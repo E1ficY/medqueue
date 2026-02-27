@@ -9,7 +9,7 @@
   <style>
 
     .page-hero {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      background: linear-gradient(135deg, #16a34a 0%, #0891b2 100%);
       border-radius: 20px;
       padding: 32px 36px;
       color: white;
@@ -46,7 +46,7 @@
       border-radius: 20px;
       padding: 32px;
       box-shadow: 0 12px 40px rgba(21,128,61,0.12);
-      border: 1px solid rgba(22,163,74,0.13);
+      border: 1px solid rgba(8,145,178,0.11);
     }
 
     .specialties-grid {
@@ -78,7 +78,7 @@
     .spec-option.selected {
       border-color: var(--accent);
       background: linear-gradient(135deg, rgba(22,163,74,0.12), rgba(16,185,129,0.08));
-      color: #065f46;
+      color: #0369a1;
       box-shadow: 0 4px 12px rgba(22,163,74,0.18);
     }
 
@@ -148,7 +148,7 @@
 
     .clinic-mini-card:hover {
       border-color: var(--accent);
-      box-shadow: 0 6px 20px rgba(22,163,74,0.14);
+      box-shadow: 0 6px 20px rgba(8,145,178,0.12);
     }
 
     .clinic-mini-card .clinic-icon {
@@ -166,7 +166,7 @@
     .clinic-mini-card .clinic-info .clinic-name {
       font-weight: 700;
       font-size: 14px;
-      color: #064e3b;
+      color: #0c4a6e;
     }
 
     .clinic-mini-card .clinic-info .clinic-meta {
@@ -203,7 +203,7 @@
     .dt-cal-header span {
       font-weight: 800;
       font-size: 15px;
-      color: #064e3b;
+      color: #0c4a6e;
     }
     .dt-cal-nav {
       background: none;
@@ -250,7 +250,7 @@
     }
     .dt-cal-day.today { border-color: rgba(22,163,74,0.4); color: #16a34a; }
     .dt-cal-day.selected {
-      background: linear-gradient(135deg, #16a34a, #15803d);
+      background: linear-gradient(135deg,#16a34a,#0891b2);
       color: white !important;
       border-color: transparent;
       box-shadow: 0 4px 12px rgba(22,163,74,0.35);
@@ -267,7 +267,7 @@
     .dt-time-panel h4 {
       font-size: 13px;
       font-weight: 700;
-      color: #064e3b;
+      color: #0c4a6e;
       margin: 0 0 10px;
     }
     .dt-time-slots {
@@ -286,14 +286,14 @@
       font-weight: 700;
       cursor: pointer;
       border: 2px solid rgba(22,163,74,0.2);
-      color: #065f46;
+      color: #0369a1;
       background: rgba(22,163,74,0.04);
       transition: all .15s;
       user-select: none;
     }
     .dt-slot:hover { background: rgba(22,163,74,0.12); border-color: var(--accent); }
     .dt-slot.selected {
-      background: linear-gradient(135deg, #16a34a, #15803d);
+      background: linear-gradient(135deg,#16a34a,#0891b2);
       color: white;
       border-color: transparent;
       box-shadow: 0 3px 10px rgba(22,163,74,0.3);
@@ -304,7 +304,7 @@
       color: var(--muted);
       min-height: 20px;
     }
-    .dt-selected-label strong { color: #064e3b; }
+    .dt-selected-label strong { color: #0c4a6e; }
 
     /* dark overrides */
     [data-theme="dark"] .dt-cal-header span,
@@ -463,7 +463,7 @@
                 <span class="phone-chevron">&#9662;</span>
               </button>
               <input type="hidden" id="appPhoneCode" value="+7">
-              <input type="tel" id="appPhone" data-phone-input placeholder="(___) ___-__-__" autocomplete="tel-national" readonly style="background:#f0fdf4;color:#065f46;cursor:default;">
+              <input type="tel" id="appPhone" data-phone-input placeholder="(___) ___-__-__" autocomplete="tel-national" readonly style="background:#f0fdf4;color: #0369a1;cursor:default;">
               <div class="phone-region-dropdown" id="appRegionDrop"></div>
             </div>
             <div style="font-size:12px;color:#6b7280;margin-top:5px;">
@@ -555,7 +555,7 @@
 
     <section style="margin-top:36px;">
       <div class="section-head">
-        <h3 style="margin:0;font-size:22px;font-weight:800;color:#064e3b;">🏥 Доступные клиники</h3>
+        <h3 style="margin:0;font-size:22px;font-weight:800;color: #0c4a6e;">🏥 Доступные клиники</h3>
       </div>
       <div id="hospList" class="grid" style="margin-top:4px;"></div>
     </section>
@@ -711,7 +711,7 @@
             <div style="font-size:12px;color:var(--muted)">Кабинет ${d.cabinet} · ${d.work_days} · ${d.work_hours}</div>
           </div>
           <div style="text-align:right;font-size:12px;color:var(--muted)">
-            <span style="background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;font-weight:600">
+            <span style="background:rgba(8,145,178,0.08);color:#0891b2;padding:2px 8px;border-radius:20px;font-weight:600">
               В очереди: ${d.current_queue}
             </span>
           </div>

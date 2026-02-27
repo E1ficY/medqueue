@@ -10,12 +10,12 @@
   <style>
     /* ---- Profile header ---- */
     .profile-header {
-      background: linear-gradient(135deg, #16a34a 0%, #0d9456 50%, #15803d 100%);
+      background: linear-gradient(135deg, #16a34a 0%, #0284c7 60%, #0891b2 100%);
       color: white;
       padding: 28px 32px;
       border-radius: 20px;
       margin-bottom: 24px;
-      box-shadow: 0 16px 40px rgba(22, 163, 74, 0.24);
+      box-shadow: 0 16px 40px rgba(8,145,178,0.22);
       position: relative;
       overflow: hidden;
     }
@@ -148,7 +148,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      color: #065f46;
+      color: #0369a1;
       font-size: 20px;
       font-weight: 800;
     }
@@ -187,24 +187,24 @@
     .tab-btn.active {
       background: white;
       color: var(--accent);
-      box-shadow: 0 2px 8px rgba(22,163,74,0.14);
+      box-shadow: 0 2px 8px rgba(8,145,178,0.12);
     }
     .tab-btn:hover:not(.active) {
       background: rgba(22,163,74,0.07);
-      color: #065f46;
+      color: #0369a1;
     }
 
     /* ---- Appointment item ---- */
     .appointment-item {
       padding: 18px;
-      border: 1.5px solid rgba(22,163,74,0.13);
+      border: 1.5px solid rgba(8,145,178,0.11);
       border-radius: 14px;
       margin-bottom: 12px;
       transition: all 0.2s ease;
       background: #fafff9;
     }
     .appointment-item:hover {
-      box-shadow: 0 8px 22px rgba(22,163,74,0.13);
+      box-shadow: 0 8px 22px rgba(8,145,178,0.11);
       border-color: rgba(22,163,74,0.28);
     }
     .appt-header {
@@ -217,7 +217,7 @@
     .appt-hospital-name {
       font-weight: 800;
       font-size: 16px;
-      color: #064e3b;
+      color: #0c4a6e;
       margin: 0 0 4px;
     }
     .appt-address {
@@ -229,7 +229,7 @@
     }
     .appt-queue-badge {
       background: linear-gradient(135deg, #86efac, #10b981);
-      color: #064e3b;
+      color: #0c4a6e;
       padding: 6px 14px;
       border-radius: 10px;
       font-weight: 900;
@@ -279,10 +279,10 @@
       font-size: 13px;
       cursor: pointer;
       transition: all 0.2s ease;
-      border: 1px solid rgba(22,163,74,0.13);
+      border: 1px solid rgba(8,145,178,0.11);
     }
     .hospital-chip:hover {
-      background: rgba(22,163,74,0.14);
+      background: rgba(8,145,178,0.12);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(22,163,74,0.15);
     }
@@ -586,7 +586,7 @@
     <div class="section-card quick-book animate-in">
       <div class="quick-book-inner">
         <div>
-          <h3 style="margin:0 0 6px;font-size:19px;color:#064e3b;"> Быстрая запись</h3>
+          <h3 style="margin:0 0 6px;font-size:19px;color: #0c4a6e;"> Быстрая запись</h3>
           <p style="margin:0;color:var(--muted);font-size:14px;">Запишитесь к врачу в несколько кликов</p>
         </div>
         <a href="recording.html" class="btn btn-primary"> Записаться к врачу</a>
@@ -835,7 +835,7 @@
         <div class="hospital-chip" onclick="window.location.href='recording.html?hospital_name=${encodeURIComponent(h.name)}'">
           <div class="chip-icon"></div>
           <div>
-            <div style="font-weight:700;font-size:13.5px;color:#064e3b;">${h.name}</div>
+            <div style="font-weight:700;font-size:13.5px;color: #0c4a6e;">${h.name}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:1px;">${h.type || ''}  ${h.count} ${h.count === 1 ? 'посещение' : 'посещений'}</div>
           </div>
         </div>`).join('');
@@ -939,22 +939,22 @@
   <div id="profileEditorModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
     <div style="background:white;padding:36px 28px 28px 28px;border-radius:18px;max-width:420px;width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;animation:slideUpModal 0.25s ease;">
       <button onclick="closeProfileEditor()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;line-height:1;">&times;</button>
-      <h3 style="margin:0 0 20px 0;font-size:20px;color:#065f46;font-weight:800;">&#9998; Редактировать профиль</h3>
+      <h3 style="margin:0 0 20px 0;font-size:20px;color: #0369a1;font-weight:800;">&#9998; Редактировать профиль</h3>
       <form id="profileEditForm" onsubmit="saveProfileEdit(event)">
         <div style="margin-bottom:14px;">
-          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Имя</label>
+          <label style="display:block;font-size:12px;font-weight:700;color: #0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Имя</label>
           <input type="text" id="editName" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
         </div>
         <div style="margin-bottom:14px;">
-          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Логин / Никнейм</label>
+          <label style="display:block;font-size:12px;font-weight:700;color: #0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Логин / Никнейм</label>
           <input type="text" id="editUsername" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
         </div>
         <div style="margin-bottom:14px;">
-          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Email</label>
+          <label style="display:block;font-size:12px;font-weight:700;color: #0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Email</label>
           <input type="email" id="editEmail" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
         </div>
         <div style="margin-bottom:22px;">
-          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Телефон</label>
+          <label style="display:block;font-size:12px;font-weight:700;color: #0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Телефон</label>
           <div class="phone-wrap" style="margin-top:2px;">
             <button type="button" class="phone-region-btn" id="editRegionBtn" onclick="togglePhoneDropdown('editRegionDrop')">
               <span id="editPhoneFlag">&#127472;&#127487;</span>
