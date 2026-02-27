@@ -205,7 +205,7 @@
   const HOSPITAL_ICONS = { 'Поликлиника': '🏥', 'Больница': '🏨', 'Детская': '👶', 'Спец. клиника': '⚕️' };
 
   function buildMap(hosp) {
-    const map = L.map('hospitalsMap', { zoomControl: true, scrollWheelZoom: false })
+    const map = L.map('hospitalsMap', { zoomControl: true, scrollWheelZoom: true })
       .setView([43.238, 76.900], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
