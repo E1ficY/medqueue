@@ -1,37 +1,22 @@
 <!DOCTYPE html>
-
 <html lang="ru">
-
 <head>
-
   <meta charset="utf-8" />
-
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
   <title>Статус очереди – MedQueue</title>
-
   <link rel="stylesheet" href="../css/styles.css">
-
   <script src="../js/script.js"></script>
-
   <script src="/js/theme.js"></script>
 </head>
-
 <body>
 
   <header class="site-header">
-
     <div class="wrap">
-
       <a class="logo" href="main.html">MedQueue</a>
-
-      
 
       <!-- Mobile menu button -->
 
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
-
-      
 
       <!-- Navigation -->
 
@@ -42,81 +27,42 @@
         <a href="profile.html" class="nav-link">Личный кабинет</a>
         <a href="contacts%20and%20about.html" class="nav-link">О проекте &amp; Контакты</a>
       </nav>
-
     </div>
       <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
-
   </header>
-
-  
-
   <script>
 
   function toggleMobileMenu() {
-
     const nav = document.getElementById('mainNav');
-
     nav.classList.toggle('mobile-open');
 
   }
-
   </script>
 
-
-
   <main class="wrap" style="padding-top:36px; padding-bottom:40px; max-width:700px;">
-
     <h2>Проверить статус очереди</h2>
-
-
-
     <div class="card" style="margin-top:14px;">
-
       <form id="checkForm">
-
         <label class="field">
-
           <span>Код записи</span>
-
           <input id="code" type="text" placeholder="Введите код из SMS/почты">
-
         </label>
-
         <button class="btn btn-primary" type="submit">Проверить</button>
-
         <div id="result" class="result" style="display:none; margin-top:12px;"></div>
-
       </form>
-
     </div>
-
-
 
     <section style="margin-top:22px;">
-
       <h3>Ближайшие клиники и примерное ожидание</h3>
-
       <div id="hospList" class="grid" style="margin-top:12px;"></div>
-
     </section>
-
   </main>
 
-
-
   <footer class="site-footer">
-
     <div class="wrap">
-
       <div>© 2025 MedQueue – Удобная запись и управление очередями</div>
-
       <div class="muted">Версия прототипа</div>
-
     </div>
-
   </footer>
-
 </body>
-
 </html>
-

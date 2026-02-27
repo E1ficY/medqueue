@@ -1,483 +1,163 @@
 <!DOCTYPE html>
-
-
 <html lang="ru">
-
-
 <head>
-
-
   <meta charset="utf-8" />
-
-
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-
   <title>Вход в MedQueue</title>
-
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-
   <link rel="stylesheet" href="../css/styles.css">
-
-
   <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
-
-
   <style>
 
-
     body {
-
-
       background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-
-
       min-height: 100vh;
-
-
       display: flex;
-
-
       align-items: center;
-
-
       justify-content: center;
-
-
       padding: 20px;
-
-
       font-family: 'Inter', sans-serif;
-
-
     }
-
-
-    
-
 
     .auth-card {
-
-
       background: white;
-
-
       border-radius: 20px;
-
-
       padding: 40px;
-
-
       max-width: 450px;
-
-
       width: 100%;
-
-
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-
-
     }
-
-
-    
-
 
     .logo {
-
-
       text-align: center;
-
-
       margin-bottom: 30px;
-
-
     }
-
-
-    
-
 
     .logo-icon {
-
-
       font-size: 60px;
-
-
       margin-bottom: 10px;
-
-
     }
-
-
-    
-
 
     .logo-title {
-
-
       font-size: 22px;
-
-
       font-weight: 900;
-
-
       color: var(--accent);
-
-
       letter-spacing: -0.5px;
-
-
       margin: 0;
-
-
     }
-
-
-    
-
 
     .tabs {
-
-
       display: flex;
-
-
       gap: 10px;
-
-
       margin-bottom: 30px;
-
-
       background: #f3f4f6;
-
-
       padding: 5px;
-
-
       border-radius: 12px;
-
-
     }
-
-
-    
-
 
     .tab {
-
-
       flex: 1;
-
-
       padding: 12px;
-
-
       border: none;
-
-
       background: transparent;
-
-
       border-radius: 8px;
-
-
       font-weight: 700;
-
-
       cursor: pointer;
-
-
       color: #6b7280;
-
-
     }
-
-
-    
-
 
     .tab.active {
-
-
       background: white;
-
-
       color: #16a34a;
-
-
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-
     }
-
-
-    
-
 
     .form-group {
-
-
       margin-bottom: 20px;
-
-
     }
-
-
-    
-
 
     .form-label {
-
-
       display: block;
-
-
       font-weight: 600;
-
-
       margin-bottom: 8px;
-
-
       color: #374151;
-
-
     }
-
-
-    
-
 
     .form-input {
-
-
       width: 100%;
-
-
       padding: 12px;
-
-
       border: 2px solid #e5e7eb;
-
-
       border-radius: 10px;
-
-
       font-size: 15px;
-
-
       font-family: 'Inter', sans-serif;
-
-
     }
-
-
-    
-
 
     .form-input:focus {
-
-
       outline: none;
-
-
       border-color: #16a34a;
-
-
     }
-
-
-    
-
 
     .submit-btn {
-
-
       width: 100%;
-
-
       padding: 14px;
-
-
       background: linear-gradient(135deg, #16a34a, #15803d);
-
-
       color: white;
-
-
       border: none;
-
-
       border-radius: 10px;
-
-
       font-weight: 700;
-
-
       font-size: 16px;
-
-
       cursor: pointer;
-
-
     }
-
-
-    
-
 
     .submit-btn:hover {
-
-
       opacity: 0.9;
-
-
     }
-
-
-    
-
 
     .message {
-
-
       padding: 12px;
-
-
       border-radius: 8px;
-
-
       margin-bottom: 20px;
-
-
       display: none;
-
-
     }
-
-
-    
-
 
     .error {
-
-
       background: #fee2e2;
-
-
       color: #dc2626;
-
-
       border: 1px solid #fca5a5;
-
-
     }
-
-
-    
-
 
     .success {
-
-
       background: #dcfce7;
-
-
       color: #166534;
-
-
       border: 1px solid #86efac;
-
-
     }
-
-
-    
-
 
     .hidden {
-
-
       display: none;
-
-
     }
-
-
-    
-
 
     .back-link {
-
-
       text-align: center;
-
-
       margin-top: 20px;
-
-
     }
-
-
-    
-
 
     .back-link a {
-
-
       color: #16a34a;
-
-
       text-decoration: none;
-
-
       font-weight: 600;
-
-
     }
-
-
-    
-
 
     .code-step {
-
-
       text-align: center;
-
-
     }
-
-
-    
-
 
     .code-input {
-
-
       font-size: 24px;
-
-
       letter-spacing: 8px;
-
-
       text-align: center;
-
-
       font-weight: 700;
-
-
       padding: 15px;
-
-
     }
-
-
-
-
-
 
     /* ===== DARK THEME OVERRIDES ===== */
     [data-theme="dark"] body {
@@ -524,1185 +204,422 @@
       color: var(--accent-2);
     }
   </style>
-
-
   <script src="/js/theme.js"></script>
 </head>
-
-
 <body>
   <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
-
-
-  
-
-
   <div class="auth-card">
-
-
-    
-
-
     <div class="logo">
-
-
       <div class="logo-icon">🏥</div>
-
-
       <h1 class="logo-title">MedQueue</h1>
-
-
     </div>
-
-
-    
-
-
     <div class="tabs">
-
-
       <button class="tab active" id="loginTab" onclick="showLogin()">Вход</button>
-
-
       <button class="tab" id="registerTab" onclick="showRegister()">Регистрация</button>
-
-
     </div>
-
-
-    
-
-
     <div id="message" class="message"></div>
-
-
-    
-
 
     <!-- ВХОД -->
 
-
     <div id="loginForm">
-
-
       <form onsubmit="handleLogin(event)">
-
-
         <div class="form-group">
-
-
           <label class="form-label">Email</label>
-
-
           <input type="email" class="form-input" id="loginEmail" required>
-
-
         </div>
-
-
-        
-
-
         <div class="form-group">
-
-
           <label class="form-label">Пароль</label>
-
-
           <input type="password" class="form-input" id="loginPassword" required>
-
-
         </div>
-
-
-
-
-
         <div class="form-group">
-
-
           <label class="form-label">Проверка на робота</label>
-
-
           <div id="loginRecaptcha"></div>
-
-
         </div>
-
-
-        
-
-
         <button type="submit" class="submit-btn">Войти</button>
-
-
       </form>
-
-
     </div>
-
-
-    
-
 
     <!-- РЕГИСТРАЦИЯ -->
 
-
     <div id="registerForm" class="hidden">
-
-
       <form onsubmit="handleRegister(event)">
-
-
         <div class="form-group">
-
-
           <label class="form-label">Имя</label>
-
-
           <input type="text" class="form-input" id="registerName" required>
-
-
         </div>
-
-
         <div class="form-group">
-
-
           <label class="form-label">Email</label>
-
-
           <input type="email" class="form-input" id="registerEmail" required>
-
-
         </div>
-
-
-        
-
-
         <div class="form-group">
-
-
           <label class="form-label">Пароль</label>
-
-
           <input type="password" class="form-input" id="registerPassword" minlength="6" required>
-
-
         </div>
-
-
-        
-
-
         <div class="form-group">
-
-
           <label class="form-label">Подтвердите пароль</label>
-
-
           <input type="password" class="form-input" id="registerPasswordConfirm" required>
-
-
         </div>
-
-
-
-
-
         <div class="form-group">
-
-
           <label class="form-label">Проверка на робота</label>
-
-
           <div id="registerRecaptcha"></div>
-
-
         </div>
-
-
-        
-
-
         <button type="submit" class="submit-btn">Зарегистрироваться</button>
-
-
       </form>
-
         <div style="margin-top:16px;text-align:center;">
           <button type="button" onclick="openVideoModal()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(22,163,74,0.08);color:#065f46;border:1.5px solid rgba(22,163,74,0.25);border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;width:100%;" onmouseover="this.style.background='rgba(22,163,74,0.15)'" onmouseout="this.style.background='rgba(22,163,74,0.08)'">
             <span style="font-size:18px;">▶️</span> Смотреть видео о проекте
           </button>
         </div>
-
-
     </div>
-
-
-    
-
 
     <!-- ПОДТВЕРЖДЕНИЕ КОДА -->
 
-
     <div id="verifyForm" class="hidden code-step">
-
-
       <h3 style="margin-bottom: 15px;">Проверьте почту</h3>
-
-
       <p style="color: #6b7280; margin-bottom: 20px;">
-
-
         Код отправлен на <strong id="emailSent"></strong>
-
-
       </p>
-
-
       <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">
-
 
         Не видите письмо? Проверьте папку <strong>Спам</strong>.
 
-
       </p>
-
-
-      
-
-
       <div class="form-group">
-
-
         <label class="form-label">Введите код</label>
-
-
         <input type="text" class="form-input code-input" id="verifyCode" maxlength="6" required>
-
-
       </div>
-
-
-      
-
-
       <button onclick="handleVerify()" class="submit-btn">Подтвердить</button>
-
-
-      
-
-
       <p style="margin-top: 15px; font-size: 14px;">
-
-
         <a href="#" onclick="resendCode(); return false;" style="color: #16a34a;">Отправить код снова</a>
-
-
       </p>
-
-
     </div>
-
-
-    
-
-
     <div class="back-link">
-
-
       <a href="main.html">← Вернуться на главную</a>
-
-
     </div>
-
-
-    
-
-
   </div>
-
-
-
-
-
   <script>
-
-
     const DEFAULT_LOCAL_API_ORIGIN = 'http://127.0.0.1:8001';
-
-
     const API_BASE = window.location.protocol === 'file:'
-
-
       ? (localStorage.getItem('medqueue_api_origin') || DEFAULT_LOCAL_API_ORIGIN)
-
-
       : window.location.origin;
-
-
     const API_URL = `${API_BASE}/api`;
-
-
     const AUTH_STORAGE_KEY = 'medqueue_current_user';
-
-
     const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
-
-
     const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
-
-
     let currentEmail = '';
-
-
     const recaptchaWidgets = {
-
-
       login: null,
-
-
       register: null,
-
 
     };
 
-
-
-
-
     function redirectAfterAuth() {
-
-
       const params = new URLSearchParams(window.location.search);
-
-
       const next = params.get('next');
-
-
       if (next) {
-
-
         window.location.href = next;
-
-
         return;
 
-
       }
-
-
       window.location.href = 'profile.html';
 
-
     }
-
-
-
-
-
     document.addEventListener('DOMContentLoaded', function() {
-
-
       const currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-
-
       const params = new URLSearchParams(window.location.search);
-
-
       const tab = params.get('tab');
-
-
-
-
-
       if (currentUser) {
-
-
         redirectAfterAuth();
-
-
         return;
 
-
       }
-
-
-
-
-
       if (tab === 'register') {
-
-
         showRegister();
 
-
       } else {
-
-
         showLogin();
 
-
       }
-
-
-
-
-
       initRecaptchaWidgets();
-
-
-
-
-
       setTimeout(() => {
-
-
         if (IS_FILE_PROTOCOL) {
-
-
           showMessage('reCAPTCHA не работает при открытии файла напрямую (file://). Откройте страницу через http://localhost или http://127.0.0.1.', 'error');
-
-
           return;
 
-
         }
-
-
         if (!window.grecaptcha) {
-
-
           showMessage('reCAPTCHA не загрузилась. Проверьте интернет и отключите блокировщик рекламы.', 'error');
 
-
         }
-
 
       }, 3500);
 
-
     });
 
-
-
-
-
     function initRecaptchaWidgets() {
-
-
       if (IS_FILE_PROTOCOL) {
-
-
         return;
 
-
       }
-
-
-
-
-
       if (!window.grecaptcha || !window.grecaptcha.render) {
-
-
         setTimeout(initRecaptchaWidgets, 200);
-
-
         return;
 
-
       }
-
-
-
-
-
       if (recaptchaWidgets.login === null) {
-
-
         const loginContainer = document.getElementById('loginRecaptcha');
-
-
         if (loginContainer) {
-
-
           recaptchaWidgets.login = window.grecaptcha.render(loginContainer, {
-
-
             sitekey: RECAPTCHA_SITE_KEY,
-
-
             'error-callback': function() {
-
-
               showMessage('Ошибка ключа/домена reCAPTCHA. Проверьте Site Key в Google Console.', 'error');
-
 
             },
 
-
           });
-
 
         }
 
-
       }
-
-
-
-
-
       if (recaptchaWidgets.register === null) {
-
-
         const registerContainer = document.getElementById('registerRecaptcha');
-
-
         if (registerContainer) {
-
-
           recaptchaWidgets.register = window.grecaptcha.render(registerContainer, {
-
-
             sitekey: RECAPTCHA_SITE_KEY,
-
-
             'error-callback': function() {
-
-
               showMessage('Ошибка ключа/домена reCAPTCHA. Проверьте Site Key в Google Console.', 'error');
-
 
             },
 
-
           });
-
 
         }
 
-
       }
-
 
     }
-
-
-
-
-
     window.initRecaptchaWidgets = initRecaptchaWidgets;
 
-
-
-
-
     function getCaptchaToken(type) {
-
-
       const widgetId = recaptchaWidgets[type];
-
-
       if (widgetId === null || !window.grecaptcha) {
-
-
         return '';
 
-
       }
-
-
-
-
-
       return window.grecaptcha.getResponse(widgetId) || '';
 
-
     }
-
-
-
-
 
     function resetCaptcha(type) {
-
-
       const widgetId = recaptchaWidgets[type];
-
-
       if (widgetId !== null && window.grecaptcha) {
-
-
         window.grecaptcha.reset(widgetId);
 
-
       }
 
-
     }
-
-
-    
-
 
     function showLogin() {
-
-
       document.getElementById('loginTab').classList.add('active');
-
-
       document.getElementById('registerTab').classList.remove('active');
-
-
       document.getElementById('loginForm').classList.remove('hidden');
-
-
       document.getElementById('registerForm').classList.add('hidden');
-
-
       document.getElementById('verifyForm').classList.add('hidden');
-
-
       initRecaptchaWidgets();
-
-
       hideMessage();
 
-
     }
-
-
-    
-
 
     function showRegister() {
-
-
       document.getElementById('loginTab').classList.remove('active');
-
-
       document.getElementById('registerTab').classList.add('active');
-
-
       document.getElementById('loginForm').classList.add('hidden');
-
-
       document.getElementById('registerForm').classList.remove('hidden');
-
-
       document.getElementById('verifyForm').classList.add('hidden');
-
-
       initRecaptchaWidgets();
-
-
       hideMessage();
 
-
     }
-
-
-    
-
 
     function showMessage(text, type) {
-
-
       const msg = document.getElementById('message');
-
-
       msg.textContent = text;
-
-
       msg.className = 'message ' + type;
-
-
       msg.style.display = 'block';
 
-
     }
-
-
-    
-
 
     function hideMessage() {
-
-
       document.getElementById('message').style.display = 'none';
 
-
     }
-
-
-    
-
-
     // ВХОД
 
-
     async function handleLogin(e) {
-
-
       e.preventDefault();
-
-
-
-
-
       if (IS_FILE_PROTOCOL) {
-
-
         showMessage('Для работы reCAPTCHA откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
-
-
         return;
 
-
       }
-
-
-
-
-
       if (!window.grecaptcha) {
-
-
         showMessage('reCAPTCHA не загрузилась. Отключите блокировщик рекламы и обновите страницу.', 'error');
-
-
         return;
 
-
       }
-
-
-
-
-
       const captchaToken = getCaptchaToken('login');
-
-
       if (!captchaToken) {
-
-
         showMessage('Подтвердите, что вы не робот', 'error');
-
-
         return;
 
-
       }
-
-
-      
-
-
       const email = document.getElementById('loginEmail').value;
-
-
       const password = document.getElementById('loginPassword').value;
-
-
-      
-
-
       try {
-
-
         const response = await fetch(`${API_URL}/auth/login/`, {
-
-
           method: 'POST',
-
-
           headers: { 'Content-Type': 'application/json' },
-
-
           body: JSON.stringify({ email, password, captcha_token: captchaToken })
 
-
         });
-
-
-        
-
-
         const data = await response.json();
-
-
-        
-
-
         if (response.ok) {
-
-
           const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
-
-
           showMessage('Вход выполнен!', 'success');
-
-
           setTimeout(redirectAfterAuth, 1000);
 
-
         } else {
-
-
           showMessage(data.error || 'Ошибка входа', 'error');
-
-
           resetCaptcha('login');
 
-
         }
 
-
       } catch (error) {
-
-
         showMessage(`Ошибка подключения к серверу. Проверьте, что backend запущен по адресу ${API_BASE}`, 'error');
-
-
         resetCaptcha('login');
 
-
       }
 
-
     }
-
-
-    
-
-
     // РЕГИСТРАЦИЯ
 
-
     async function handleRegister(e) {
-
-
       e.preventDefault();
-
-
-
-
-
       if (IS_FILE_PROTOCOL) {
-
-
         showMessage('Для работы reCAPTCHA откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
-
-
         return;
 
-
       }
-
-
-
-
-
       if (!window.grecaptcha) {
-
-
         showMessage('reCAPTCHA не загрузилась. Отключите блокировщик рекламы и обновите страницу.', 'error');
-
-
         return;
 
-
       }
-
-
-
-
-
       const captchaToken = getCaptchaToken('register');
-
-
       if (!captchaToken) {
-
-
         showMessage('Подтвердите, что вы не робот', 'error');
-
-
         return;
 
-
       }
-
-
-      
-
-
       const name = document.getElementById('registerName').value;
-
-
       const email = document.getElementById('registerEmail').value;
-
-
       const password = document.getElementById('registerPassword').value;
-
-
       const confirm = document.getElementById('registerPasswordConfirm').value;
-
-
-      
-
-
       if (password !== confirm) {
-
-
         showMessage('Пароли не совпадают', 'error');
-
-
         resetCaptcha('register');
-
-
         return;
 
-
       }
-
-
-      
-
-
       try {
-
-
         const response = await fetch(`${API_URL}/auth/register/`, {
-
-
           method: 'POST',
-
-
           headers: { 'Content-Type': 'application/json' },
-
-
           body: JSON.stringify({ name, email, password, captcha_token: captchaToken })
 
-
         });
-
-
-        
-
-
         const data = await response.json();
-
-
-        
-
-
         if (response.ok) {
-
-
           currentEmail = email;
-
-
           document.getElementById('emailSent').textContent = email;
-
-
           document.getElementById('registerForm').classList.add('hidden');
-
-
           document.getElementById('verifyForm').classList.remove('hidden');
-
-
           showMessage('Код отправлен на почту ' + email + '.', 'success');
 
-
         } else {
-
-
           showMessage(data.error || 'Ошибка регистрации', 'error');
-
-
           resetCaptcha('register');
 
-
         }
 
-
       } catch (error) {
-
-
         showMessage(`Ошибка подключения к серверу. Проверьте, что backend запущен по адресу ${API_BASE}`, 'error');
-
-
         resetCaptcha('register');
 
-
       }
 
-
     }
-
-
-    
-
-
     // ПОДТВЕРЖДЕНИЕ
 
-
     async function handleVerify() {
-
-
       const code = document.getElementById('verifyCode').value;
-
-
-      
-
-
       if (code.length !== 6) {
-
-
         showMessage('Введите 6-значный код', 'error');
-
-
         return;
 
-
       }
-
-
-      
-
-
       try {
-
-
         const response = await fetch(`${API_URL}/auth/verify/`, {
-
-
           method: 'POST',
-
-
           headers: { 'Content-Type': 'application/json' },
-
-
           body: JSON.stringify({ email: currentEmail, code })
 
-
         });
-
-
-        
-
-
         const data = await response.json();
-
-
-        
-
-
         if (response.ok) {
-
-
           const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
-
-
           showMessage('Регистрация успешна!', 'success');
-
-
           setTimeout(redirectAfterAuth, 1000);
 
-
         } else {
-
-
           showMessage(data.error || 'Ошибка подтверждения кода', 'error');
 
-
         }
 
-
       } catch (error) {
-
-
         showMessage(`Ошибка подключения к серверу. Проверьте, что backend запущен по адресу ${API_BASE}`, 'error');
-
 
       }
 
-
     }
-
-
-    
-
-
     // ПОВТОРНАЯ ОТПРАВКА
 
-
     async function resendCode() {
-
-
       try {
-
-
         const response = await fetch(`${API_URL}/auth/resend/`, {
-
-
           method: 'POST',
-
-
           headers: { 'Content-Type': 'application/json' },
-
-
           body: JSON.stringify({ email: currentEmail })
 
-
         });
-
-
-        
-
-
         const data = await response.json();
-
-
-        
-
-
         if (response.ok) {
-
-
           showMessage('Новый код отправлен на почту.', 'success');
 
-
         } else {
-
-
           showMessage(data.error, 'error');
-
 
         }
 
-
       } catch (error) {
-
-
         showMessage(`Ошибка подключения к серверу. Проверьте, что backend запущен по адресу ${API_BASE}`, 'error');
-
 
       }
 
-
     }
-
-
   </script>
-
-
 
   <!-- ===== ВИДЕО МОДАЛ ===== -->
   <div id="videoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);" onclick="if(event.target===this)closeVideoModal()">
@@ -1738,10 +655,5 @@
     v.currentTime = 0;
   }
   </script>
-
 </body>
-
-
 </html>
-
-
