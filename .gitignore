@@ -38,5 +38,10 @@ media/
 .DS_Store
 Thumbs.db
 
+# Excluded projects
+ren_project/
+Samir.html
+Samir.py
+
 # Node
 node_modules/
