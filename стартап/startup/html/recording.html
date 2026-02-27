@@ -515,57 +515,27 @@
         <div class="form-section-title">🩺 Специальность врача</div>
 
         <input type="hidden" id="appSpecialty" value="Терапевт">
+        <input type="hidden" id="appDoctor" value="">
+
+        <div id="specLoadingHint" style="display:none;font-size:13px;color:var(--muted);margin-bottom:8px;">
+          ⏳ Загрузка специальностей...
+        </div>
 
         <div class="specialties-grid" id="specGrid">
+          <div class="spec-option selected" data-value="Терапевт" onclick="selectSpec(this)"><span class="spec-icon">🩺</span>Терапевт</div>
+          <div class="spec-option" data-value="Хирург" onclick="selectSpec(this)"><span class="spec-icon">🔪</span>Хирург</div>
+          <div class="spec-option" data-value="Стоматолог" onclick="selectSpec(this)"><span class="spec-icon">🦷</span>Стоматолог</div>
+          <div class="spec-option" data-value="Педиатр" onclick="selectSpec(this)"><span class="spec-icon">👶</span>Педиатр</div>
+          <div class="spec-option" data-value="Кардиолог" onclick="selectSpec(this)"><span class="spec-icon">❤️</span>Кардиолог</div>
+          <div class="spec-option" data-value="Невролог" onclick="selectSpec(this)"><span class="spec-icon">🧠</span>Невролог</div>
+          <div class="spec-option" data-value="Офтальмолог" onclick="selectSpec(this)"><span class="spec-icon">👁️</span>Офтальмолог</div>
+          <div class="spec-option" data-value="Дерматолог" onclick="selectSpec(this)"><span class="spec-icon">🌡️</span>Дерматолог</div>
+        </div>
 
-          <div class="spec-option selected" data-value="Терапевт" onclick="selectSpec(this)">
-
-            <span class="spec-icon">🩺</span>Терапевт
-
-          </div>
-
-          <div class="spec-option" data-value="Хирург" onclick="selectSpec(this)">
-
-            <span class="spec-icon">🔪</span>Хирург
-
-          </div>
-
-          <div class="spec-option" data-value="Стоматолог" onclick="selectSpec(this)">
-
-            <span class="spec-icon">🦷</span>Стоматолог
-
-          </div>
-
-          <div class="spec-option" data-value="Педиатр" onclick="selectSpec(this)">
-
-            <span class="spec-icon">👶</span>Педиатр
-
-          </div>
-
-          <div class="spec-option" data-value="Кардиолог" onclick="selectSpec(this)">
-
-            <span class="spec-icon">❤️</span>Кардиолог
-
-          </div>
-
-          <div class="spec-option" data-value="Невролог" onclick="selectSpec(this)">
-
-            <span class="spec-icon">🧠</span>Невролог
-
-          </div>
-
-          <div class="spec-option" data-value="Офтальмолог" onclick="selectSpec(this)">
-
-            <span class="spec-icon">👁️</span>Офтальмолог
-
-          </div>
-
-          <div class="spec-option" data-value="Дерматолог" onclick="selectSpec(this)">
-
-            <span class="spec-icon">🌡️</span>Дерматолог
-
-          </div>
-
+        <!-- Doctor selector (appears when specialty is selected and hospital has doctors) -->
+        <div id="doctorPanel" style="display:none;margin-top:12px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">👨‍⚕️ Выберите врача <span style="font-weight:400;color:var(--muted)">(необязательно)</span></div>
+          <div id="doctorList" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
 
 
@@ -662,42 +632,149 @@
 
   <script>
 
+  // Icons map for dynamic specialty grid
+  const SPEC_ICONS = {
+    'Терапевт':'🩺','Хирург':'🔪','Стоматолог':'🦷','Педиатр':'👶',
+    'Кардиолог':'❤️','Невролог':'🧠','Офтальмолог':'👁️','Дерматолог':'🌡️',
+    'Эндокринолог':'💉','Гинеколог':'🌸','Уролог':'🏥','Психиатр':'🧘'
+  };
+
+  // Doctors data for current hospital, keyed by specialty
+  let _hospitalDoctors = {};
+
   function selectSpec(el) {
-
     document.querySelectorAll('.spec-option').forEach(o => o.classList.remove('selected'));
-
     el.classList.add('selected');
-
-    document.getElementById('appSpecialty').value = el.dataset.value;
-
+    const spec = el.dataset.value;
+    document.getElementById('appSpecialty').value = spec;
+    // Clear selected doctor when specialty changes
+    document.getElementById('appDoctor').value = '';
+    // Show doctors for this specialty if available
+    const panel = document.getElementById('doctorPanel');
+    const list  = document.getElementById('doctorList');
+    const docs  = _hospitalDoctors[spec];
+    if (docs && docs.length > 0) {
+      list.innerHTML = docs.map(d => `
+        <div class="doctor-card" id="doc-card-${d.id}" onclick="selectDoctor(${d.id}, '${d.full_name.replace(/'/g,"\\'")}', this)"
+             style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:border-color .2s,background .2s">
+          <div style="font-size:28px">👨‍⚕️</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${d.full_name}</div>
+            <div style="font-size:12px;color:var(--muted)">Кабинет ${d.cabinet} · ${d.work_days} · ${d.work_hours}</div>
+          </div>
+          <div style="text-align:right;font-size:12px;color:var(--muted)">
+            <span style="background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;font-weight:600">
+              В очереди: ${d.current_queue}
+            </span>
+          </div>
+        </div>
+      `).join('');
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
   }
 
+  function selectDoctor(id, name, el) {
+    document.querySelectorAll('.doctor-card').forEach(c => {
+      c.style.borderColor = 'var(--border)';
+      c.style.background = '';
+    });
+    if (document.getElementById('appDoctor').value == id) {
+      // Deselect if same doctor clicked again
+      document.getElementById('appDoctor').value = '';
+    } else {
+      document.getElementById('appDoctor').value = id;
+      el.style.borderColor = 'var(--primary)';
+      el.style.background = 'rgba(var(--primary-rgb,99,102,241),0.06)';
+    }
+  }
 
+  async function loadHospitalDoctors(hospitalId) {
+    _hospitalDoctors = {};
+    const panel = document.getElementById('doctorPanel');
+    const hint  = document.getElementById('specLoadingHint');
+    panel.style.display = 'none';
+    document.getElementById('appDoctor').value = '';
 
-  // Pre-fill name and phone from logged-in user
+    if (!hospitalId) {
+      renderDefaultSpecGrid();
+      return;
+    }
 
-  document.addEventListener('DOMContentLoaded', function() {
-
+    hint.style.display = 'block';
     try {
+      // API_URL is defined in script.js
+      const res = await fetch(`${API_URL}/hospitals/${hospitalId}/doctors/`);
+      if (!res.ok) throw new Error('network');
+      const groups = await res.json(); // [{specialty, doctors:[...]}]
 
-      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
-
-      const remembered = JSON.parse(localStorage.getItem('medqueue_remembered') || 'null');
-
-      const prefill = user || remembered;
-
-      if (prefill) {
-
-        const nameInput = document.getElementById('appName');
-
-        if (nameInput && !nameInput.value && prefill.name) nameInput.value = prefill.name;
-
-        if (prefill.phone) _parseStoredPhone(prefill.phone, 'app');
-
+      if (!groups || groups.length === 0) {
+        renderDefaultSpecGrid();
+        return;
       }
 
+      // Build lookup
+      groups.forEach(g => { _hospitalDoctors[g.specialty] = g.doctors; });
+
+      // Render specialty grid from server data
+      const grid = document.getElementById('specGrid');
+      grid.innerHTML = groups.map((g, i) => `
+        <div class="spec-option${i===0?' selected':''}" data-value="${g.specialty}" onclick="selectSpec(this)">
+          <span class="spec-icon">${SPEC_ICONS[g.specialty]||'🏥'}</span>
+          ${g.specialty}
+          <span style="display:block;font-size:11px;color:var(--muted);margin-top:2px">врачей: ${g.doctors.length}</span>
+        </div>
+      `).join('');
+
+      // Pre-select first specialty
+      document.getElementById('appSpecialty').value = groups[0].specialty;
+      // Auto-show doctors for first specialty
+      const firstCard = grid.querySelector('.spec-option');
+      if (firstCard) selectSpec(firstCard);
+
+    } catch(e) {
+      renderDefaultSpecGrid();
+    } finally {
+      hint.style.display = 'none';
+    }
+  }
+
+  function renderDefaultSpecGrid() {
+    const defaults = [
+      ['Терапевт','🩺'],['Хирург','🔪'],['Стоматолог','🦷'],['Педиатр','👶'],
+      ['Кардиолог','❤️'],['Невролог','🧠'],['Офтальмолог','👁️'],['Дерматолог','🌡️']
+    ];
+    document.getElementById('specGrid').innerHTML = defaults.map((s,i) =>
+      `<div class="spec-option${i===0?' selected':''}" data-value="${s[0]}" onclick="selectSpec(this)">
+        <span class="spec-icon">${s[1]}</span>${s[0]}
+      </div>`
+    ).join('');
+    document.getElementById('appSpecialty').value = defaults[0][0];
+    document.getElementById('appDoctor').value = '';
+    document.getElementById('doctorPanel').style.display = 'none';
+  }
+
+  // Pre-fill name and phone from logged-in user
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      const remembered = JSON.parse(localStorage.getItem('medqueue_remembered') || 'null');
+      const prefill = user || remembered;
+      if (prefill) {
+        const nameInput = document.getElementById('appName');
+        if (nameInput && !nameInput.value && prefill.name) nameInput.value = prefill.name;
+        if (prefill.phone) _parseStoredPhone(prefill.phone, 'app');
+      }
     } catch(e) {}
 
+    // Listen for hospital change to reload doctors
+    const appSelect = document.getElementById('hospitalSelectApp');
+    if (appSelect) {
+      appSelect.addEventListener('change', function() {
+        loadHospitalDoctors(this.value);
+      });
+    }
   });
 
   </script>

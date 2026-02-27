@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Hospital, Appointment, VerificationCode
+from .models import Hospital, Appointment, VerificationCode, Doctor
 
 
 @admin.register(Hospital)
@@ -74,3 +74,20 @@ class VerificationCodeAdmin(admin.ModelAdmin):
     list_display = ['email', 'code', 'name', 'created_at']
     readonly_fields = ['created_at']
     search_fields = ['email', 'name']
+
+
+@admin.register(Doctor)
+class DoctorAdmin(admin.ModelAdmin):
+    """Админка для врачей"""
+    list_display = ['full_name', 'specialty', 'hospital', 'cabinet', 'work_days', 'work_hours', 'current_queue', 'is_active']
+    list_filter = ['specialty', 'hospital', 'is_active']
+    search_fields = ['full_name', 'hospital__name']
+    list_editable = ['is_active', 'cabinet']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('hospital', 'full_name', 'specialty', 'cabinet')
+        }),
+        ('Расписание', {
+            'fields': ('work_days', 'work_hours', 'is_active')
+        }),
+    )

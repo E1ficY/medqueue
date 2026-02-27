@@ -39,15 +39,58 @@ class Hospital(models.Model):
         ).count()
 
 
+SPECIALTIES_CHOICES = [
+    ('Терапевт', 'Терапевт'),
+    ('Хирург', 'Хирург'),
+    ('Стоматолог', 'Стоматолог'),
+    ('Педиатр', 'Педиатр'),
+    ('Кардиолог', 'Кардиолог'),
+    ('Невролог', 'Невролог'),
+    ('Офтальмолог', 'Офтальмолог'),
+    ('Дерматолог', 'Дерматолог'),
+    ('Эндокринолог', 'Эндокринолог'),
+    ('Гинеколог', 'Гинеколог'),
+    ('Уролог', 'Уролог'),
+    ('Психиатр', 'Психиатр'),
+]
+
+
+class Doctor(models.Model):
+    """Модель врача"""
+    hospital = models.ForeignKey(
+        Hospital,
+        on_delete=models.CASCADE,
+        related_name='doctors',
+        verbose_name="Больница"
+    )
+    full_name = models.CharField(max_length=200, verbose_name="ФИО врача")
+    specialty = models.CharField(max_length=50, choices=SPECIALTIES_CHOICES, verbose_name="Специальность")
+    cabinet = models.CharField(max_length=20, blank=True, verbose_name="Кабинет")
+    work_days = models.CharField(max_length=100, default="Пн-Пт", verbose_name="Рабочие дни")
+    work_hours = models.CharField(max_length=50, default="08:00-18:00", verbose_name="Рабочие часы")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    class Meta:
+        verbose_name = "Врач"
+        verbose_name_plural = "Врачи"
+        ordering = ['specialty', 'full_name']
+
+    def __str__(self):
+        return f"{self.full_name} ({self.specialty}) — {self.hospital.name}"
+
+    @property
+    def current_queue(self):
+        """Количество человек в очереди к этому врачу сейчас"""
+        return self.appointments.filter(
+            status='confirmed',
+            datetime__gte=timezone.now()
+        ).count()
+
+
 class Appointment(models.Model):
     """Модель записи на приём"""
-    
-    SPECIALTIES = [
-        ('Терапевт', 'Терапевт'),
-        ('Хирург', 'Хирург'),
-        ('Стоматолог', 'Стоматолог'),
-        ('Педиатр', 'Педиатр'),
-    ]
+
+    SPECIALTIES = SPECIALTIES_CHOICES
     
     STATUS_CHOICES = [
         ('confirmed', 'Подтверждена'),
@@ -63,6 +106,14 @@ class Appointment(models.Model):
         blank=True,
         related_name='appointments',
         verbose_name="Пользователь"
+    )
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+        verbose_name="Врач"
     )
     patient_name = models.CharField(max_length=200, verbose_name="Имя пациента")
     hospital = models.ForeignKey(

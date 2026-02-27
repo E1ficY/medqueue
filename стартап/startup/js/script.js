@@ -445,6 +445,11 @@ async function handleAppointmentSubmit(e) {
   }
   
   // Отправляем на API
+  const doctorId = (() => {
+    const el = document.getElementById('appDoctor');
+    return el && el.value ? parseInt(el.value) : undefined;
+  })();
+
   try {
     const response = await fetch(`${API_URL}/appointments/`, {
       method: 'POST',
@@ -454,6 +459,7 @@ async function handleAppointmentSubmit(e) {
         phone: phone || undefined,
         hospital: parseInt(hospitalId),
         specialty: specialty,
+        doctor: doctorId,
         datetime: datetime
       })
     });
@@ -465,6 +471,9 @@ async function handleAppointmentSubmit(e) {
     
     const appointment = await response.json();
     const hospital = hospitals.find(h => h.id === parseInt(hospitalId));
+    const doctorLine = appointment.doctor_name
+      ? `<div style="margin-bottom:6px;"><strong>Врач:</strong> ${appointment.doctor_name}${appointment.doctor_cabinet ? ' · каб. ' + appointment.doctor_cabinet : ''}</div>`
+      : `<div style="margin-bottom:6px;"><strong>Специальность:</strong> ${specialty}</div>`;
     
     // Показываем большое окно с кодом
     msgEl.innerHTML = `
@@ -490,7 +499,7 @@ async function handleAppointmentSubmit(e) {
         <div style="background:rgba(255,255,255,0.5); padding:12px; border-radius:8px; font-size:13px;">
           <div style="margin-bottom:6px;"><strong>Пациент:</strong> ${name}</div>
           <div style="margin-bottom:6px;"><strong>Больница:</strong> ${hospital.name}</div>
-          <div style="margin-bottom:6px;"><strong>Врач:</strong> ${specialty}</div>
+          ${doctorLine}
           <div style="margin-bottom:6px;"><strong>Дата:</strong> ${new Date(datetime).toLocaleString('ru-RU')}</div>
           <div><strong>Место в очереди:</strong> ${appointment.queue_position}</div>
         </div>

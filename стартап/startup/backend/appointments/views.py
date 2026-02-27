@@ -3,12 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from .models import Hospital, Appointment
+from .models import Hospital, Appointment, Doctor
 from .serializers import (
     HospitalSerializer,
     AppointmentSerializer,
     AppointmentCreateSerializer,
-    AppointmentStatusSerializer
+    AppointmentStatusSerializer,
+    DoctorSerializer
 )
 
 
@@ -27,6 +28,29 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
         hospitals = self.get_queryset()
         serializer = self.get_serializer(hospitals, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='doctors')
+    def doctors(self, request, pk=None):
+        """
+        Врачи больницы, сгруппированные по специальностям
+
+        GET /api/hospitals/{id}/doctors/
+        Возвращает: [{specialty, doctors: [{id, full_name, cabinet, work_days, work_hours, current_queue}]}]
+        """
+        hospital = get_object_or_404(Hospital, pk=pk, is_active=True)
+        doctors = Doctor.objects.filter(hospital=hospital, is_active=True).order_by('specialty', 'full_name')
+
+        # Группируем по специальностям
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        for doc in doctors:
+            grouped[doc.specialty].append(DoctorSerializer(doc).data)
+
+        result = [
+            {'specialty': spec, 'doctors': docs}
+            for spec, docs in grouped.items()
+        ]
+        return Response(result)
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
