@@ -37,6 +37,7 @@ media/
 # OS
 .DS_Store
 Thumbs.db
+__MACOSX/
 
 # Excluded projects
 ren_project/
