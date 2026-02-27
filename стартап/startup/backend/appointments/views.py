@@ -1,5 +1,5 @@
 from collections import defaultdict
-from rest_framework import viewsets, status
+from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,10 +7,9 @@ from django.shortcuts import get_object_or_404
 from .models import Hospital, Appointment, Doctor
 from .serializers import (
     HospitalSerializer,
-    AppointmentSerializer,
     AppointmentCreateSerializer,
     AppointmentStatusSerializer,
-    DoctorSerializer
+    DoctorSerializer,
 )
 
 
@@ -46,7 +45,7 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(result)
 
 
-class AppointmentViewSet(viewsets.ModelViewSet):
+class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     API для записей
 
@@ -56,15 +55,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     GET /api/appointments/my_appointments/ - записи текущего пользователя
     """
     queryset = Appointment.objects.all()
-    serializer_class = AppointmentSerializer
-    
+    serializer_class = AppointmentStatusSerializer
+
     def get_serializer_class(self):
         """Выбираем сериализатор в зависимости от действия"""
         if self.action == 'create':
             return AppointmentCreateSerializer
-        elif self.action == 'check_status':
-            return AppointmentStatusSerializer
-        return AppointmentSerializer
+        return AppointmentStatusSerializer
     
     def create(self, request):
         """

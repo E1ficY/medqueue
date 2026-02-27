@@ -189,15 +189,12 @@ class Command(BaseCommand):
                     name, cab, days, hours = pool[idx]
                     pointers[spec] += 1
 
-                    # Cabinet prefix with hospital id to keep unique across
-                    cabinet = f'{cab}'
-
                     Doctor.objects.get_or_create(
                         hospital=hospital,
                         full_name=name,
                         specialty=spec,
                         defaults=dict(
-                            cabinet=cabinet,
+                            cabinet=cab,
                             work_days=days,
                             work_hours=hours,
                             is_active=True,

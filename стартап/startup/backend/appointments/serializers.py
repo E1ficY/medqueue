@@ -38,38 +38,6 @@ class HospitalSerializer(serializers.ModelSerializer):
         ]
 
 
-class AppointmentSerializer(serializers.ModelSerializer):
-    """Сериализатор для записей"""
-    hospital_name = serializers.CharField(source='hospital.name', read_only=True)
-    hospital_address = serializers.CharField(source='hospital.address', read_only=True)
-    estimated_wait_time = serializers.ReadOnlyField()
-    code = serializers.CharField(read_only=True)
-    
-    class Meta:
-        model = Appointment
-        fields = [
-            'id',
-            'code',
-            'patient_name',
-            'hospital',
-            'hospital_name',
-            'hospital_address',
-            'specialty',
-            'datetime',
-            'queue_position',
-            'status',
-            'estimated_wait_time',
-            'created_at'
-        ]
-        read_only_fields = ['code', 'queue_position', 'created_at']
-    
-    def validate_datetime(self, value):
-        """Проверка что дата в будущем"""
-        if value < timezone.now():
-            raise serializers.ValidationError("Нельзя записаться на прошедшее время")
-        return value
-
-
 class AppointmentCreateSerializer(serializers.ModelSerializer):
     """Упрощенный сериализатор для создания записи"""
 
