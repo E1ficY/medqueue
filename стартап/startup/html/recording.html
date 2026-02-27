@@ -160,6 +160,70 @@
 
     }
 
+    .doctor-card {
+
+      border: 2px solid var(--border);
+
+      border-radius: 10px;
+
+      padding: 10px 14px;
+
+      cursor: pointer;
+
+      transition: border-color .18s, background .18s, box-shadow .18s;
+
+    }
+
+    .doctor-card:hover {
+
+      border-color: var(--accent);
+
+      background: rgba(22,163,74,0.04);
+
+    }
+
+    .doctor-card.selected {
+
+      border-color: var(--accent);
+
+      background: rgba(22,163,74,0.08);
+
+      box-shadow: 0 2px 10px rgba(22,163,74,0.15);
+
+    }
+
+    [data-theme="dark"] .doctor-card {
+
+      border-color: rgba(255,255,255,0.12);
+
+    }
+
+    [data-theme="dark"] .doctor-card:hover,
+
+    [data-theme="dark"] .doctor-card.selected {
+
+      border-color: var(--accent);
+
+      background: rgba(22,163,74,0.12);
+
+    }
+
+    /* Make spec-option count text wrap nicely */
+
+    .spec-option .spec-count {
+
+      display: block;
+
+      font-size: 11px;
+
+      color: var(--muted);
+
+      margin-top: 2px;
+
+      font-weight: 400;
+
+    }
+
 
 
     .clinics-grid {
@@ -656,7 +720,7 @@
     if (docs && docs.length > 0) {
       list.innerHTML = docs.map(d => `
         <div class="doctor-card" id="doc-card-${d.id}" onclick="selectDoctor(${d.id}, '${d.full_name.replace(/'/g,"\\'")}', this)"
-             style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:border-color .2s,background .2s">
+             style="display:flex;align-items:center;gap:12px;">
           <div style="font-size:28px">👨‍⚕️</div>
           <div style="flex:1">
             <div style="font-weight:600;font-size:14px">${d.full_name}</div>
@@ -676,17 +740,13 @@
   }
 
   function selectDoctor(id, name, el) {
-    document.querySelectorAll('.doctor-card').forEach(c => {
-      c.style.borderColor = 'var(--border)';
-      c.style.background = '';
-    });
+    document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
     if (document.getElementById('appDoctor').value == id) {
       // Deselect if same doctor clicked again
       document.getElementById('appDoctor').value = '';
     } else {
       document.getElementById('appDoctor').value = id;
-      el.style.borderColor = 'var(--primary)';
-      el.style.background = 'rgba(var(--primary-rgb,99,102,241),0.06)';
+      el.classList.add('selected');
     }
   }
 
@@ -723,7 +783,7 @@
         <div class="spec-option${i===0?' selected':''}" data-value="${g.specialty}" onclick="selectSpec(this)">
           <span class="spec-icon">${SPEC_ICONS[g.specialty]||'🏥'}</span>
           ${g.specialty}
-          <span style="display:block;font-size:11px;color:var(--muted);margin-top:2px">врачей: ${g.doctors.length}</span>
+          <span class="spec-count">врачей: ${g.doctors.length}</span>
         </div>
       `).join('');
 

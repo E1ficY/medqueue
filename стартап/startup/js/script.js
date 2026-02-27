@@ -601,6 +601,7 @@ function initStatusPage() {
               <div style="border-top:1px solid #e5e7eb; padding-top:12px;">
                 <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">СПЕЦИАЛИСТ</div>
                 <div style="font-weight:600; color:#111827;">${appointment.specialty}</div>
+                ${appointment.doctor_name ? `<div style="font-size:13px; color:#374151; margin-top:4px;">👨‍⚕️ ${appointment.doctor_name}${appointment.doctor_cabinet ? ' · каб. ' + appointment.doctor_cabinet : ''}</div>` : ''}
               </div>
               
               <div style="border-top:1px solid #e5e7eb; padding-top:12px;">

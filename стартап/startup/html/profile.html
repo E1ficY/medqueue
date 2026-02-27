@@ -794,6 +794,7 @@
               <div class="appt-meta-item">
                 <div class="meta-label">Специалист</div>
                 <div class="meta-value"> ${app.specialty}</div>
+                ${app.doctor_name ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">👨‍⚕️ ${app.doctor_name}${app.doctor_cabinet ? ' · каб. ' + app.doctor_cabinet : ''}</div>` : ''}
               </div>
               <div class="appt-meta-item">
                 <div class="meta-label">Дата и время</div>
