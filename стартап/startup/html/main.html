@@ -179,38 +179,32 @@
 
   const HOSPITAL_ICONS = { 'Поликлиника': '🏥', 'Больница': '🏨', 'Детская': '👶', 'Спец. клиника': '⚕️' };
 
-  function initHospitalsMap() {
-    if (!window.L || !window.hospitals || window.hospitals.length === 0) {
-      setTimeout(initHospitalsMap, 150);
-      return;
-    }
+  function buildMap(hosp) {
     const map = L.map('hospitalsMap', { zoomControl: true, scrollWheelZoom: false })
       .setView([43.238, 76.889], 11);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
       maxZoom: 18,
     }).addTo(map);
-
-    window.hospitals.forEach(function(h, i) {
+    hosp.forEach(function(h, i) {
       const coords = ALMATY_POINTS[i % ALMATY_POINTS.length];
       const icon = HOSPITAL_ICONS[h.type] || '🏥';
-      const marker = L.marker(coords, {
-        title: h.name,
-      }).addTo(map);
-      marker.bindPopup(
-        `<div style="min-width:190px;font-family:Inter,sans-serif;">
-          <div style="font-weight:800;font-size:14px;color:#064e3b;margin-bottom:4px;">${icon} ${h.name}</div>
-          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">${h.type}</div>
-          <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📍 ${h.address || ''}</div>
-          <div style="font-size:12px;margin-bottom:8px;">Очередь: <b>${h.queue || 0}</b> чел. · ~${h.waiting} мин</div>
-          <a class="map-popup-btn" href="recording.html?hospital=${h.id}">Записаться →</a>
-        </div>`
-      );
+      L.marker(coords, { title: h.name }).addTo(map)
+        .bindPopup(
+          `<div style="min-width:190px;font-family:Inter,sans-serif;">
+            <div style="font-weight:800;font-size:14px;color:#064e3b;margin-bottom:4px;">${icon} ${h.name}</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">${h.type}</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📍 ${h.address || ''}</div>
+            <div style="font-size:12px;margin-bottom:8px;">Очередь: <b>${h.queue || 0}</b> чел. · ~${h.waiting} мин</div>
+            <a class="map-popup-btn" href="recording.html?hospital=${h.id}">Записаться →</a>
+          </div>`
+        );
     });
   }
 
-  document.addEventListener('DOMContentLoaded', initHospitalsMap);
+  document.addEventListener('hospitalsReady', function() {
+    buildMap(window.hospitals);
+  });
   </script>
 </body>
 </html>

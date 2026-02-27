@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   
   await loadHospitals();
+  window.hospitals = hospitals; // expose for map
+  document.dispatchEvent(new Event('hospitalsReady'));
   initHospitalSelects();
   renderHospitalCards();
   initSearch();
