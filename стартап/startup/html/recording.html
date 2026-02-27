@@ -594,6 +594,10 @@
           <div class="spec-option" data-value="Невролог" onclick="selectSpec(this)"><span class="spec-icon">🧠</span>Невролог</div>
           <div class="spec-option" data-value="Офтальмолог" onclick="selectSpec(this)"><span class="spec-icon">👁️</span>Офтальмолог</div>
           <div class="spec-option" data-value="Дерматолог" onclick="selectSpec(this)"><span class="spec-icon">🌡️</span>Дерматолог</div>
+          <div class="spec-option" data-value="Эндокринолог" onclick="selectSpec(this)"><span class="spec-icon">💉</span>Эндокринолог</div>
+          <div class="spec-option" data-value="Гинеколог" onclick="selectSpec(this)"><span class="spec-icon">🌸</span>Гинеколог</div>
+          <div class="spec-option" data-value="Уролог" onclick="selectSpec(this)"><span class="spec-icon">🏥</span>Уролог</div>
+          <div class="spec-option" data-value="Психиатр" onclick="selectSpec(this)"><span class="spec-icon">🧘</span>Психиатр</div>
         </div>
 
         <!-- Doctor selector (appears when specialty is selected and hospital has doctors) -->
@@ -803,7 +807,8 @@
   function renderDefaultSpecGrid() {
     const defaults = [
       ['Терапевт','🩺'],['Хирург','🔪'],['Стоматолог','🦷'],['Педиатр','👶'],
-      ['Кардиолог','❤️'],['Невролог','🧠'],['Офтальмолог','👁️'],['Дерматолог','🌡️']
+      ['Кардиолог','❤️'],['Невролог','🧠'],['Офтальмолог','👁️'],['Дерматолог','🌡️'],
+      ['Эндокринолог','💉'],['Гинеколог','🌸'],['Уролог','🏥'],['Психиатр','🧘']
     ];
     document.getElementById('specGrid').innerHTML = defaults.map((s,i) =>
       `<div class="spec-option${i===0?' selected':''}" data-value="${s[0]}" onclick="selectSpec(this)">
