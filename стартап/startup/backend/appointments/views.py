@@ -1,7 +1,8 @@
+from collections import defaultdict
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Hospital, Appointment, Doctor
 from .serializers import (
@@ -22,12 +23,6 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Hospital.objects.filter(is_active=True)
     serializer_class = HospitalSerializer
-    
-    def list(self, request):
-        """Получить список всех активных больниц"""
-        hospitals = self.get_queryset()
-        serializer = self.get_serializer(hospitals, many=True)
-        return Response(serializer.data)
 
     @action(detail=True, methods=['get'], url_path='doctors')
     def doctors(self, request, pk=None):
@@ -40,8 +35,6 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
         hospital = get_object_or_404(Hospital, pk=pk, is_active=True)
         doctors = Doctor.objects.filter(hospital=hospital, is_active=True).order_by('specialty', 'full_name')
 
-        # Группируем по специальностям
-        from collections import defaultdict
         grouped = defaultdict(list)
         for doc in doctors:
             grouped[doc.specialty].append(DoctorSerializer(doc).data)
@@ -60,7 +53,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     POST /api/appointments/ - создать новую запись
     GET /api/appointments/check/{code}/ - проверить статус по коду
     POST /api/appointments/cancel/ - отменить запись
-    GET /api/appointments/my/ - записи текущего пользователя
+    GET /api/appointments/my_appointments/ - записи текущего пользователя
     """
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer

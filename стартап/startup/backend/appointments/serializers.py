@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Hospital, Appointment, Doctor
 
 
@@ -64,7 +65,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
     
     def validate_datetime(self, value):
         """Проверка что дата в будущем"""
-        from django.utils import timezone
         if value < timezone.now():
             raise serializers.ValidationError("Нельзя записаться на прошедшее время")
         return value
@@ -87,7 +87,6 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        from django.utils import timezone
         if data['datetime'] < timezone.now():
             raise serializers.ValidationError({'datetime': 'Нельзя записаться на прошедшее время'})
         doctor = data.get('doctor')

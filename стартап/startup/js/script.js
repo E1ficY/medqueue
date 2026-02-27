@@ -453,7 +453,7 @@ async function handleMiniFormSubmit(e) {
     
   } catch (error) {
     console.error('Ошибка:', error);
-    showMessage(msgEl, '❌ Ошибка создания записи. Проверьте подключение к серверу.', 'error');
+    showMessage(msgEl, `❌ ${error.message}`, 'error');
   }
 }
 

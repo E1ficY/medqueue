@@ -90,8 +90,6 @@ class Doctor(models.Model):
 class Appointment(models.Model):
     """Модель записи на приём"""
 
-    SPECIALTIES = SPECIALTIES_CHOICES
-    
     STATUS_CHOICES = [
         ('confirmed', 'Подтверждена'),
         ('cancelled', 'Отменена'),
@@ -122,7 +120,7 @@ class Appointment(models.Model):
         related_name='appointments',
         verbose_name="Больница"
     )
-    specialty = models.CharField(max_length=50, choices=SPECIALTIES, verbose_name="Специальность")
+    specialty = models.CharField(max_length=50, choices=SPECIALTIES_CHOICES, verbose_name="Специальность")
     datetime = models.DateTimeField(verbose_name="Дата и время приёма")
     queue_position = models.IntegerField(default=1, verbose_name="Место в очереди")
     status = models.CharField(
