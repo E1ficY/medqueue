@@ -13,6 +13,40 @@ function getAuthHeaders() {
   return headers;
 }
 
+// Обновляет access-токен через refresh. Возвращает true если успешно.
+async function ensureFreshToken() {
+  try {
+    const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+    if (!user?.refresh) return false;
+    const res = await fetch(`${API_URL}/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: user.refresh })
+    });
+    if (!res.ok) {
+      // refresh тоже истёк — разлогиниваем
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return false;
+    }
+    const data = await res.json();
+    user.access = data.access;
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    return true;
+  } catch { return false; }
+}
+
+// Выполняет fetch с авто-обновлением токена при 401
+async function authFetch(url, options = {}) {
+  let res = await fetch(url, { ...options, headers: getAuthHeaders() });
+  if (res.status === 401) {
+    const refreshed = await ensureFreshToken();
+    if (refreshed) {
+      res = await fetch(url, { ...options, headers: getAuthHeaders() });
+    }
+  }
+  return res;
+}
+
 // === ДАННЫЕ ===
 let hospitals = [];
 let myAppointments = [];
@@ -367,9 +401,8 @@ async function handleMiniFormSubmit(e) {
   // Отправляем на API
   try {
     const currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-    const response = await fetch(`${API_URL}/appointments/`, {
+    const response = await authFetch(`${API_URL}/appointments/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({
         patient_name: currentUser?.name || 'Гость',
         hospital: parseInt(hospitalId),
@@ -462,9 +495,8 @@ async function handleAppointmentSubmit(e) {
   })();
 
   try {
-    const response = await fetch(`${API_URL}/appointments/`, {
+    const response = await authFetch(`${API_URL}/appointments/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({
         patient_name: name,
         phone: phone || undefined,
