@@ -378,7 +378,13 @@ async function handleMiniFormSubmit(e) {
       })
     });
     
-    if (!response.ok) throw new Error('Ошибка создания записи');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      let msg = 'Ошибка создания записи';
+      if (errorData.detail) msg = errorData.detail;
+      else { const k = Object.keys(errorData)[0]; if (k) { const v = errorData[k]; msg = Array.isArray(v) ? v[0] : String(v); } }
+      throw new Error(msg);
+    }
     
     const appointment = await response.json();
     const hospital = hospitals.find(h => h.id === parseInt(hospitalId));
@@ -444,6 +450,10 @@ async function handleAppointmentSubmit(e) {
     showMessage(msgEl, '❌ Заполните все поля', 'error');
     return;
   }
+  if (!specialty) {
+    showMessage(msgEl, '❌ Выберите специальность врача', 'error');
+    return;
+  }
   
   // Отправляем на API
   const doctorId = (() => {
@@ -467,7 +477,20 @@ async function handleAppointmentSubmit(e) {
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.datetime ? errorData.datetime[0] : 'Ошибка создания записи');
+      // Извлекаем первую читаемую ошибку из любого поля
+      let msg = 'Ошибка создания записи';
+      if (typeof errorData === 'string') {
+        msg = errorData;
+      } else if (errorData.detail) {
+        msg = errorData.detail;
+      } else {
+        const firstKey = Object.keys(errorData)[0];
+        if (firstKey) {
+          const val = errorData[firstKey];
+          msg = Array.isArray(val) ? val[0] : String(val);
+        }
+      }
+      throw new Error(msg);
     }
     
     const appointment = await response.json();
