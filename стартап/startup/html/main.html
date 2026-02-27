@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>MedQueue – Удобная запись в клиники Алматы</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/styles.css">
+
+  <script src="../js/script.js"></script>
+
+  <style>
+
+    .filter-tabs {
+
+      display: flex;
+
+      gap: 8px;
+
+      margin-bottom: 16px;
+
+      flex-wrap: wrap;
+
+    }
+
+    
+
+    .filter-btn {
+
+      padding: 8px 16px;
+
+      border-radius: 8px;
+
+      border: 1px solid rgba(22, 163, 74, 0.2);
+
+      background: transparent;
+
+      color: var(--accent);
+
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: all 0.2s ease;
+
+      font-size: 14px;
+
+    }
+
+    
+
+    .filter-btn:hover {
+
+      background: rgba(22, 163, 74, 0.1);
+
+    }
+
+    
+
+    .filter-btn.active {
+
+      background: var(--accent);
+
+      color: white;
+
+      border-color: var(--accent);
+
+    }
+
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .filter-btn {
+      border-color: rgba(34,197,94,0.25);
+      color: var(--accent-2);
+    }
+    [data-theme="dark"] .filter-btn:hover {
+      background: rgba(34,197,94,0.1);
+    }
+    [data-theme="dark"] .filter-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+  </style>
+
+  <script src="/js/theme.js"></script>
+</head>
+
+<body>
+
+  <header class="site-header">
+
+    <div class="wrap">
+
+      <a class="logo" href="main.html">MedQueue</a>
+
+      
+
+      <!-- Mobile menu button -->
+
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+
+      
+
+      <!-- Navigation -->
+
+            <nav id="mainNav">
+
+        <a href="main.html" class="nav-link active">Главная</a>
+
+        <a href="recording.html" class="nav-link">Записаться</a>
+
+        <a href="status.html" class="nav-link">Статус очереди</a>
+
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+
+        <a href="contacts%20and%20about.html" class="nav-link">О проекте &amp; Контакты</a>
+
+      </nav>
+
+    </div>
+      <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+
+  </header>
+
+  
+
+  <script>
+
+  function toggleMobileMenu() {
+
+    const nav = document.getElementById('mainNav');
+
+    nav.classList.toggle('mobile-open');
+
+  }
+
+  </script>
+
+
+
+  <main>
+
+    <section class="hero">
+
+      <div class="wrap hero-inner">
+
+        <div class="hero-left">
+
+          <h1>Меньше очередей – быстрее помощь</h1>
+
+          <p class="lead">Онлайн-запись и динамический статус очереди в поликлиниках Алматы. Выберите клинику, врача и время – мы покажем примерное ожидание.</p>
+
+          <div class="hero-cta">
+
+            <a class="btn btn-primary" href="recording.html">Записаться</a>
+
+            <a class="btn btn-outline" href="status.html">Проверить статус</a>
+
+            <a class="btn btn-outline" href="profile.html">Личный кабинет</a>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="hero-right card-form">
+
+          <h3>Быстрая запись</h3>
+
+          <form id="miniForm">
+
+            <label class="field">
+
+              <span>Больница</span>
+
+              <div class="custom-select-wrap">
+
+                <select id="hospitalSelect"></select>
+
+                <svg class="chev" width="14" height="9" viewBox="0 0 14 9"><path d="M1 1l6 6 6-6" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+              </div>
+
+            </label>
+
+
+
+            <label class="field">
+
+              <span>Специальность</span>
+
+              <select id="specialtySelect">
+
+                <option>Терапевт</option>
+
+                <option>Хирург</option>
+
+                <option>Стоматолог</option>
+
+                <option>Педиатр</option>
+
+                <option>Кардиолог</option>
+
+                <option>Невролог</option>
+
+                <option>Офтальмолог</option>
+
+                <option>Дерматолог</option>
+
+              </select>
+
+            </label>
+
+
+
+            <label class="field">
+
+              <span>Дата и время</span>
+
+              <input type="datetime-local" id="datetime">
+
+            </label>
+
+
+
+            <button class="btn btn-primary" type="submit" style="width:100%;">Записаться</button>
+
+            <div id="miniFormMsg" class="mini-msg" aria-live="polite"></div>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <section class="hospitals wrap">
+
+      <div class="section-head">
+
+        <h2>Клиники Алматы</h2>
+
+        <input id="search" class="search" placeholder="Поиск по названию или адресу..." />
+
+      </div>
+
+
+
+      <!-- Фильтры по типу клиник -->
+
+      <div class="filter-tabs">
+
+        <button class="filter-btn active" onclick="filterByType('all', event)">Все клиники</button>
+
+        <button class="filter-btn" onclick="filterByType('Поликлиника', event)">🏥 Поликлиники</button>
+
+        <button class="filter-btn" onclick="filterByType('Детская', event)">👶 Детские</button>
+
+        <button class="filter-btn" onclick="filterByType('Больница', event)">🏨 Больницы</button>
+
+        <button class="filter-btn" onclick="filterByType('Спец. клиника', event)">⚕️ Спец. клиники</button>
+
+      </div>
+
+
+
+      <div id="hospList" class="grid"></div>
+
+    </section>
+
+  </main>
+
+
+
+  <footer class="site-footer">
+
+    <div class="wrap">
+
+      <div>© 2025 MedQueue – Удобная запись и управление очередями</div>
+
+      <div class="muted">Версия прототипа</div>
+
+    </div>
+
+  </footer>
+
+
+
+</body>
+
+</html>
+

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Личный кабинет  MedQueue</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/script.js"></script>
+  <style>
+    /* ---- Profile header ---- */
+    .profile-header {
+      background: linear-gradient(135deg, #16a34a 0%, #0d9456 50%, #15803d 100%);
+      color: white;
+      padding: 28px 32px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 16px 40px rgba(22, 163, 74, 0.24);
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-header::before {
+      content: '';
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+    }
+    .profile-header::after {
+      content: '';
+      position: absolute;
+      right: 40px;
+      bottom: -60px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .profile-header-inner {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      border: 3px solid rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    .profile-info h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .profile-info .profile-username {
+      margin: 0 0 2px;
+      font-size: 14px;
+      opacity: 0.75;
+      font-weight: 500;
+    }
+    .profile-info .profile-email {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.65;
+    }
+    .profile-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ---- Stats ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px 16px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(21,128,61,0.09);
+      text-align: center;
+      border: 1px solid rgba(22,163,74,0.12);
+      transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(21,128,61,0.14);
+    }
+    .stat-number {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    /* ---- Section card ---- */
+    .section-card {
+      background: white;
+      padding: 26px;
+      border-radius: 18px;
+      box-shadow: 0 6px 22px rgba(21,128,61,0.09);
+      margin-bottom: 20px;
+      border: 1px solid rgba(22,163,74,0.11);
+    }
+    .section-title {
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .section-title h2 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #065f46;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .section-count {
+      background: rgba(22,163,74,0.10);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ---- Tabs ---- */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: rgba(22,163,74,0.06);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      margin-bottom: 18px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+    .tab-btn.active {
+      background: white;
+      color: var(--accent);
+      box-shadow: 0 2px 8px rgba(22,163,74,0.14);
+    }
+    .tab-btn:hover:not(.active) {
+      background: rgba(22,163,74,0.07);
+      color: #065f46;
+    }
+
+    /* ---- Appointment item ---- */
+    .appointment-item {
+      padding: 18px;
+      border: 1.5px solid rgba(22,163,74,0.13);
+      border-radius: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+      background: #fafff9;
+    }
+    .appointment-item:hover {
+      box-shadow: 0 8px 22px rgba(22,163,74,0.13);
+      border-color: rgba(22,163,74,0.28);
+    }
+    .appt-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .appt-hospital-name {
+      font-weight: 800;
+      font-size: 16px;
+      color: #064e3b;
+      margin: 0 0 4px;
+    }
+    .appt-address {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .appt-queue-badge {
+      background: linear-gradient(135deg, #86efac, #10b981);
+      color: #064e3b;
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 15px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .appt-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .appt-meta-item .meta-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .appt-meta-item .meta-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .appt-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .appt-actions .btn {
+      flex: 1;
+      font-size: 13px;
+      padding: 10px 14px;
+    }
+
+    /* ---- Hospital chip ---- */
+    .hospital-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(22,163,74,0.07);
+      border-radius: 12px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(22,163,74,0.13);
+    }
+    .hospital-chip:hover {
+      background: rgba(22,163,74,0.14);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(22,163,74,0.15);
+    }
+    .chip-icon {
+      width: 34px;
+      height: 34px;
+      background: white;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(22,163,74,0.10);
+    }
+
+    /* ---- Quick book ---- */
+    .quick-book {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-color: rgba(22,163,74,0.20);
+    }
+    .quick-book-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ---- Empty state ---- */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 14px;
+      opacity: 0.45;
+      display: block;
+    }
+    .empty-state p { margin: 0; font-size: 15px; }
+
+    /* ---- User data card ---- */
+    .user-data-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .user-data-field {
+      background: #f8fffe;
+      border: 1.5px solid rgba(22,163,74,0.12);
+      border-radius: 12px;
+      padding: 13px 16px;
+    }
+    .user-data-field .udf-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .user-data-field .udf-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .profile-header-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .profile-header { padding: 22px 20px; }
+      .appt-meta-grid { grid-template-columns: 1fr; }
+      .user-data-grid { grid-template-columns: 1fr; }
+      .quick-book-inner { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .section-card { padding: 18px; }
+    }
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .stat-card {
+      background: #1a3a28;
+      border-color: rgba(34,197,94,0.15);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    [data-theme="dark"] .section-card {
+      background: #132910;
+      border-color: rgba(34,197,94,0.13);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    [data-theme="dark"] .section-card h3 {
+      color: var(--text);
+    }
+    [data-theme="dark"] .appointment-item,
+    [data-theme="dark"] .appt-item {
+      background: #1a3a28;
+      border-color: rgba(34,197,94,0.15);
+    }
+    [data-theme="dark"] .appt-clinic,
+    [data-theme="dark"] .appt-doctor,
+    [data-theme="dark"] .appt-date {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .info-row,
+    [data-theme="dark"] .info-item {
+      border-color: rgba(34,197,94,0.1);
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .info-label {
+      color: var(--muted);
+    }
+    [data-theme="dark"] .info-value {
+      color: var(--text);
+    }
+
+    [data-theme="dark"] .user-data-field {
+      background: #1a3a28;
+      border-color: rgba(34,197,94,0.15);
+    }
+    [data-theme="dark"] .user-data-field .udf-label {
+      color: var(--muted);
+    }
+    [data-theme="dark"] .user-data-field .udf-value {
+      color: var(--text);
+    }
+    [data-theme="dark"] .tabs {
+      background: rgba(34,197,94,0.06);
+      border-color: var(--border-soft);
+    }
+    [data-theme="dark"] .tab-btn {
+      color: var(--muted);
+    }
+    [data-theme="dark"] .tab-btn.active {
+      background: #1a3a28;
+      color: var(--accent-2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    [data-theme="dark"] .tab-btn:hover:not(.active) {
+      background: rgba(34,197,94,0.08);
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .appointment-item {
+      background: #1a3a28;
+      border-color: rgba(34,197,94,0.15);
+    }
+    [data-theme="dark"] .appt-hospital-name {
+      color: var(--text);
+    }
+    [data-theme="dark"] .section-title h2 {
+      color: var(--accent-2);
+    }
+    [data-theme="dark"] .hospital-chip {
+      background: rgba(34,197,94,0.08);
+      border-color: rgba(34,197,94,0.15);
+    }
+    [data-theme="dark"] .hospital-chip:hover {
+      background: rgba(34,197,94,0.14);
+    }
+    [data-theme="dark"] .chip-icon {
+      background: #132910;
+      box-shadow: none;
+    }
+    [data-theme="dark"] .hospital-chip div div:first-child {
+      color: var(--text) !important;
+    }
+    [data-theme="dark"] .quick-book {
+      background: linear-gradient(135deg, #0f2d1e 0%, #132910 100%);
+      border-color: rgba(34,197,94,0.2);
+    }
+    [data-theme="dark"] .section-count {
+      background: rgba(34,197,94,0.12);
+      color: var(--accent-2);
+    }
+  </style>
+  <script src="/js/theme.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html">MedQueue</a>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            <nav id="mainNav">
+        <a href="main.html" class="nav-link">Главная</a>
+        <a href="recording.html" class="nav-link">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link active">Личный кабинет</a>
+        <a href="contacts%20and%20about.html" class="nav-link">О проекте &amp; Контакты</a>
+      </nav>
+    </div>
+      <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+
+  <script>
+  function toggleMobileMenu() {
+    const nav = document.getElementById('mainNav');
+    nav.classList.toggle('mobile-open');
+  }
+  </script>
+
+  <main class="wrap" style="padding-top:28px;padding-bottom:60px;max-width:980px;">
+
+    <!-- Profile header -->
+    <div class="profile-header animate-in">
+      <div class="profile-header-inner">
+        <div class="profile-avatar" id="profileAvatar"></div>
+        <div class="profile-info">
+          <h1 id="profileName">Добро пожаловать!</h1>
+          <p class="profile-username" id="profileUsername"></p>
+          <p class="profile-email" id="profileEmail"></p>
+          <div class="profile-badges">
+            <span class="profile-badge"> Верифицирован</span>
+            <span class="profile-badge" id="memberSince"> Участник MedQueue</span>
+          </div>
+        </div>
+        <button onclick="logout()" style="margin-left:auto;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.35);color:white;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&#x2192; Выйти</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid animate-in">
+      <div class="stat-card">
+        <div class="stat-number" id="activeCount"></div>
+        <div class="stat-label">Активных записей</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalCount"></div>
+        <div class="stat-label">Всего записей</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="hospitalCount"></div>
+        <div class="stat-label">Посещено клиник</div>
+      </div>
+    </div>
+
+    <!-- Appointments section -->
+    <div class="section-card animate-in">
+      <div class="section-title">
+        <h2> Мои записи</h2>
+        <span class="section-count" id="appointmentsCount">0</span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('active', this)"> Активные</button>
+        <button class="tab-btn" onclick="switchTab('all', this)"> Все записи</button>
+        <button class="tab-btn" onclick="switchTab('cancelled', this)"> Отменённые</button>
+      </div>
+
+      <div id="appointmentsList">
+        <div class="empty-state">
+          <span class="empty-state-icon"></span>
+          <p>Загружаем ваши записи...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- User data card -->
+    <div class="section-card animate-in">
+      <div class="section-title">
+        <h2> Мои данные</h2>
+        <button class="btn btn-outline" style="font-size:13px;padding:8px 14px;" onclick="openProfileEditor()">Изменить</button>
+      </div>
+      <div class="user-data-grid" id="userDataGrid">
+        <div class="user-data-field">
+          <div class="udf-label">Имя</div>
+          <div class="udf-value" id="udName"></div>
+        </div>
+        <div class="user-data-field">
+          <div class="udf-label">Логин / Никнейм</div>
+          <div class="udf-value" id="udUsername"></div>
+        </div>
+        <div class="user-data-field">
+          <div class="udf-label">Email</div>
+          <div class="udf-value" id="udEmail"></div>
+        </div>
+        <div class="user-data-field">
+          <div class="udf-label">Телефон</div>
+          <div class="udf-value" id="udPhone"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent clinics -->
+    <div class="section-card animate-in">
+      <div class="section-title">
+        <h2> Недавно посещённые клиники</h2>
+      </div>
+      <div id="recentHospitals">
+        <div class="empty-state">
+          <span class="empty-state-icon"></span>
+          <p>Загрузка...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick booking -->
+    <div class="section-card quick-book animate-in">
+      <div class="quick-book-inner">
+        <div>
+          <h3 style="margin:0 0 6px;font-size:19px;color:#064e3b;"> Быстрая запись</h3>
+          <p style="margin:0;color:var(--muted);font-size:14px;">Запишитесь к врачу в несколько кликов</p>
+        </div>
+        <a href="recording.html" class="btn btn-primary"> Записаться к врачу</a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div> 2025 MedQueue  Удобная запись и управление очередями</div>
+      <div class="muted">Версия прототипа</div>
+    </div>
+  </footer>
+
+  <script>
+    const PROF_API_BASE = window.location.protocol === 'file:'
+      ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8001')
+      : window.location.origin;
+    const PROF_API_URL = `${PROF_API_BASE}/api`;
+
+    let allAppointments = [];
+    let currentTab = 'active';
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+
+      if (!user) {
+        window.location.href = 'auth.html?tab=login&next=profile.html';
+        return;
+      }
+
+      // Fill profile header
+      fillUserHeader(user);
+      fillUserDataCard(user);
+
+      await loadProfileData();
+    });
+
+    function fillUserHeader(user) {
+      // Avatar with first letter
+      const avatarEl = document.getElementById('profileAvatar');
+      const firstLetter = (user.name || user.username || '?')[0].toUpperCase();
+      avatarEl.textContent = firstLetter;
+      avatarEl.style.background = 'rgba(255,255,255,0.25)';
+      avatarEl.style.fontSize = '30px';
+      avatarEl.style.fontWeight = '900';
+      avatarEl.style.color = 'white';
+
+      document.getElementById('profileName').textContent = `Привет, ${user.name || user.username || 'Пользователь'}!`;
+
+      const usernameEl = document.getElementById('profileUsername');
+      if (user.username) {
+        usernameEl.textContent = `@${user.username}`;
+        usernameEl.style.display = 'block';
+      }
+
+      const emailEl = document.getElementById('profileEmail');
+      if (user.email) {
+        emailEl.textContent = user.email;
+        emailEl.style.display = 'block';
+      }
+
+      const sinceEl = document.getElementById('memberSince');
+      if (user.date_joined) {
+        const d = new Date(user.date_joined);
+        sinceEl.textContent = ` С нами с ${d.toLocaleDateString('ru-RU', {month:'long', year:'numeric'})}`;
+      }
+    }
+
+    function fillUserDataCard(user) {
+      document.getElementById('udName').textContent     = user.name      || '';
+      document.getElementById('udUsername').textContent = user.username  ? `@${user.username}` : '';
+      document.getElementById('udEmail').textContent    = user.email     || '';
+      document.getElementById('udPhone').textContent    = user.phone     || '';
+    }
+
+    async function loadProfileData() {
+      try {
+        const response = await fetch(`${PROF_API_URL}/appointments/my_appointments/`);
+        if (!response.ok) throw new Error('API error');
+        allAppointments = await response.json();
+
+        const active    = allAppointments.filter(a => a.status === 'confirmed');
+        const cancelled = allAppointments.filter(a => a.status === 'cancelled');
+        const unique    = [...new Set(allAppointments.map(a => a.hospital_name))];
+
+        document.getElementById('activeCount').textContent   = active.length;
+        document.getElementById('totalCount').textContent    = allAppointments.length;
+        document.getElementById('hospitalCount').textContent = unique.length;
+        document.getElementById('appointmentsCount').textContent = allAppointments.length;
+
+        renderAppointments(currentTab);
+        renderRecentHospitals(allAppointments);
+
+      } catch (error) {
+        // Show demo data if API not available
+        renderDemoState();
+      }
+    }
+
+    function switchTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAppointments(tab);
+    }
+
+    function renderAppointments(tab) {
+      let list = allAppointments;
+      if (tab === 'active')    list = allAppointments.filter(a => a.status === 'confirmed');
+      if (tab === 'cancelled') list = allAppointments.filter(a => a.status === 'cancelled');
+
+      const container = document.getElementById('appointmentsList');
+
+      if (list.length === 0) {
+        const msgs = {
+          active:    ['', 'Нет активных записей', 'Вы можете записаться к врачу прямо сейчас'],
+          all:       ['', 'История записей пуста', 'Здесь будут отображаться все ваши записи'],
+          cancelled: ['', 'Нет отменённых записей', '']
+        };
+        const [icon, title, sub] = msgs[tab];
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-state-icon">${icon}</span>
+            <p style="font-weight:700;margin-bottom:6px;">${title}</p>
+            ${sub ? `<p style="font-size:13px;margin-top:4px;">${sub}</p>` : ''}
+            ${tab === 'active' ? '<a href="recording.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex;">Записаться к врачу</a>' : ''}
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(app => {
+        const dt = new Date(app.datetime);
+        const dateStr = dt.toLocaleDateString('ru-RU', {day:'2-digit', month:'long', year:'numeric'});
+        const timeStr = dt.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        const statusMap = {
+          confirmed: '<span class="status-pill confirmed"> Подтверждено</span>',
+          pending:   '<span class="status-pill pending"> Ожидает</span>',
+          cancelled: '<span class="status-pill cancelled"> Отменено</span>',
+        };
+        const statusBadge = statusMap[app.status] || statusMap['pending'];
+        return `
+          <div class="appointment-item">
+            <div class="appt-header">
+              <div>
+                <div class="appt-hospital-name">${app.hospital_name}</div>
+                <div class="appt-address"> ${app.hospital_address || ''}</div>
+                <div style="margin-top:8px;">${statusBadge}</div>
+              </div>
+              ${app.queue_position ? `<div class="appt-queue-badge">#${app.queue_position}</div>` : ''}
+            </div>
+            <div class="appt-meta-grid">
+              <div class="appt-meta-item">
+                <div class="meta-label">Пациент</div>
+                <div class="meta-value"> ${app.patient_name}</div>
+              </div>
+              <div class="appt-meta-item">
+                <div class="meta-label">Специалист</div>
+                <div class="meta-value"> ${app.specialty}</div>
+              </div>
+              <div class="appt-meta-item">
+                <div class="meta-label">Дата и время</div>
+                <div class="meta-value"> ${dateStr}, ${timeStr}</div>
+              </div>
+              ${app.estimated_wait_time ? `
+              <div class="appt-meta-item">
+                <div class="meta-label">Ожидание</div>
+                <div class="meta-value"> ~${app.estimated_wait_time} мин</div>
+              </div>` : ''}
+            </div>
+            ${app.status !== 'cancelled' ? `
+            <div class="appt-actions">
+              <button onclick="viewCode('${app.code}')" class="btn btn-outline">
+                 Код: <strong>${app.code}</strong>
+              </button>
+              <button onclick="cancelFromProfile('${app.code}')" class="btn btn-outline" style="color:#dc2626;border-color:rgba(220,38,38,0.22);flex:0 0 auto;">
+                 Отменить
+              </button>
+            </div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    function renderRecentHospitals(appointments) {
+      const container = document.getElementById('recentHospitals');
+      if (!appointments.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-state-icon"></span><p>История посещений пуста</p></div>`;
+        return;
+      }
+      const stats = {};
+      appointments.forEach(a => {
+        if (!stats[a.hospital_name]) stats[a.hospital_name] = { name: a.hospital_name, address: a.hospital_address, type: a.hospital_type, count: 0 };
+        stats[a.hospital_name].count++;
+      });
+      const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
+      container.innerHTML = sorted.map(h => `
+        <div class="hospital-chip" onclick="window.location.href='recording.html?hospital_name=${encodeURIComponent(h.name)}'">
+          <div class="chip-icon"></div>
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:#064e3b;">${h.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:1px;">${h.type || ''}  ${h.count} ${h.count === 1 ? 'посещение' : 'посещений'}</div>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderDemoState() {
+      document.getElementById('activeCount').textContent   = '';
+      document.getElementById('totalCount').textContent    = '';
+      document.getElementById('hospitalCount').textContent = '';
+      document.getElementById('appointmentsList').innerHTML = `
+        <div class="empty-state">
+          <span class="empty-state-icon"></span>
+          <p style="font-weight:700;margin-bottom:6px;">Сервер недоступен</p>
+          <p style="font-size:13px;">Запустите бэкенд чтобы увидеть ваши записи</p>
+          <a href="recording.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex;">Записаться к врачу</a>
+        </div>`;
+      document.getElementById('recentHospitals').innerHTML = `
+        <div class="empty-state">
+          <span class="empty-state-icon"></span>
+          <p>История недоступна</p>
+        </div>`;
+    }
+
+    function openProfileEditor() {
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      if (!user) return;
+      document.getElementById('editName').value     = user.name     || '';
+      document.getElementById('editUsername').value = user.username || '';
+      document.getElementById('editEmail').value    = user.email    || '';
+      if (user.phone) {
+        if (typeof _parseStoredPhone === 'function') _parseStoredPhone(user.phone, 'edit');
+        else document.getElementById('editPhone').value = user.phone;
+      } else {
+        document.getElementById('editPhone').value = '';
+      }
+      document.getElementById('profileEditorModal').style.display = 'flex';
+    }
+
+    function closeProfileEditor() {
+      document.getElementById('profileEditorModal').style.display = 'none';
+    }
+
+    function saveProfileEdit(e) {
+      e.preventDefault();
+      const name      = document.getElementById('editName').value.trim();
+      const username  = document.getElementById('editUsername').value.trim();
+      const email     = document.getElementById('editEmail').value.trim();
+      const phoneCode = document.getElementById('editPhoneCode')?.value || '+7';
+      const phoneNum  = document.getElementById('editPhone').value.trim();
+      const phone     = phoneNum ? `${phoneCode} ${phoneNum}` : '';
+      let user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      if (!user) return;
+      user = {...user, name, username, email, phone};
+      localStorage.setItem('medqueue_current_user', JSON.stringify(user));
+      localStorage.setItem('medqueue_remembered', JSON.stringify({ name, phone }));
+      fillUserHeader(user);
+      fillUserDataCard(user);
+      closeProfileEditor();
+      showToast('Профиль обновлён!', 'success');
+    }
+
+    function viewCode(code) {
+      window.location.href = `status.html?code=${code}`;
+    }
+
+    function logout() {
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      if (user) {
+        localStorage.setItem('medqueue_remembered', JSON.stringify({
+          name: user.name || '',
+          phone: user.phone || ''
+        }));
+      }
+      localStorage.removeItem('medqueue_current_user');
+      window.location.href = 'auth.html';
+    }
+
+    async function cancelFromProfile(code) {
+      if (!confirm('Вы уверены, что хотите отменить запись?')) return;
+      try {
+        const r = await fetch(`${PROF_API_URL}/appointments/cancel/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        if (r.ok) {
+          // Update local list
+          const item = allAppointments.find(a => a.code === code);
+          if (item) item.status = 'cancelled';
+          document.getElementById('activeCount').textContent = allAppointments.filter(a => a.status === 'confirmed').length;
+          renderAppointments(currentTab);
+        } else {
+          alert('Ошибка при отмене записи');
+        }
+      } catch (e) {
+        alert('Не удалось отменить запись');
+      }
+    }
+  </script>
+  <!-- Profile editor modal (прямой потомок body для правильного z-index) -->
+  <div id="profileEditorModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:white;padding:36px 28px 28px 28px;border-radius:18px;max-width:420px;width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;animation:slideUpModal 0.25s ease;">
+      <button onclick="closeProfileEditor()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;line-height:1;">&times;</button>
+      <h3 style="margin:0 0 20px 0;font-size:20px;color:#065f46;font-weight:800;">&#9998; Редактировать профиль</h3>
+      <form id="profileEditForm" onsubmit="saveProfileEdit(event)">
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Имя</label>
+          <input type="text" id="editName" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Логин / Никнейм</label>
+          <input type="text" id="editUsername" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Email</label>
+          <input type="email" id="editEmail" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;" required>
+        </div>
+        <div style="margin-bottom:22px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Телефон</label>
+          <div class="phone-wrap" style="margin-top:2px;">
+            <button type="button" class="phone-region-btn" id="editRegionBtn" onclick="togglePhoneDropdown('editRegionDrop')">
+              <span id="editPhoneFlag">&#127472;&#127487;</span>
+              <span id="editPhoneCodeDisplay">+7</span>
+              <span class="phone-chevron">&#9662;</span>
+            </button>
+            <input type="hidden" id="editPhoneCode" value="+7">
+            <input type="tel" id="editPhone" data-phone-input placeholder="(___) ___-__-__" style="flex:1;padding:10px 12px;border-radius:0 8px 8px 0;border:1.5px solid #d1fae5;border-left:none;font-size:15px;outline:none;font-family:inherit;min-width:0;">
+            <div class="phone-region-dropdown" id="editRegionDrop"></div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;font-size:15px;padding:13px 0;">&#10003; Сохранить</button>
+      </form>
+    </div>
+  </div>
+  <style>
+    @keyframes slideUpModal {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+  </style>
+
+  <style>
+    [data-theme="dark"] #profileEditorModal > div {
+      background: #132910 !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+      border: 1px solid rgba(34,197,94,0.15) !important;
+    }
+    [data-theme="dark"] #profileEditorModal h3 {
+      color: var(--accent-2) !important;
+    }
+    [data-theme="dark"] #profileEditorModal label {
+      color: var(--muted) !important;
+    }
+    [data-theme="dark"] #profileEditorModal input {
+      background: #0a1f10 !important;
+      border-color: rgba(34,197,94,0.25) !important;
+      color: var(--text) !important;
+    }
+  </style>
+</body>
+</html>
+

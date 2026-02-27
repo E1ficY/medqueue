@@ -1,0 +1,714 @@
+﻿<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Записаться – MedQueue</title>
+
+  <link rel="stylesheet" href="../css/styles.css">
+
+  <script src="../js/script.js"></script>
+
+  <style>
+
+    .page-hero {
+
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+
+      border-radius: 20px;
+
+      padding: 32px 36px;
+
+      color: white;
+
+      margin-bottom: 28px;
+
+      position: relative;
+
+      overflow: hidden;
+
+    }
+
+    .page-hero::before {
+
+      content: '🏥';
+
+      position: absolute;
+
+      right: 28px;
+
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      font-size: 80px;
+
+      opacity: 0.18;
+
+      pointer-events: none;
+
+    }
+
+    .page-hero h2 {
+
+      margin: 0 0 8px;
+
+      font-size: 28px;
+
+      font-weight: 900;
+
+    }
+
+    .page-hero p {
+
+      margin: 0;
+
+      opacity: 0.88;
+
+      font-size: 15px;
+
+    }
+
+
+
+    .form-card {
+
+      background: white;
+
+      border-radius: 20px;
+
+      padding: 32px;
+
+      box-shadow: 0 12px 40px rgba(21,128,61,0.12);
+
+      border: 1px solid rgba(22,163,74,0.13);
+
+    }
+
+
+
+    .specialties-grid {
+
+      display: grid;
+
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+
+      gap: 10px;
+
+      margin-top: 4px;
+
+    }
+
+    .spec-option {
+
+      border: 2px solid #e5e7eb;
+
+      border-radius: 12px;
+
+      padding: 12px 10px;
+
+      text-align: center;
+
+      cursor: pointer;
+
+      transition: all 0.18s ease;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      color: var(--muted);
+
+      user-select: none;
+
+    }
+
+    .spec-option:hover {
+
+      border-color: var(--accent);
+
+      color: var(--accent);
+
+      background: rgba(22,163,74,0.05);
+
+    }
+
+    .spec-option.selected {
+
+      border-color: var(--accent);
+
+      background: linear-gradient(135deg, rgba(22,163,74,0.12), rgba(16,185,129,0.08));
+
+      color: #065f46;
+
+      box-shadow: 0 4px 12px rgba(22,163,74,0.18);
+
+    }
+
+    .spec-option .spec-icon {
+
+      font-size: 26px;
+
+      display: block;
+
+      margin-bottom: 6px;
+
+    }
+
+
+
+    .clinics-grid {
+
+      display: grid;
+
+      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+
+      gap: 16px;
+
+      margin-top: 18px;
+
+    }
+
+    .clinic-mini-card {
+
+      border: 2px solid #e5e7eb;
+
+      border-radius: 14px;
+
+      padding: 16px 18px;
+
+      cursor: pointer;
+
+      transition: all 0.2s ease;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 14px;
+
+    }
+
+    .clinic-mini-card:hover {
+
+      border-color: var(--accent);
+
+      box-shadow: 0 6px 20px rgba(22,163,74,0.14);
+
+    }
+
+    .clinic-mini-card .clinic-icon {
+
+      width: 44px;
+
+      height: 44px;
+
+      border-radius: 12px;
+
+      background: rgba(22,163,74,0.10);
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 22px;
+
+      flex-shrink: 0;
+
+    }
+
+    .clinic-mini-card .clinic-info .clinic-name {
+
+      font-weight: 700;
+
+      font-size: 14px;
+
+      color: #064e3b;
+
+    }
+
+    .clinic-mini-card .clinic-info .clinic-meta {
+
+      font-size: 12.5px;
+
+      color: var(--muted);
+
+      margin-top: 2px;
+
+    }
+
+
+
+    .datetime-hint {
+
+      font-size: 12.5px;
+
+      color: var(--muted);
+
+      margin-top: 6px;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 5px;
+
+    }
+
+
+
+    .submit-wrap {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 16px;
+
+      margin-top: 6px;
+
+      flex-wrap: wrap;
+
+    }
+
+    .submit-wrap .btn { min-width: 200px; padding: 15px 28px; font-size: 16px; }
+
+    .submit-note { font-size: 13px; color: var(--muted); }
+
+
+
+    @media (max-width: 600px) {
+
+      .specialties-grid { grid-template-columns: repeat(3, 1fr); }
+
+      .form-card { padding: 20px; }
+
+      .page-hero { padding: 22px 20px; }
+
+      .page-hero h2 { font-size: 22px; }
+
+    }
+
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .form-card {
+      background: #132910;
+      border-color: rgba(34,197,94,0.15);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    [data-theme="dark"] .spec-option {
+      border-color: rgba(34,197,94,0.2);
+      color: var(--text-soft);
+      background: transparent;
+    }
+    [data-theme="dark"] .spec-option:hover {
+      border-color: var(--accent);
+      color: var(--accent-2);
+      background: rgba(34,197,94,0.08);
+    }
+    [data-theme="dark"] .spec-option.selected {
+      border-color: var(--accent);
+      background: rgba(34,197,94,0.14);
+      color: var(--text);
+    }
+    [data-theme="dark"] .clinic-mini-card {
+      border-color: rgba(34,197,94,0.18);
+      background: #1a3a28;
+    }
+    [data-theme="dark"] .clinic-mini-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    [data-theme="dark"] .clinic-mini-card .clinic-info .clinic-name {
+      color: var(--text);
+    }
+    [data-theme="dark"] .form-group label,
+    [data-theme="dark"] .form-label {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: #0a1f10 !important;
+      color: var(--text) !important;
+      border-color: rgba(34,197,94,0.25) !important;
+    }
+
+    [data-theme="dark"] .phone-region-btn {
+      background: #0a1f10 !important;
+      border-color: rgba(34,197,94,0.25) !important;
+      color: var(--text) !important;
+    }
+    [data-theme="dark"] .phone-region-dropdown {
+      background: #132910 !important;
+      border-color: rgba(34,197,94,0.2) !important;
+    }
+    [data-theme="dark"] .appointment-summary,
+    [data-theme="dark"] .summary-card,
+    [data-theme="dark"] .confirm-card,
+    [data-theme="dark"] .step-card {
+      background: #132910 !important;
+      border-color: rgba(34,197,94,0.15) !important;
+    }
+    [data-theme="dark"] .form-card h3,
+    [data-theme="dark"] .form-card h4 {
+      color: var(--text);
+    }
+    [data-theme="dark"] .datetime-hint {
+      color: var(--muted);
+    }
+  </style>
+
+  <script src="/js/theme.js"></script>
+</head>
+
+<body>
+
+  <header class="site-header">
+
+    <div class="wrap">
+
+      <a class="logo" href="main.html">MedQueue</a>
+
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+
+            <nav id="mainNav">
+
+        <a href="main.html" class="nav-link">Главная</a>
+
+        <a href="recording.html" class="nav-link active">Записаться</a>
+
+        <a href="status.html" class="nav-link">Статус очереди</a>
+
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+
+        <a href="contacts%20and%20about.html" class="nav-link">О проекте &amp; Контакты</a>
+
+      </nav>
+
+    </div>
+      <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+
+  </header>
+
+
+
+  <script>
+
+  function toggleMobileMenu() {
+
+    const nav = document.getElementById('mainNav');
+
+    nav.classList.toggle('mobile-open');
+
+  }
+
+  </script>
+
+
+
+  <main class="wrap" style="padding-top:32px; padding-bottom:60px; max-width:860px;">
+
+
+
+    <!-- Page hero banner -->
+
+    <div class="page-hero animate-in">
+
+      <h2>Записаться к врачу</h2>
+
+      <p>Выберите клинику, специалиста и удобное время – мы позаботимся об остальном</p>
+
+    </div>
+
+
+
+    <!-- Main form card -->
+
+    <div class="form-card animate-in">
+
+      <form id="appointmentForm">
+
+
+
+        <!-- Section 1: Personal info -->
+
+        <div class="form-section-title">👤 Личные данные</div>
+
+
+
+        <div class="form-grid-2">
+
+          <label class="field">
+
+            <span>ФИО пациента</span>
+
+            <div class="field-icon-wrap">
+
+              <span class="field-icon">👤</span>
+
+              <input type="text" id="appName" placeholder="Иванов Иван Иванович" required>
+
+            </div>
+
+          </label>
+
+          <label class="field">
+
+            <span>Номер телефона</span>
+
+            <div class="phone-wrap">
+
+              <button type="button" class="phone-region-btn" id="appRegionBtn" style="cursor:default;opacity:0.75;pointer-events:none;">
+
+                <span id="appPhoneFlag">&#127472;&#127487;</span>
+
+                <span id="appPhoneCodeDisplay">+7</span>
+
+                <span class="phone-chevron">&#9662;</span>
+
+              </button>
+
+              <input type="hidden" id="appPhoneCode" value="+7">
+
+              <input type="tel" id="appPhone" data-phone-input placeholder="(___) ___-__-__" autocomplete="tel-national" readonly style="background:#f0fdf4;color:#065f46;cursor:default;">
+
+              <div class="phone-region-dropdown" id="appRegionDrop"></div>
+
+            </div>
+
+            <div style="font-size:12px;color:#6b7280;margin-top:5px;">
+
+              Номер из вашего профиля. <a href="profile.html" style="color:#16a34a;text-decoration:underline;">Изменить в профиле</a>
+
+            </div>
+
+          </label>
+
+        </div>
+
+
+
+        <!-- Section 2: Clinic -->
+
+        <div class="form-section-title">🏥 Выбор клиники</div>
+
+
+
+        <label class="field">
+
+          <span>Больница / клиника</span>
+
+          <div class="custom-select-wrap">
+
+            <select class="js-hospital-select" id="hospitalSelectApp"></select>
+
+          </div>
+
+        </label>
+
+
+
+        <!-- Section 3: Specialty -->
+
+        <div class="form-section-title">🩺 Специальность врача</div>
+
+        <input type="hidden" id="appSpecialty" value="Терапевт">
+
+        <div class="specialties-grid" id="specGrid">
+
+          <div class="spec-option selected" data-value="Терапевт" onclick="selectSpec(this)">
+
+            <span class="spec-icon">🩺</span>Терапевт
+
+          </div>
+
+          <div class="spec-option" data-value="Хирург" onclick="selectSpec(this)">
+
+            <span class="spec-icon">🔪</span>Хирург
+
+          </div>
+
+          <div class="spec-option" data-value="Стоматолог" onclick="selectSpec(this)">
+
+            <span class="spec-icon">🦷</span>Стоматолог
+
+          </div>
+
+          <div class="spec-option" data-value="Педиатр" onclick="selectSpec(this)">
+
+            <span class="spec-icon">👶</span>Педиатр
+
+          </div>
+
+          <div class="spec-option" data-value="Кардиолог" onclick="selectSpec(this)">
+
+            <span class="spec-icon">❤️</span>Кардиолог
+
+          </div>
+
+          <div class="spec-option" data-value="Невролог" onclick="selectSpec(this)">
+
+            <span class="spec-icon">🧠</span>Невролог
+
+          </div>
+
+          <div class="spec-option" data-value="Офтальмолог" onclick="selectSpec(this)">
+
+            <span class="spec-icon">👁️</span>Офтальмолог
+
+          </div>
+
+          <div class="spec-option" data-value="Дерматолог" onclick="selectSpec(this)">
+
+            <span class="spec-icon">🌡️</span>Дерматолог
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Section 4: DateTime -->
+
+        <div class="form-section-title">📅 Дата и время приёма</div>
+
+
+
+        <label class="field">
+
+          <span>Желаемая дата и время</span>
+
+          <div class="field-icon-wrap">
+
+            <span class="field-icon">🗓️</span>
+
+            <input type="datetime-local" id="appDatetime" required>
+
+          </div>
+
+          <div class="datetime-hint">⏱️ Рабочие часы: пн–пт с 08:00 до 18:00, сб с 09:00 до 14:00</div>
+
+        </label>
+
+
+
+        <!-- Section 5: Notes -->
+
+        <div class="form-section-title">💬 Дополнительно</div>
+
+        <label class="field">
+
+          <span>Комментарий к записи <span style="color:var(--muted);font-weight:400">(необязательно)</span></span>
+
+          <textarea id="appComment" placeholder="Опишите жалобы или пожелания к приёму..." rows="3" style="resize:vertical;"></textarea>
+
+        </label>
+
+
+
+        <!-- Submit -->
+
+        <div class="submit-wrap">
+
+          <button class="btn btn-primary" type="submit">✅ Записаться к врачу</button>
+
+          <span class="submit-note">🔒 Ваши данные защищены и не передаются третьим лицам</span>
+
+        </div>
+
+        <div id="appMsg" class="mini-msg" aria-live="polite"></div>
+
+
+
+      </form>
+
+    </div>
+
+
+
+    <!-- Other clinics section -->
+
+    <section style="margin-top:36px;">
+
+      <div class="section-head">
+
+        <h3 style="margin:0;font-size:22px;font-weight:800;color:#064e3b;">🏥 Доступные клиники</h3>
+
+      </div>
+
+      <div id="hospList" class="grid" style="margin-top:4px;"></div>
+
+    </section>
+
+  </main>
+
+
+
+  <footer class="site-footer">
+
+    <div class="wrap">
+
+      <div>© 2025 MedQueue – Удобная запись и управление очередями</div>
+
+      <div class="muted">Версия прототипа</div>
+
+    </div>
+
+  </footer>
+
+
+
+  <script>
+
+  function selectSpec(el) {
+
+    document.querySelectorAll('.spec-option').forEach(o => o.classList.remove('selected'));
+
+    el.classList.add('selected');
+
+    document.getElementById('appSpecialty').value = el.dataset.value;
+
+  }
+
+
+
+  // Pre-fill name and phone from logged-in user
+
+  document.addEventListener('DOMContentLoaded', function() {
+
+    try {
+
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+
+      const remembered = JSON.parse(localStorage.getItem('medqueue_remembered') || 'null');
+
+      const prefill = user || remembered;
+
+      if (prefill) {
+
+        const nameInput = document.getElementById('appName');
+
+        if (nameInput && !nameInput.value && prefill.name) nameInput.value = prefill.name;
+
+        if (prefill.phone) _parseStoredPhone(prefill.phone, 'app');
+
+      }
+
+    } catch(e) {}
+
+  });
+
+  </script>
+
+</body>
+
+</html>
+

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Контакты – MedQueue</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="/js/theme.js"></script>
+  <script src="../js/script.js"></script>
+  <style>
+    .content-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 34px 28px 56px;
+    }
+
+    .content-wrap h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 40px);
+      color: #064e3b;
+      letter-spacing: -0.02em;
+    }
+
+    .intro .lead {
+      margin-bottom: 0;
+      font-size: 16px;
+      color: #334155;
+    }
+
+    .contacts-section {
+      margin-top: 24px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(22, 163, 74, 0.14);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(21, 128, 61, 0.08);
+    }
+
+    .contacts-section h2 {
+      margin: 0 0 8px;
+      color: #065f46;
+      font-size: 24px;
+    }
+
+    .intro {
+      margin-bottom: 18px;
+    }
+
+    .contact-mini-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .contact-mini-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 148px;
+      flex-shrink: 0;
+      padding: 18px 12px 14px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1.5px solid rgba(22, 163, 74, 0.14);
+      box-shadow: 0 4px 16px rgba(21,128,61,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .mini-tooltip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      width: 210px;
+      background: #0f2d1e;
+      color: #e6f4ee;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      text-align: left;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    }
+
+    .mini-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 7px solid transparent;
+      border-top-color: #0f2d1e;
+    }
+
+    .mini-tooltip .tt-role {
+      font-weight: 800;
+      font-size: 12px;
+      color: #6ee7b7;
+      margin-bottom: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    .contact-mini-card:hover .mini-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .contact-mini-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(22, 163, 74, 0.4);
+      box-shadow: 0 10px 24px rgba(21,128,61,0.14);
+    }
+
+    .contact-mini-card .mini-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top center;
+      border: 2.5px solid rgba(22,163,74,0.22);
+      background: #f3f4f6;
+      margin-bottom: 12px;
+    }
+
+    .contact-mini-card .mini-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: #065f46;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .contact-mini-card .mini-links {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: 100%;
+    }
+
+    .contact-mini-card .mini-links a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-mini-card .mini-links a.link-phone {
+      background: rgba(22,163,74,0.08);
+      color: #065f46;
+      border: 1px solid rgba(22,163,74,0.2);
+    }
+
+    .contact-mini-card .mini-links a.link-phone:hover {
+      background: rgba(22,163,74,0.16);
+      border-color: rgba(22,163,74,0.4);
+    }
+
+    .contact-mini-card .mini-links a.link-tg {
+      background: rgba(0,136,204,0.08);
+      color: #0066aa;
+      border: 1px solid rgba(0,136,204,0.2);
+    }
+
+    .contact-mini-card .mini-links a.link-tg:hover {
+      background: rgba(0,136,204,0.16);
+      border-color: rgba(0,136,204,0.4);
+    }
+
+    /* About us section */
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .about-fact {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 1.5px solid rgba(22, 163, 74, 0.15);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .about-fact:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.14);
+    }
+    .about-fact .fact-icon {
+      font-size: 34px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .about-fact .fact-value {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .about-fact .fact-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .about-values {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .about-value-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid rgba(22, 163, 74, 0.12);
+    }
+    .about-value-row .av-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(22, 163, 74, 0.10);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .about-value-row .av-title {
+      font-weight: 800;
+      font-size: 15px;
+      color: #064e3b;
+      margin-bottom: 3px;
+    }
+    .about-value-row .av-text {
+      font-size: 13.5px;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    @media (max-width:980px) {
+      .about-grid { grid-template-columns: repeat(2, 1fr); }
+      .contact-mini-grid { gap: 10px; }
+    }
+
+    @media (max-width:620px) {
+      .content-wrap { padding: 22px 16px 40px; }
+      .contacts-section { padding: 14px; }
+      .about-grid { grid-template-columns: 1fr; }
+      .contact-mini-grid { gap: 6px; }
+      .contact-mini-card { padding: 12px 6px 10px; }
+      .contact-mini-card .mini-photo { width: 52px; height: 52px; }
+      .contact-mini-card .mini-name { font-size: 12px; margin-bottom: 7px; }
+      .contact-mini-card .mini-links a { font-size: 10px; padding: 5px 6px; }
+      nav { display: none }
+    }
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .content-wrap h1 {
+      color: var(--text);
+    }
+    [data-theme="dark"] .intro .lead {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .contacts-section {
+      background: rgba(13, 31, 20, 0.7);
+      border-color: var(--border-soft);
+    }
+    [data-theme="dark"] .contacts-section h2 {
+      color: var(--text);
+    }
+    [data-theme="dark"] .contact-mini-card {
+      background: var(--card);
+      border-color: var(--border-soft);
+    }
+    [data-theme="dark"] .contact-mini-card .mini-name {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .contact-mini-card .mini-links a.link-phone {
+      background: rgba(34, 197, 94, 0.10);
+      color: var(--accent-2);
+      border-color: rgba(34, 197, 94, 0.25);
+    }
+    [data-theme="dark"] .contact-mini-card .mini-links a.link-phone:hover {
+      background: rgba(34, 197, 94, 0.18);
+    }
+    [data-theme="dark"] .contact-mini-card .mini-links a.link-tg {
+      background: rgba(0, 136, 204, 0.12);
+      color: #60c8f0;
+      border-color: rgba(0, 136, 204, 0.3);
+    }
+    [data-theme="dark"] .contact-mini-card .mini-links a.link-tg:hover {
+      background: rgba(0, 136, 204, 0.20);
+    }
+    [data-theme="dark"] .about-fact {
+      background: linear-gradient(135deg, #132910, #0a1f10);
+      border-color: var(--border-soft);
+    }
+    [data-theme="dark"] .about-value-row {
+      background: var(--card);
+      border-color: var(--border-soft);
+    }
+    [data-theme="dark"] .about-value-row .av-title {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] .av-icon {
+      background: rgba(34, 197, 94, 0.12);
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html" id="medqueueLogo">MedQueue</a>
+      
+      <!-- Mobile menu button -->
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      
+      <!-- Navigation -->
+            <nav id="mainNav">
+        <a href="main.html" class="nav-link">Главная</a>
+        <a href="recording.html" class="nav-link">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+        <a href="contacts%20and%20about.html" class="nav-link active">О проекте &amp; Контакты</a>
+      </nav>
+    </div>
+    <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+  
+  <script>
+  function toggleMobileMenu() {
+    const nav = document.getElementById('mainNav');
+    nav.classList.toggle('mobile-open');
+  }
+  </script>
+
+  <main class="content-wrap">
+    <h1>Контакты</h1>
+
+    <section class="intro">
+      <p class="lead">Мы – команда из <strong>5 человек</strong>, студенты 1 курса университета AlmaU. Проект создан для решения актуальной проблемы – длинных очередей в поликлиниках. Ниже – как с нами связаться.</p>
+
+    </section>
+
+    <section class="contacts-section">
+      <h2>Связаться с нами</h2>
+      <p style="margin-bottom:10px; color: var(--muted);">Ниже контакты команды. Нажми на номер, чтобы позвонить, или на Telegram, чтобы
+        открыть профиль.</p>
+
+      <div class="contact-mini-grid">
+        <!-- Самир -->
+        <div class="contact-mini-card" id="samirCard">
+          <div class="mini-tooltip">
+            <div class="tt-role">👑 СЕО &amp; идея</div>
+            Инициатор проекта. Отвечает за продукт и связь с клиниками. Также помогает с кодом и тестирует приложение.
+          </div>
+          <img class="mini-photo" src="../images/c7fd649c-70e3-4097-b460-27f34bf526c8.jpg" alt="Самир">
+          <div class="mini-name">Самир</div>
+          <div class="mini-links">
+            <a class="link-phone" href="tel:+77052333987">📞 +7 705 233-39-87</a>
+            <a class="link-tg" href="https://t.me/zelfcy" target="_blank">✈ @zelfcy</a>
+          </div>
+        </div>
+        <!-- Хамит -->
+        <div class="contact-mini-card" id="khamitCard">
+          <div class="mini-tooltip">
+            <div class="tt-role">💻 Главный разработчик</div>
+            Ведущий разработчик команды. Строит архитектуру, пишет бекенд, реализует логику очередей и API, а также следит за стабильностью всего сервиса.
+          </div>
+          <img class="mini-photo" src="../images/khamit.jpg" alt="Хамит" onerror="this.onerror=null;this.style.background='#e5f3ec'">
+          <div class="mini-name">Хамит</div>
+          <div class="mini-links">
+            <a class="link-phone" href="tel:+77769867115">📞 +7 776 986-71-15</a>
+            <a class="link-tg" href="https://t.me/nehomaa" target="_blank">✈ @nehomaa</a>
+          </div>
+        </div>
+        <!-- Жансая -->
+        <div class="contact-mini-card">
+          <div class="mini-tooltip">
+            <div class="tt-role">🎨 Дизайнер UX/UI</div>
+            Проектирует интерфейсы, чтобы запись была простой и понятной для всех.
+          </div>
+          <img class="mini-photo" src="../images/a8dbc7ca-507b-4b88-bdba-b6dd48a51669.JPG" alt="Жансая">
+          <div class="mini-name">Жансая</div>
+          <div class="mini-links">
+            <a class="link-phone" href="tel:+77472716848">📞 +7 747 271-68-48</a>
+            <a class="link-tg" href="https://t.me/Zhansaya" target="_blank">✈ @Zhansaya</a>
+          </div>
+        </div>
+        <!-- Аружан -->
+        <div class="contact-mini-card">
+          <div class="mini-tooltip">
+            <div class="tt-role">📊 Продакт-менеджер</div>
+            Исследует рынок, определяет стратегию, планирует разработку и координирует команду.
+          </div>
+          <img class="mini-photo" src="../images/WhatsApp Image 2026-01-24 at 11.00.54.jpg" alt="Аружан" onerror="this.onerror=null;this.style.background='#e5f3ec'">
+          <div class="mini-name">Аружан</div>
+          <div class="mini-links">
+            <a class="link-phone" href="tel:+77788980923">📞 +7 778 898-09-23</a>
+            <a class="link-tg" href="https://t.me/bazarbekovazh" target="_blank">✈ @bazarbekovazh</a>
+          </div>
+        </div>
+        <!-- Молдир -->
+        <div class="contact-mini-card">
+          <div class="mini-tooltip">
+            <div class="tt-role">🔍 Аналитик данных</div>
+            Переводит сырые данные в стратегию компании и выявляет ключевые инсайты.
+          </div>
+          <img class="mini-photo" src="../images/WhatsApp Image 2026-01-24 at 11.01.50.jpg" alt="Молдир" onerror="this.onerror=null;this.style.background='#e5f3ec'">
+          <div class="mini-name">Молдир</div>
+          <div class="mini-links">
+            <a class="link-phone" href="tel:+77755157869">📞 +7 775 515-78-69</a>
+            <a class="link-tg" href="https://t.me/davvicii" target="_blank">✈ @davvicii</a>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="contacts-section">
+      <h2>Коротко о нас</h2>
+      <p style="color:var(--text-soft);font-size:15px;margin-bottom:4px;">Студенты 1 курса AlmaU, Алматы. Мы столкнулись с проблемой очередей лично – и решили её автоматизировать.</p>
+
+      <!-- Stats -->
+      <div class="about-grid">
+        <div class="about-fact">
+          <span class="fact-icon">🎓</span>
+          <div class="fact-value">1</div>
+          <div class="fact-label">Курс, AlmaU</div>
+        </div>
+        <div class="about-fact">
+          <span class="fact-icon">👥</span>
+          <div class="fact-value">5</div>
+          <div class="fact-label">Участников команды</div>
+        </div>
+        <div class="about-fact">
+          <span class="fact-icon">🏥</span>
+          <div class="fact-value">10+</div>
+          <div class="fact-label">Клиник в системе</div>
+        </div>
+      </div>
+
+      <!-- Values -->
+      <div class="about-values">
+        <div class="about-value-row">
+          <div class="av-icon">⏱️</div>
+          <div>
+            <div class="av-title">Экономия времени</div>
+            <div class="av-text">Электронная очередь устраняет часы ожидания в коридорах – пациент приходит точно к своему времени.</div>
+          </div>
+        </div>
+        <div class="about-value-row">
+          <div class="av-icon">📊</div>
+          <div>
+            <div class="av-title">Прозрачность</div>
+            <div class="av-text">Статус очереди в реальном времени – пациент и врач видят актуальную картину без лишних звонков.</div>
+          </div>
+        </div>
+        <div class="about-value-row">
+          <div class="av-icon">🔔</div>
+          <div>
+            <div class="av-title">Push-уведомления</div>
+            <div class="av-text">Напоминания о приёме и изменениях в очереди приходят автоматически – ничего не забудется.</div>
+          </div>
+        </div>
+        <div class="about-value-row">
+          <div class="av-icon">🌱</div>
+          <div>
+            <div class="av-title">Социальная миссия</div>
+            <div class="av-text">MedQueue – наш вклад в улучшение качества медицины в Казахстане, начиная с малого – с очереди.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>© 2025 MedQueue – Удобная запись и управление очередями</div>
+      <div class="muted">Версия прототипа</div>
+    </div>
+  </footer>
+
+
+  <!-- ===== ПАСХАЛКА САМИРА ===== -->
+
+  <!-- Капча -->
+  <div id="cultCaptcha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:99998;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div style="background:#0f2d1e;border:2px solid #6ee7b7;border-radius:20px;padding:34px 30px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
+      <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+      <div style="font-size:17px;font-weight:900;color:#6ee7b7;margin-bottom:6px;">Проверка личности</div>
+      <div style="font-size:13px;color:#a7f3d0;margin-bottom:18px;line-height:1.5;">Перед вступлением в культ докажи, что ты не робот.</div>
+      <div style="font-size:20px;font-weight:900;color:#e6f4ee;margin-bottom:14px;">5 + 4 + 6 + 2 = ?</div>
+      <input id="cultAnswer" type="number" placeholder="Твой ответ" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:10px;border:1.5px solid #6ee7b7;background:#1a3d2b;color:#e6f4ee;font-size:16px;font-weight:700;text-align:center;outline:none;margin-bottom:10px;">
+      <div id="cultCaptchaError" style="color:#fca5a5;font-size:12px;min-height:18px;margin-bottom:8px;"></div>
+      <button onclick="checkCultCaptcha()" style="background:#6ee7b7;color:#0f2d1e;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;width:100%;">Войти в культ</button>
+    </div>
+  </div>
+
+  <!-- Итоговое окно -->
+  <div id="cultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+    <div style="background:#0f2d1e;border:2px solid #6ee7b7;border-radius:20px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
+      <div style="font-size:52px;margin-bottom:12px;">👁️</div>
+      <div style="font-size:22px;font-weight:900;color:#6ee7b7;margin-bottom:10px;letter-spacing:-0.5px;">Поздравляю.</div>
+      <div style="font-size:15px;color:#e6f4ee;line-height:1.6;margin-bottom:6px;">Вы только что вступили в <strong style="color:#6ee7b7;">Культ #5462</strong>.</div>
+      <div style="font-size:13px;color:#a7f3d0;line-height:1.6;margin-bottom:20px;">Членский взнос: одобрение всех идей Самира.<br>Собрания: каждый раз, когда очередь больше 3 человек.<br><em style="color:#fbbf24;">Выхода нет. Мы уже знаем.</em></div>
+      <button onclick="document.getElementById('cultModal').style.display='none'" style="background:#6ee7b7;color:#0f2d1e;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:0.02em;">Принять судьбу</button>
+    </div>
+  </div>
+
+  <style>
+    @keyframes cultPop {
+      from { transform: scale(0.5); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+  </style>
+
+  <script>
+  (function() {
+    var clicks = 0;
+    var card = document.getElementById('samirCard');
+    if (!card) return;
+
+    card.style.cursor = 'pointer';
+
+    card.addEventListener('click', function(e) {
+      // не считать клики по ссылкам (телефон/телеграм)
+      if (e.target.closest('a')) return;
+      clicks++;
+      if (clicks === 7) {
+        clicks = 0;
+        var captcha = document.getElementById('cultCaptcha');
+        captcha.style.display = 'flex';
+        document.getElementById('cultAnswer').value = '';
+        document.getElementById('cultCaptchaError').textContent = '';
+        setTimeout(function(){ document.getElementById('cultAnswer').focus(); }, 100);
+      }
+    });
+
+    document.getElementById('cultCaptcha').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+    document.getElementById('cultModal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+
+    document.getElementById('cultAnswer').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkCultCaptcha();
+    });
+  })();
+
+  function checkCultCaptcha() {
+    var val = parseInt(document.getElementById('cultAnswer').value, 10);
+    if (val === 17) {
+      document.getElementById('cultCaptcha').style.display = 'none';
+      document.getElementById('cultModal').style.display = 'flex';
+    } else {
+      document.getElementById('cultCaptchaError').textContent = 'Неверно. Культ не принимает слабых.';
+      document.getElementById('cultAnswer').value = '';
+      document.getElementById('cultAnswer').focus();
+    }
+  }
+  </script>
+
+
+</body>
+
+</html>

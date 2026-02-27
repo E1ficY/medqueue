@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Django Server",
+			"type": "shell",
+			"command": "& 'c:/Users/Acer/Desktop/Code/стартап/startup/backend/.venv/Scripts/python.exe' 'c:/Users/Acer/Desktop/Code/стартап/startup/backend/manage.py' runserver",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
