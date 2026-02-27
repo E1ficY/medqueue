@@ -437,6 +437,7 @@ async function handleAppointmentSubmit(e) {
   const hospitalId = document.getElementById('hospitalSelectApp').value;
   const specialty  = document.getElementById('appSpecialty').value;
   const datetime   = document.getElementById('appDatetime').value;
+  const comment    = (document.getElementById('appComment')?.value || '').trim();
   const msgEl      = document.getElementById('appMsg');
   
   if (!name || !hospitalId || !datetime) {
@@ -471,9 +472,10 @@ async function handleAppointmentSubmit(e) {
     
     const appointment = await response.json();
     const hospital = hospitals.find(h => h.id === parseInt(hospitalId));
-    const doctorLine = appointment.doctor_name
-      ? `<div style="margin-bottom:6px;"><strong>Врач:</strong> ${appointment.doctor_name}${appointment.doctor_cabinet ? ' · каб. ' + appointment.doctor_cabinet : ''}</div>`
-      : `<div style="margin-bottom:6px;"><strong>Специальность:</strong> ${specialty}</div>`;
+    const doctorLine = `<div style="margin-bottom:6px;"><strong>Специальность:</strong> ${specialty}</div>`
+      + (appointment.doctor_name
+        ? `<div style="margin-bottom:6px;"><strong>Врач:</strong> ${appointment.doctor_name}${appointment.doctor_cabinet ? ' · каб. ' + appointment.doctor_cabinet : ''}</div>`
+        : '');
     
     // Показываем большое окно с кодом
     msgEl.innerHTML = `
@@ -501,7 +503,8 @@ async function handleAppointmentSubmit(e) {
           <div style="margin-bottom:6px;"><strong>Больница:</strong> ${hospital.name}</div>
           ${doctorLine}
           <div style="margin-bottom:6px;"><strong>Дата:</strong> ${new Date(datetime).toLocaleString('ru-RU')}</div>
-          <div><strong>Место в очереди:</strong> ${appointment.queue_position}</div>
+          <div style="margin-bottom:${comment ? '6px' : '0'};"><strong>Место в очереди:</strong> ${appointment.queue_position}</div>
+          ${comment ? `<div style="margin-top:2px;padding:8px 10px;background:rgba(0,0,0,0.04);border-radius:6px;border-left:3px solid #16a34a;"><strong>Комментарий:</strong> ${comment}</div>` : ''}
         </div>
         
         <div style="margin-top:12px; text-align:center;">
