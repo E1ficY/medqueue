@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import HospitalViewSet, AppointmentViewSet
 from . import auth_views
 
@@ -13,4 +14,5 @@ urlpatterns = [
     path('auth/verify/', auth_views.verify_email),
     path('auth/login/', auth_views.login_user),
     path('auth/resend/', auth_views.resend_code),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

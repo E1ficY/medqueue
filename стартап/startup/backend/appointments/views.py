@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from .models import Hospital, Appointment
 from .serializers import (
-    HospitalSerializer, 
+    HospitalSerializer,
     AppointmentSerializer,
     AppointmentCreateSerializer,
     AppointmentStatusSerializer
@@ -31,10 +32,11 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
 class AppointmentViewSet(viewsets.ModelViewSet):
     """
     API для записей
-    
+
     POST /api/appointments/ - создать новую запись
     GET /api/appointments/check/{code}/ - проверить статус по коду
-    DELETE /api/appointments/{code}/cancel/ - отменить запись
+    POST /api/appointments/cancel/ - отменить запись
+    GET /api/appointments/my/ - записи текущего пользователя
     """
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
@@ -50,7 +52,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def create(self, request):
         """
         Создать новую запись
-        
+
         POST /api/appointments/
         Body: {
             "patient_name": "Иван Иванов",
@@ -61,7 +63,10 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        appointment = serializer.save()
+
+        # Привязываем запись к пользователю, если аутентифицирован
+        user = request.user if request.user.is_authenticated else None
+        appointment = serializer.save(user=user)
         
         # Возвращаем полную информацию о созданной записи
         response_serializer = AppointmentStatusSerializer(appointment)
@@ -107,19 +112,33 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         
         appointment.status = 'cancelled'
         appointment.save()
+
+        # Пересчитываем позиции остальных в очереди в этот день
+        same_day = Appointment.objects.filter(
+            hospital=appointment.hospital,
+            datetime__date=appointment.datetime.date(),
+            status='confirmed'
+        ).order_by('datetime')
+        for i, appt in enumerate(same_day, start=1):
+            if appt.queue_position != i:
+                appt.queue_position = i
+                appt.save(update_fields=['queue_position'])
         
         return Response({
             'message': 'Запись успешно отменена',
             'code': code
         })
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_appointments(self, request):
         """
-        Получить все записи (для админки или личного кабинета)
-        
+        Записи текущего аутентифицированного пользователя
+
         GET /api/appointments/my_appointments/
+        Требует: Authorization: Bearer <access_token>
         """
-        appointments = Appointment.objects.filter(status='confirmed')
+        appointments = Appointment.objects.filter(
+            user=request.user
+        ).order_by('-created_at')
         serializer = AppointmentStatusSerializer(appointments, many=True)
         return Response(serializer.data)

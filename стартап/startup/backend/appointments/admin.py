@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Hospital, Appointment
+from .models import Hospital, Appointment, VerificationCode
 
 
 @admin.register(Hospital)
@@ -66,3 +66,11 @@ class AppointmentAdmin(admin.ModelAdmin):
         updated = queryset.update(status='cancelled')
         self.message_user(request, f'Отменено: {updated} записей')
     mark_as_cancelled.short_description = "Отменить записи"
+
+
+@admin.register(VerificationCode)
+class VerificationCodeAdmin(admin.ModelAdmin):
+    """Админка для кодов верификации"""
+    list_display = ['email', 'code', 'name', 'created_at']
+    readonly_fields = ['created_at']
+    search_fields = ['email', 'name']

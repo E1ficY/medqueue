@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
 import random
 import string
@@ -55,6 +56,14 @@ class Appointment(models.Model):
     ]
     
     code = models.CharField(max_length=6, unique=True, editable=False, verbose_name="Код записи")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+        verbose_name="Пользователь"
+    )
     patient_name = models.CharField(max_length=200, verbose_name="Имя пациента")
     hospital = models.ForeignKey(
         Hospital, 
@@ -113,3 +122,23 @@ class Appointment(models.Model):
     def estimated_wait_time(self):
         """Примерное время ожидания в минутах"""
         return self.queue_position * 5
+
+
+class VerificationCode(models.Model):
+    """Коды подтверждения email при регистрации"""
+    email = models.EmailField(verbose_name="Email")
+    code = models.CharField(max_length=6, verbose_name="Код")
+    name = models.CharField(max_length=200, verbose_name="Имя")
+    password = models.CharField(max_length=200, verbose_name="Пароль")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Код верификации"
+        verbose_name_plural = "Коды верификации"
+
+    def is_expired(self):
+        """Истёк ли код (10 минут)"""
+        return (timezone.now() - self.created_at).total_seconds() > 600
+
+    def __str__(self):
+        return f"{self.email} — {self.code}"
