@@ -184,6 +184,136 @@
       gap: 5px;
     }
 
+    /* ====== CUSTOM DATE-TIME PICKER ====== */
+    .dt-picker {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .dt-calendar {
+      flex: 1;
+      min-width: 260px;
+    }
+    .dt-cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .dt-cal-header span {
+      font-weight: 800;
+      font-size: 15px;
+      color: #064e3b;
+    }
+    .dt-cal-nav {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--accent);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .dt-cal-nav:hover { background: rgba(22,163,74,0.1); }
+    .dt-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .dt-cal-dow {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+    }
+    .dt-cal-day {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      border: 2px solid transparent;
+      color: var(--text);
+    }
+    .dt-cal-day:hover:not(.disabled):not(.empty) {
+      background: rgba(22,163,74,0.1);
+      border-color: rgba(22,163,74,0.25);
+    }
+    .dt-cal-day.today { border-color: rgba(22,163,74,0.4); color: #16a34a; }
+    .dt-cal-day.selected {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white !important;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(22,163,74,0.35);
+    }
+    .dt-cal-day.disabled {
+      color: #d1d5db;
+      cursor: not-allowed;
+    }
+    .dt-cal-day.empty { cursor: default; }
+    .dt-time-panel {
+      flex: 1;
+      min-width: 200px;
+    }
+    .dt-time-panel h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #064e3b;
+      margin: 0 0 10px;
+    }
+    .dt-time-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .dt-slot {
+      padding: 9px 4px;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid rgba(22,163,74,0.2);
+      color: #065f46;
+      background: rgba(22,163,74,0.04);
+      transition: all .15s;
+      user-select: none;
+    }
+    .dt-slot:hover { background: rgba(22,163,74,0.12); border-color: var(--accent); }
+    .dt-slot.selected {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 3px 10px rgba(22,163,74,0.3);
+    }
+    .dt-selected-label {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+    .dt-selected-label strong { color: #064e3b; }
+
+    /* dark overrides */
+    [data-theme="dark"] .dt-cal-header span,
+    [data-theme="dark"] .dt-time-panel h4 { color: var(--text); }
+    [data-theme="dark"] .dt-cal-day { color: var(--text); }
+    [data-theme="dark"] .dt-cal-day.disabled { color: #374151; }
+    [data-theme="dark"] .dt-slot { color: #a7f3d0; border-color: rgba(56,189,248,0.15); background: rgba(34,197,94,0.06); }
+    [data-theme="dark"] .dt-selected-label strong { color: #86efac; }
+
     .submit-wrap {
       display: flex;
       align-items: center;
@@ -205,28 +335,28 @@
 
     /* ===== DARK THEME OVERRIDES ===== */
     [data-theme="dark"] .form-card {
-      background: #132910;
-      border-color: rgba(34,197,94,0.15);
+      background: #111827;
+      border-color: rgba(56,189,248,0.15);
       box-shadow: 0 12px 40px rgba(0,0,0,0.4);
     }
     [data-theme="dark"] .spec-option {
-      border-color: rgba(34,197,94,0.2);
+      border-color: rgba(56,189,248,0.15);
       color: var(--text-soft);
       background: transparent;
     }
     [data-theme="dark"] .spec-option:hover {
       border-color: var(--accent);
       color: var(--accent-2);
-      background: rgba(34,197,94,0.08);
+      background: rgba(56,189,248,0.08);
     }
     [data-theme="dark"] .spec-option.selected {
       border-color: var(--accent);
-      background: rgba(34,197,94,0.14);
+      background: rgba(56,189,248,0.12);
       color: var(--text);
     }
     [data-theme="dark"] .clinic-mini-card {
-      border-color: rgba(34,197,94,0.18);
-      background: #1a3a28;
+      border-color: rgba(56,189,248,0.14);
+      background: #131f2e;
     }
     [data-theme="dark"] .clinic-mini-card:hover {
       border-color: var(--accent);
@@ -242,26 +372,26 @@
     [data-theme="dark"] input,
     [data-theme="dark"] select,
     [data-theme="dark"] textarea {
-      background: #0a1f10 !important;
+      background: #0d1117 !important;
       color: var(--text) !important;
-      border-color: rgba(34,197,94,0.25) !important;
+      border-color: rgba(56,189,248,0.20) !important;
     }
 
     [data-theme="dark"] .phone-region-btn {
-      background: #0a1f10 !important;
-      border-color: rgba(34,197,94,0.25) !important;
+      background: #0d1117 !important;
+      border-color: rgba(56,189,248,0.20) !important;
       color: var(--text) !important;
     }
     [data-theme="dark"] .phone-region-dropdown {
-      background: #132910 !important;
-      border-color: rgba(34,197,94,0.2) !important;
+      background: #111827 !important;
+      border-color: rgba(56,189,248,0.15) !important;
     }
     [data-theme="dark"] .appointment-summary,
     [data-theme="dark"] .summary-card,
     [data-theme="dark"] .confirm-card,
     [data-theme="dark"] .step-card {
-      background: #132910 !important;
-      border-color: rgba(34,197,94,0.15) !important;
+      background: #111827 !important;
+      border-color: rgba(56,189,248,0.15) !important;
     }
     [data-theme="dark"] .form-card h3,
     [data-theme="dark"] .form-card h4 {
@@ -270,6 +400,7 @@
     [data-theme="dark"] .datetime-hint {
       color: var(--muted);
     }
+    [data-theme="dark"] .dt-cal-nav { color: #4ade80; }
   </style>
   <script src="/js/theme.js"></script>
 </head>
@@ -284,7 +415,7 @@
         <a href="recording.html" class="nav-link active">Записаться</a>
         <a href="status.html" class="nav-link">Статус очереди</a>
         <a href="profile.html" class="nav-link">Личный кабинет</a>
-        <a href="contacts%20and%20about.html" class="nav-link">О проекте &amp; Контакты</a>
+
       </nav>
     </div>
       <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
@@ -383,14 +514,24 @@
         <!-- Section 4: DateTime -->
 
         <div class="form-section-title">📅 Дата и время приёма</div>
-        <label class="field">
-          <span>Желаемая дата и время</span>
-          <div class="field-icon-wrap">
-            <span class="field-icon">🗓️</span>
-            <input type="datetime-local" id="appDatetime" required>
+        <input type="hidden" id="appDatetime" required>
+        <div class="dt-picker">
+          <!-- Calendar -->
+          <div class="dt-calendar">
+            <div class="dt-cal-header">
+              <button type="button" class="dt-cal-nav" id="dtPrev">&#8249;</button>
+              <span id="dtMonthLabel"></span>
+              <button type="button" class="dt-cal-nav" id="dtNext">&#8250;</button>
+            </div>
+            <div class="dt-cal-grid" id="dtCalGrid"></div>
           </div>
-          <div class="datetime-hint">⏱️ Рабочие часы: пн–пт с 08:00 до 18:00, сб с 09:00 до 14:00</div>
-        </label>
+          <!-- Time slots -->
+          <div class="dt-time-panel">
+            <h4 id="dtTimeTitle">Выберите сначала дату</h4>
+            <div class="dt-time-slots" id="dtTimeSlots"></div>
+          </div>
+        </div>
+        <div class="dt-selected-label" id="dtSelectedLabel">Дата и время не выбраны</div>
 
         <!-- Section 5: Notes -->
 
@@ -428,6 +569,119 @@
   </footer>
   <script>
   // Icons map for dynamic specialty grid
+  // ===== CUSTOM DATE-TIME PICKER =====
+  (function() {
+    const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const DAYS_RU   = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    let currentYear, currentMonth, selectedDate = null, selectedTime = null;
+
+    function init() {
+      const now = new Date();
+      currentYear  = now.getFullYear();
+      currentMonth = now.getMonth();
+      renderCalendar();
+      document.getElementById('dtPrev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
+      document.getElementById('dtNext').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
+    }
+
+    function renderCalendar() {
+      const grid  = document.getElementById('dtCalGrid');
+      const label = document.getElementById('dtMonthLabel');
+      label.textContent = MONTHS_RU[currentMonth] + ' ' + currentYear;
+      grid.innerHTML = '';
+      // Day-of-week headers
+      DAYS_RU.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'dt-cal-dow';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      // Monday-based offset (0=Mon,...,6=Sun)
+      let offset = firstDay.getDay() - 1;
+      if (offset < 0) offset = 6;
+      for (let i = 0; i < offset; i++) {
+        const el = document.createElement('div');
+        el.className = 'dt-cal-day empty';
+        grid.appendChild(el);
+      }
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const today = new Date(); today.setHours(0,0,0,0);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const dow  = date.getDay(); // 0=Sun,6=Sat
+        const past = date < today;
+        const isSun = dow === 0;
+        const el = document.createElement('div');
+        el.className = 'dt-cal-day' + (past || isSun ? ' disabled' : '') + (date.getTime()===today.getTime() ? ' today' : '');
+        el.textContent = d;
+        if (selectedDate && selectedDate.getTime() === date.getTime()) el.classList.add('selected');
+        if (!past && !isSun) {
+          el.onclick = () => selectDate(date, el);
+        }
+        grid.appendChild(el);
+      }
+    }
+
+    function selectDate(date, el) {
+      selectedDate = date;
+      selectedTime = null;
+      document.querySelectorAll('.dt-cal-day').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      renderTimeSlots(date);
+      updateHidden();
+    }
+
+    function renderTimeSlots(date) {
+      const panel = document.getElementById('dtTimeSlots');
+      const title = document.getElementById('dtTimeTitle');
+      panel.innerHTML = '';
+      const dow = date.getDay(); // 6=Sat
+      const isSat = dow === 6;
+      const startH = isSat ? 9  : 8;
+      const endH   = isSat ? 14 : 18;
+      title.textContent = isSat ? '⏱️ Суббота: 09:00–14:00' : '⏱️ Пн–Пт: 08:00–18:00';
+      for (let h = startH; h < endH; h++) {
+        for (let m of [0, 30]) {
+          const hh = String(h).padStart(2,'0');
+          const mm = String(m).padStart(2,'0');
+          const timeStr = hh + ':' + mm;
+          const el = document.createElement('div');
+          el.className = 'dt-slot' + (selectedTime === timeStr ? ' selected' : '');
+          el.textContent = timeStr;
+          el.onclick = () => {
+            selectedTime = timeStr;
+            document.querySelectorAll('.dt-slot').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            updateHidden();
+          };
+          panel.appendChild(el);
+        }
+      }
+    }
+
+    function updateHidden() {
+      const lbl = document.getElementById('dtSelectedLabel');
+      if (!selectedDate) { lbl.textContent = 'Дата и время не выбраны'; document.getElementById('appDatetime').value = ''; return; }
+      const DAYS_FULL = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+      const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+      const dayName = DAYS_FULL[selectedDate.getDay()];
+      const dateStr = selectedDate.getDate() + ' ' + MONTHS_GEN[selectedDate.getMonth()] + ' ' + selectedDate.getFullYear();
+      if (!selectedTime) {
+        lbl.innerHTML = '📅 <strong>' + dayName + ', ' + dateStr + '</strong> — выберите время';
+        document.getElementById('appDatetime').value = '';
+      } else {
+        lbl.innerHTML = '✅ <strong>' + dayName + ', ' + dateStr + ' в ' + selectedTime + '</strong>';
+        const y = selectedDate.getFullYear();
+        const mo = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d  = String(selectedDate.getDate()).padStart(2,'0');
+        document.getElementById('appDatetime').value = y+'-'+mo+'-'+d+'T'+selectedTime+':00';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  })();
+
   const SPEC_ICONS = {
     'Терапевт':'🩺','Хирург':'🔪','Стоматолог':'🦷','Педиатр':'👶',
     'Кардиолог':'❤️','Невролог':'🧠','Офтальмолог':'👁️','Дерматолог':'🌡️',

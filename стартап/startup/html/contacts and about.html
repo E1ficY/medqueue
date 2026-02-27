@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 
 <head>
@@ -78,7 +78,7 @@
       left: 50%;
       transform: translateX(-50%) translateY(6px);
       width: 210px;
-      background: #0f2d1e;
+      background: #0d1117;
       color: #e6f4ee;
       border-radius: 12px;
       padding: 12px 14px;
@@ -99,7 +99,7 @@
       left: 50%;
       transform: translateX(-50%);
       border: 7px solid transparent;
-      border-top-color: #0f2d1e;
+      border-top-color: #0d1117;
     }
 
     .mini-tooltip .tt-role {
@@ -314,7 +314,7 @@
       background: rgba(0, 136, 204, 0.20);
     }
     [data-theme="dark"] .about-fact {
-      background: linear-gradient(135deg, #132910, #0a1f10);
+      background: linear-gradient(135deg, #111827, #0d1117);
       border-color: var(--border-soft);
     }
     [data-theme="dark"] .about-value-row {
@@ -344,7 +344,7 @@
         <a href="recording.html" class="nav-link">Записаться</a>
         <a href="status.html" class="nav-link">Статус очереди</a>
         <a href="profile.html" class="nav-link">Личный кабинет</a>
-        <a href="contacts%20and%20about.html" class="nav-link active">О проекте &amp; Контакты</a>
+
       </nav>
     </div>
     <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
@@ -365,7 +365,7 @@
 
     </section>
 
-    <section class="contacts-section">
+    <section class="contacts-section" id="contacts">
       <h2>Связаться с нами</h2>
       <p style="margin-bottom:10px; color: var(--muted);">Ниже контакты команды. Нажми на номер, чтобы позвонить, или на Telegram, чтобы
         открыть профиль.</p>
@@ -510,25 +510,25 @@
 
   <!-- Капча -->
   <div id="cultCaptcha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:99998;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
-    <div style="background:#0f2d1e;border:2px solid #6ee7b7;border-radius:20px;padding:34px 30px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
+    <div style="background:#0d1117;border:2px solid #6ee7b7;border-radius:20px;padding:34px 30px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
       <div style="font-size:36px;margin-bottom:10px;">🔐</div>
       <div style="font-size:17px;font-weight:900;color:#6ee7b7;margin-bottom:6px;">Проверка личности</div>
       <div style="font-size:13px;color:#a7f3d0;margin-bottom:18px;line-height:1.5;">Перед вступлением в культ докажи, что ты не робот.</div>
       <div style="font-size:20px;font-weight:900;color:#e6f4ee;margin-bottom:14px;">5 + 4 + 6 + 2 = ?</div>
       <input id="cultAnswer" type="number" placeholder="Твой ответ" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:10px;border:1.5px solid #6ee7b7;background:#1a3d2b;color:#e6f4ee;font-size:16px;font-weight:700;text-align:center;outline:none;margin-bottom:10px;">
       <div id="cultCaptchaError" style="color:#fca5a5;font-size:12px;min-height:18px;margin-bottom:8px;"></div>
-      <button onclick="checkCultCaptcha()" style="background:#6ee7b7;color:#0f2d1e;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;width:100%;">Войти в культ</button>
+      <button onclick="checkCultCaptcha()" style="background:#6ee7b7;color:#0d1117;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;width:100%;">Войти в культ</button>
     </div>
   </div>
 
   <!-- Итоговое окно -->
   <div id="cultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-    <div style="background:#0f2d1e;border:2px solid #6ee7b7;border-radius:20px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
+    <div style="background:#0d1117;border:2px solid #6ee7b7;border-radius:20px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:cultPop 0.4s cubic-bezier(.34,1.56,.64,1);">
       <div style="font-size:52px;margin-bottom:12px;">👁️</div>
       <div style="font-size:22px;font-weight:900;color:#6ee7b7;margin-bottom:10px;letter-spacing:-0.5px;">Поздравляю.</div>
       <div style="font-size:15px;color:#e6f4ee;line-height:1.6;margin-bottom:6px;">Вы только что вступили в <strong style="color:#6ee7b7;">Культ #5462</strong>.</div>
       <div style="font-size:13px;color:#a7f3d0;line-height:1.6;margin-bottom:20px;">Членский взнос: одобрение всех идей Самира.<br>Собрания: каждый раз, когда очередь больше 3 человек.<br><em style="color:#fbbf24;">Выхода нет. Мы уже знаем.</em></div>
-      <button onclick="document.getElementById('cultModal').style.display='none'" style="background:#6ee7b7;color:#0f2d1e;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:0.02em;">Принять судьбу</button>
+      <button onclick="document.getElementById('cultModal').style.display='none'" style="background:#6ee7b7;color:#0d1117;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:0.02em;">Принять судьбу</button>
     </div>
   </div>
 
