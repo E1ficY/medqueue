@@ -1341,7 +1341,8 @@
         if (response.ok) {
 
 
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
+          const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
 
 
           showMessage('Вход выполнен!', 'success');
@@ -1605,7 +1606,8 @@
         if (response.ok) {
 
 
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
+          const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
 
 
           showMessage('Регистрация успешна!', 'success');

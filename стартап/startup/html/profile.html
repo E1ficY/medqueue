@@ -664,11 +664,58 @@
       document.getElementById('udPhone').textContent    = user.phone     || '';
     }
 
+    async function refreshAccessToken() {
+      try {
+        const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+        const refresh = user?.refresh || localStorage.getItem('medqueue_refresh_token');
+        if (!refresh) return null;
+
+        const res = await fetch(`${PROF_API_URL}/auth/token/refresh/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        // Сохраняем новый access-токен
+        if (user) {
+          user.access = data.access;
+          localStorage.setItem('medqueue_current_user', JSON.stringify(user));
+        }
+        return data.access;
+      } catch {
+        return null;
+      }
+    }
+
     async function loadProfileData() {
       try {
-        const response = await fetch(`${PROF_API_URL}/appointments/my_appointments/`);
-        if (!response.ok) throw new Error('API error');
-        allAppointments = await response.json();
+        const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+        const token = user?.access || localStorage.getItem('medqueue_access_token');
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(`${PROF_API_URL}/appointments/my_appointments/`, { headers });
+
+        if (response.status === 401) {
+          // Попробуем обновить токен
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            const retry = await fetch(`${PROF_API_URL}/appointments/my_appointments/`, {
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${newToken}` }
+            });
+            if (!retry.ok) throw new Error('auth failed');
+            allAppointments = await retry.json();
+          } else {
+            renderDemoState();
+            return;
+          }
+        } else if (!response.ok) {
+          throw new Error('API error');
+        } else {
+          allAppointments = await response.json();
+        }
 
         const active    = allAppointments.filter(a => a.status === 'confirmed');
         const cancelled = allAppointments.filter(a => a.status === 'cancelled');
