@@ -6,6 +6,13 @@ const API_BASE = window.location.protocol === 'file:'
 const API_URL = `${API_BASE}/api`;
 const AUTH_STORAGE_KEY = 'medqueue_current_user';
 
+function getAuthHeaders() {
+  const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+  const headers = { 'Content-Type': 'application/json' };
+  if (user?.access) headers['Authorization'] = `Bearer ${user.access}`;
+  return headers;
+}
+
 // === ДАННЫЕ ===
 let hospitals = [];
 let myAppointments = [];
@@ -359,13 +366,12 @@ async function handleMiniFormSubmit(e) {
   
   // Отправляем на API
   try {
+    const currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
     const response = await fetch(`${API_URL}/appointments/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
-        patient_name: 'Гость',
+        patient_name: currentUser?.name || 'Гость',
         hospital: parseInt(hospitalId),
         specialty: specialty,
         datetime: datetime
@@ -442,9 +448,7 @@ async function handleAppointmentSubmit(e) {
   try {
     const response = await fetch(`${API_URL}/appointments/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         patient_name: name,
         phone: phone || undefined,
