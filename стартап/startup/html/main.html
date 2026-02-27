@@ -6,8 +6,43 @@
   <title>MedQueue – Удобная запись в клиники Алматы</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/script.js"></script>
   <style>
+
+    /* ---- Map ---- */
+    .hero-map {
+      border-radius: 20px;
+      overflow: hidden;
+      height: 400px;
+      min-width: 340px;
+      flex: 1;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.22);
+      border: 3px solid rgba(255,255,255,0.35);
+      position: relative;
+    }
+    #hospitalsMap {
+      width: 100%;
+      height: 100%;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .map-popup-btn {
+      display: block;
+      margin-top: 10px;
+      padding: 8px 0;
+      background: linear-gradient(135deg,#16a34a,#15803d);
+      color: white;
+      text-align: center;
+      border-radius: 9px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .map-popup-btn:hover { opacity: .88; }
 
     .filter-tabs {
       display: flex;
@@ -97,40 +132,8 @@
             <a class="btn btn-outline" href="profile.html">Личный кабинет</a>
           </div>
         </div>
-        <div class="hero-right card-form">
-          <h3>Быстрая запись</h3>
-          <form id="miniForm">
-            <label class="field">
-              <span>Больница</span>
-              <div class="custom-select-wrap">
-                <select id="hospitalSelect"></select>
-                <svg class="chev" width="14" height="9" viewBox="0 0 14 9"><path d="M1 1l6 6 6-6" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </label>
-            <label class="field">
-              <span>Специальность</span>
-              <select id="specialtySelect">
-                <option>Терапевт</option>
-                <option>Хирург</option>
-                <option>Стоматолог</option>
-                <option>Педиатр</option>
-                <option>Кардиолог</option>
-                <option>Невролог</option>
-                <option>Офтальмолог</option>
-                <option>Дерматолог</option>
-                <option>Эндокринолог</option>
-                <option>Гинеколог</option>
-                <option>Уролог</option>
-                <option>Психиатр</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Дата и время</span>
-              <input type="datetime-local" id="datetime">
-            </label>
-            <button class="btn btn-primary" type="submit" style="width:100%;">Записаться</button>
-            <div id="miniFormMsg" class="mini-msg" aria-live="polite"></div>
-          </form>
+        <div class="hero-map">
+          <div id="hospitalsMap"></div>
         </div>
       </div>
     </section>
@@ -160,5 +163,54 @@
       <div class="muted">Версия прототипа</div>
     </div>
   </footer>
+
+  <script>
+  // Approximate coordinates spread across Almaty districts
+  const ALMATY_POINTS = [
+    [43.267, 76.886], [43.252, 76.957], [43.221, 76.858], [43.195, 76.905],
+    [43.305, 77.012], [43.188, 76.810], [43.325, 76.938], [43.241, 76.892],
+    [43.258, 76.910], [43.233, 76.945], [43.212, 76.877], [43.278, 76.995],
+    [43.199, 76.838], [43.314, 76.963], [43.247, 76.870], [43.264, 76.930],
+    [43.228, 76.920], [43.290, 77.030], [43.183, 76.855], [43.337, 76.920],
+    [43.255, 76.880], [43.240, 76.968], [43.210, 76.845], [43.202, 76.918],
+    [43.298, 77.005], [43.175, 76.800], [43.319, 76.950], [43.245, 76.899],
+    [43.260, 76.940], [43.220, 76.900], [43.285, 76.978],
+  ];
+
+  const HOSPITAL_ICONS = { 'Поликлиника': '🏥', 'Больница': '🏨', 'Детская': '👶', 'Спец. клиника': '⚕️' };
+
+  function initHospitalsMap() {
+    if (!window.L || !window.hospitals || window.hospitals.length === 0) {
+      setTimeout(initHospitalsMap, 150);
+      return;
+    }
+    const map = L.map('hospitalsMap', { zoomControl: true, scrollWheelZoom: false })
+      .setView([43.238, 76.889], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom: 18,
+    }).addTo(map);
+
+    window.hospitals.forEach(function(h, i) {
+      const coords = ALMATY_POINTS[i % ALMATY_POINTS.length];
+      const icon = HOSPITAL_ICONS[h.type] || '🏥';
+      const marker = L.marker(coords, {
+        title: h.name,
+      }).addTo(map);
+      marker.bindPopup(
+        `<div style="min-width:190px;font-family:Inter,sans-serif;">
+          <div style="font-weight:800;font-size:14px;color:#064e3b;margin-bottom:4px;">${icon} ${h.name}</div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:2px;">${h.type}</div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📍 ${h.address || ''}</div>
+          <div style="font-size:12px;margin-bottom:8px;">Очередь: <b>${h.queue || 0}</b> чел. · ~${h.waiting} мин</div>
+          <a class="map-popup-btn" href="recording.html?hospital=${h.id}">Записаться →</a>
+        </div>`
+      );
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initHospitalsMap);
+  </script>
 </body>
 </html>
