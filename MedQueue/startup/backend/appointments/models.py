@@ -67,6 +67,11 @@ class Doctor(models.Model):
         related_name='doctors',
         verbose_name="Больница"
     )
+    user = models.OneToOneField(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='doctor_profile',
+        verbose_name="Аккаунт пользователя"
+    )
     full_name = models.CharField(max_length=200, verbose_name="ФИО врача")
     specialty = models.CharField(max_length=50, choices=SPECIALTIES_CHOICES, verbose_name="Специальность")
     cabinet = models.CharField(max_length=20, blank=True, verbose_name="Кабинет")
@@ -204,7 +209,12 @@ class DoctorInviteCode(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        status_str = f"✅ {self.used_by.first_name}" if self.is_used else "⏳ Свободен"
+        if self.is_used and self.used_by:
+            status_str = f"✅ {self.used_by.first_name or self.used_by.username}"
+        elif self.is_used:
+            status_str = "✅ Использован (пользователь удалён)"
+        else:
+            status_str = "⏳ Свободен"
         return f"{self.code} — {self.specialty or 'Без специальности'} [{status_str}]"
 
     @classmethod

@@ -183,16 +183,21 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 # ─────────────────────────────────────────────
 
 def _require_doctor(request):
-    """Returns (hospital, error_response). If error_response is not None — return it."""
+    """
+    Returns (hospital, doctor_entry, error_response).
+    doctor_entry — запись Doctor, привязанная к аккаунту (может быть None для старых инвайт-кодов).
+    """
     if not request.user.is_authenticated:
-        return None, Response({'error': 'Требуется авторизация'}, status=401)
+        return None, None, Response({'error': 'Требуется авторизация'}, status=401)
     try:
         invite = request.user.doctor_invite  # OneToOne from DoctorInviteCode
     except Exception:
-        return None, Response({'error': 'Аккаунт врача не найден'}, status=403)
+        return None, None, Response({'error': 'Аккаунт врача не найден'}, status=403)
     if not invite.hospital:
-        return None, Response({'error': 'Больница не привязана к вашему аккаунту'}, status=403)
-    return invite.hospital, None
+        return None, None, Response({'error': 'Больница не привязана к вашему аккаунту'}, status=403)
+    # Ищем конкретную запись Doctor, привязанную к этому пользователю
+    doctor_entry = Doctor.objects.filter(user=request.user).first()
+    return invite.hospital, doctor_entry, None
 
 
 @api_view(['GET'])
@@ -202,25 +207,33 @@ def doctor_me(request):
     GET /api/doctor/me/
     Возвращает профиль врача: имя, email, больница, специальность.
     """
-    hospital, err = _require_doctor(request)
+    hospital, doctor_entry, err = _require_doctor(request)
     if err:
         return err
 
     invite = request.user.doctor_invite
     today = timezone.now().date()
 
-    today_count = Appointment.objects.filter(
-        hospital=hospital,
-        datetime__date=today,
-        status='confirmed'
-    ).count()
-
-    total_count = Appointment.objects.filter(hospital=hospital).count()
+    # Если врач привязан к конкретной записи Doctor — считаем только его записи
+    if doctor_entry:
+        today_count = Appointment.objects.filter(
+            doctor=doctor_entry, datetime__date=today, status='confirmed'
+        ).count()
+        total_count = Appointment.objects.filter(doctor=doctor_entry).count()
+    else:
+        today_count = Appointment.objects.filter(
+            hospital=hospital, datetime__date=today, status='confirmed'
+        ).count()
+        total_count = Appointment.objects.filter(hospital=hospital).count()
 
     return Response({
         'name': request.user.get_full_name() or request.user.first_name or request.user.username,
         'email': request.user.email,
-        'specialty': invite.specialty or 'Не указана',
+        'specialty': (doctor_entry.specialty if doctor_entry else invite.specialty) or 'Не указана',
+        'cabinet': doctor_entry.cabinet if doctor_entry else '',
+        'work_days': doctor_entry.work_days if doctor_entry else 'Пн-Пт',
+        'work_hours': doctor_entry.work_hours if doctor_entry else '08:00-18:00',
+        'doctor_id': doctor_entry.id if doctor_entry else None,
         'hospital': {
             'id': hospital.id,
             'name': hospital.name,
@@ -239,18 +252,22 @@ def doctor_me(request):
 def doctor_appointments(request):
     """
     GET /api/doctor/appointments/?filter=today|all&status=confirmed|cancelled|completed
-    Записи пациентов в больнице врача.
+    Записи пациентов к данному врачу.
     """
-    hospital, err = _require_doctor(request)
+    hospital, doctor_entry, err = _require_doctor(request)
     if err:
         return err
 
     invite = request.user.doctor_invite
-    qs = Appointment.objects.filter(hospital=hospital).order_by('datetime')
 
-    # Фильтр по специальности врача (если задана)
-    if invite.specialty:
-        qs = qs.filter(specialty=invite.specialty)
+    # Если есть конкретная Doctor-запись — фильтруем строго по ней
+    if doctor_entry:
+        qs = Appointment.objects.filter(doctor=doctor_entry).order_by('datetime')
+    else:
+        # Fallback: фильтр по больнице + специальности (старые аккаунты без Doctor-записи)
+        qs = Appointment.objects.filter(hospital=hospital).order_by('datetime')
+        if invite.specialty:
+            qs = qs.filter(specialty=invite.specialty)
 
     # Фильтр период
     period = request.GET.get('filter', 'today')
@@ -288,13 +305,16 @@ def doctor_update_appointment(request, appointment_id):
     """
     PATCH /api/doctor/appointments/<id>/
     Body: {"status": "completed" | "cancelled" | "confirmed"}
-    Врач может менять статус только записей своей больницы.
+    Врач может менять статус только своих записей.
     """
-    hospital, err = _require_doctor(request)
+    hospital, doctor_entry, err = _require_doctor(request)
     if err:
         return err
 
-    appt = get_object_or_404(Appointment, id=appointment_id, hospital=hospital)
+    if doctor_entry:
+        appt = get_object_or_404(Appointment, id=appointment_id, doctor=doctor_entry)
+    else:
+        appt = get_object_or_404(Appointment, id=appointment_id, hospital=hospital)
     new_status = request.data.get('status', '')
     if new_status not in ('confirmed', 'cancelled', 'completed'):
         return Response({'error': 'Недопустимый статус'}, status=400)
@@ -370,7 +390,7 @@ def admin_doctors(request):
         return err
 
     if request.method == 'GET':
-        qs = Doctor.objects.select_related('hospital').all()
+        qs = Doctor.objects.select_related('hospital', 'user').all()
         data = [{
             'id':         d.id,
             'full_name':  d.full_name,
@@ -380,6 +400,8 @@ def admin_doctors(request):
             'work_hours': d.work_hours,
             'is_active':  d.is_active,
             'hospital':   {'id': d.hospital.id, 'name': d.hospital.name},
+            'user_id':    d.user_id,
+            'username':   d.user.username if d.user else None,
         } for d in qs]
         return Response(data)
 
