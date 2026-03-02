@@ -537,8 +537,9 @@
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('active', this)"> Активные</button>
-        <button class="tab-btn" onclick="switchTab('all', this)"> Все записи</button>
+        <button class="tab-btn" onclick="switchTab('completed', this)"> Завершённые</button>
         <button class="tab-btn" onclick="switchTab('cancelled', this)"> Отменённые</button>
+        <button class="tab-btn" onclick="switchTab('all', this)"> Все</button>
       </div>
 
       <div id="appointmentsList">
@@ -757,6 +758,7 @@
     function renderAppointments(tab) {
       let list = allAppointments;
       if (tab === 'active')    list = allAppointments.filter(a => a.status === 'confirmed');
+      if (tab === 'completed') list = allAppointments.filter(a => a.status === 'completed');
       if (tab === 'cancelled') list = allAppointments.filter(a => a.status === 'cancelled');
 
       const container = document.getElementById('appointmentsList');
@@ -764,10 +766,11 @@
       if (list.length === 0) {
         const msgs = {
           active:    ['', 'Нет активных записей', 'Вы можете записаться к врачу прямо сейчас'],
+          completed: ['', 'Нет завершённых приёмов', ''],
           all:       ['', 'История записей пуста', 'Здесь будут отображаться все ваши записи'],
           cancelled: ['', 'Нет отменённых записей', '']
         };
-        const [icon, title, sub] = msgs[tab];
+        const [icon, title, sub] = msgs[tab] || msgs['all'];
         container.innerHTML = `
           <div class="empty-state">
             <span class="empty-state-icon">${icon}</span>
@@ -785,6 +788,7 @@
         const statusMap = {
           confirmed: '<span class="status-pill confirmed"> Подтверждено</span>',
           pending:   '<span class="status-pill pending"> Ожидает</span>',
+          completed: '<span class="status-pill" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3);"> Завершено</span>',
           cancelled: '<span class="status-pill cancelled"> Отменено</span>',
         };
         const statusBadge = statusMap[app.status] || statusMap['pending'];
@@ -818,15 +822,12 @@
                 <div class="meta-value"> ~${app.estimated_wait_time} мин</div>
               </div>` : ''}
             </div>
-            ${app.status !== 'cancelled' ? `
             <div class="appt-actions">
               <button onclick="viewCode('${app.code}')" class="btn btn-outline">
                  Код: <strong>${app.code}</strong>
               </button>
-              <button onclick="cancelFromProfile('${app.code}')" class="btn btn-outline" style="color:#dc2626;border-color:rgba(220,38,38,0.22);flex:0 0 auto;">
-                 Отменить
-              </button>
-            </div>` : ''}
+              ${app.status === 'confirmed' ? `<button onclick="cancelFromProfile('${app.code}')" class="btn btn-outline" style="color:#dc2626;border-color:rgba(220,38,38,0.22);flex:0 0 auto;"> Отменить</button>` : ''}
+            </div>
           </div>`;
       }).join('');
     }

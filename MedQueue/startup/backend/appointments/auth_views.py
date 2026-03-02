@@ -13,7 +13,7 @@ import string
 import urllib.parse
 import urllib.request
 
-from .models import VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode
+from .models import VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode, Doctor
 
 
 def get_tokens_for_user(user):
@@ -209,11 +209,20 @@ def verify_email(request):
         # Создаём UserProfile с ролью
         UserProfile.objects.create(user=user, role=verification.role)
 
-        # Если врач — помечаем код приглашения как использованный
+        # Если врач — помечаем код приглашения как использованный и создаём Doctor-запись
         if verification.role == 'doctor' and verification.doctor_code:
-            DoctorInviteCode.objects.filter(
-                code=verification.doctor_code, is_used=False
-            ).update(is_used=True, used_by=user)
+            invite_qs = DoctorInviteCode.objects.filter(code=verification.doctor_code, is_used=False)
+            invite_obj = invite_qs.first()
+            invite_qs.update(is_used=True, used_by=user)
+            # Автоматически создаём запись Doctor чтобы портал врача сразу начал работать
+            if invite_obj and invite_obj.hospital:
+                Doctor.objects.create(
+                    user=user,
+                    hospital=invite_obj.hospital,
+                    specialty=invite_obj.specialty or '',
+                    full_name=user.first_name or user.username,
+                    is_active=True,
+                )
 
         verification.delete()
         tokens = get_tokens_for_user(user)
