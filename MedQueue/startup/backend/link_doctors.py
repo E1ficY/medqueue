@@ -1,35 +1,50 @@
-"""Привязывает тестовых врачей к записям Doctor (создаёт или находит существующие)"""
+"""Привязывает тестовых врачей к записям Doctor (создаёт или находит существующие).
+Если invite-код не содержит больницу — ищем подходящую Doctor-запись по специальности.
+"""
 import django, os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'medqueue_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from appointments.models import Doctor, DoctorInviteCode
+from appointments.models import Doctor, DoctorInviteCode, Hospital
 
-test_logins = ['doctor_asel', 'doctor_arman', 'doctor_zarina']
+# Жёсткое соответствие: логин → (specialty, hospital_name_fragment)
+DOCTOR_MAP = {
+    'doctor_asel':   ('Стоматолог', 'Стоматологическая поликлиника №1'),
+    'doctor_arman':  ('Педиатр',    'Детская городская поликлиника №3'),
+    'doctor_zarina': ('Невролог',   'Городская поликлиника №1'),
+}
 
-for username in test_logins:
+for username, (specialty, hospital_name) in DOCTOR_MAP.items():
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
         print(f'[SKIP] Пользователь {username} не найден')
         continue
 
-    # Получаем invite-код пользователя
-    try:
-        invite = user.doctor_invite
-    except Exception:
-        print(f'[SKIP] Invite-код для {username} не найден')
-        continue
-
-    hospital = invite.hospital
-    specialty = invite.specialty
     full_name = user.first_name or user.username
 
-    if not hospital or not specialty:
-        print(f'[SKIP] {username}: нет больницы или специальности в invite-коде')
+    # Найдём больницу по точному имени
+    try:
+        hospital = Hospital.objects.get(name=hospital_name)
+    except Hospital.DoesNotExist:
+        # Fallback: поиск по частичному совпадению
+        hospital = Hospital.objects.filter(name__icontains=hospital_name[:15]).first()
+    if not hospital:
+        print(f'[SKIP] {username}: больница "{hospital_name}" не найдена')
         continue
+
+    # Обновляем invite-код больницей/специальностью если нет
+    try:
+        invite = user.doctor_invite
+        if not invite.hospital:
+            invite.hospital = hospital
+        if not invite.specialty:
+            invite.specialty = specialty
+        invite.save(update_fields=['hospital', 'specialty'])
+    except Exception:
+        pass
 
     # Если уже есть Doctor-запись — обновим её; иначе создадим новую
     existing = Doctor.objects.filter(user=user).first()
