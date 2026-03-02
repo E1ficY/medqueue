@@ -747,7 +747,7 @@
       try {
         const res = await fetch(`${API_URL}/auth/validate-doctor-code/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ code }),
         });
         const data = await res.json();
@@ -792,7 +792,7 @@
       try {
         const res = await fetch(`${API_URL}/auth/password-reset/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ email })
         });
         const data = await res.json();
@@ -827,7 +827,7 @@
       try {
         const res = await fetch(`${API_URL}/auth/password-reset/confirm/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ email: forgotEmail, code: forgotResetCode, new_password: newPassword })
         });
         const data = await res.json();
@@ -912,7 +912,7 @@
       try {
         const response = await fetch(`${API_URL}/auth/login/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ login: loginVal, password, captcha_token: captchaToken })
 
         });
@@ -983,7 +983,7 @@
       try {
         const response = await fetch(`${API_URL}/auth/register/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ name, username, email, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
 
         });
@@ -1020,7 +1020,7 @@
       try {
         const response = await fetch(`${API_URL}/auth/verify/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ email: currentEmail, code })
 
         });
@@ -1048,7 +1048,7 @@
       try {
         const response = await fetch(`${API_URL}/auth/resend/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ email: currentEmail })
 
         });
@@ -1103,7 +1103,7 @@
     try {
       const res = await fetch(`${API_URL}/ai/chat/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ message: text, history: aiHistory.slice(-10) })
       });
       const data = await res.json();

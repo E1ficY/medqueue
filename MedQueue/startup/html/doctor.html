@@ -180,11 +180,11 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <button id="aiBubble" onclick="toggleAi()" title="МедAI"></button>
+  <button id="aiBubble" onclick="toggleAi()" title="МедAI">🤖</button>
   <div id="aiPanel">
-    <div class="ai-head"><span> МедAI  помощник</span><button onclick="toggleAi()"></button></div>
+    <div class="ai-head"><span>🤖 МедAI — помощник</span><button onclick="toggleAi()">✕</button></div>
     <div class="ai-msgs" id="aiMsgs"><div class="ai-msg bot">Привет! Я МедAI. Задайте вопрос о пациентах или организации приёма.</div></div>
-    <div class="ai-input-row"><input id="aiInput" placeholder="Ваш вопрос" onkeydown="if(event.key==='Enter')sendAi()"><button onclick="sendAi()"></button></div>
+    <div class="ai-input-row"><input id="aiInput" placeholder="Ваш вопрос…" onkeydown="if(event.key==='Enter')sendAi()"><button onclick="sendAi()">➤</button></div>
   </div>
 
 <script>
@@ -209,12 +209,12 @@
   function logout(){ localStorage.removeItem(AUTH_KEY); window.location.href='auth.html'; }
   async function apiFetch(url,opts={}){
     let user=getUser(); if(!user){logout();return null;}
-    const hdrs={'Content-Type':'application/json',...(opts.headers||{})};
+    const hdrs={'Content-Type':'application/json','ngrok-skip-browser-warning':'true',...(opts.headers||{})};
     if(user.access) hdrs['Authorization']=`Bearer ${user.access}`;
     let res=await fetch(url,{...opts,headers:hdrs});
     if(res.status===401){
       try{
-        const rt=await fetch(`${API}/auth/token/refresh/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh:user.refresh})});
+        const rt=await fetch(`${API}/auth/token/refresh/`,{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},body:JSON.stringify({refresh:user.refresh})});
         if(rt.ok){const tk=await rt.json();user.access=tk.access;localStorage.setItem(AUTH_KEY,JSON.stringify(user));hdrs['Authorization']=`Bearer ${user.access}`;res=await fetch(url,{...opts,headers:hdrs});}
         else{logout();return null;}
       }catch{logout();return null;}

@@ -462,19 +462,43 @@
     }
 
     /* ===== MOBILE FIXES ===== */
+    /* Общий overflow-guard */
+    .profile-header { overflow: hidden; }
+    .profile-info h1, .profile-info .profile-email, .profile-info .profile-username {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+    }
+    .appt-hospital-name { overflow-wrap: break-word; word-break: break-word; }
+    .appt-meta-item .meta-value { overflow-wrap: break-word; word-break: break-word; }
     @media (max-width: 600px) {
       /* Шапка профиля — вертикально */
-      .profile-header-inner { flex-direction: column; text-align: center; gap: 14px; }
+      .profile-header-inner { flex-direction: column; text-align: center; gap: 10px; }
       .profile-avatar { align-self: center; }
+      /* Кнопка выйти — на всю ширину снизу */
+      .profile-header-inner > button { margin-left: 0 !important; width: 100% !important; }
+      /* Бейджи — переносятся */
+      .profile-badges { justify-content: center; }
+      .profile-info h1 { font-size: 20px; white-space: normal; }
       /* Статистика — 2 колонки вместо 3 */
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .stat-number { font-size: 28px; }
       /* Карточки */
-      .section-card { padding: 18px; }
+      .section-card { padding: 16px; }
       .section-title { flex-direction: column; align-items: flex-start; gap: 8px; }
       .section-title h2 { font-size: 17px; }
       /* Tabs — сжать */
       .tab-btn { padding: 8px 8px; font-size: 12.5px; }
+      /* Записи — шапка карточки стакается чтобы бейдж не вылезал */
+      .appt-header { flex-direction: column; gap: 8px; }
+      .appt-queue-badge { align-self: flex-start; font-size: 13px; padding: 5px 11px; }
+      .appt-hospital-name { font-size: 14px; }
+      /* Мета-грид — одна колонка */
+      .appt-meta-grid { grid-template-columns: 1fr; gap: 7px; }
+      /* Actions — кнопки полная ширина */
+      .appt-actions { flex-direction: column; }
+      .appt-actions .btn { font-size: 13px; padding: 9px; }
+      /* Чипы больниц — компактнее */
+      .hospital-chip { font-size: 12px; padding: 8px 10px; }
+      .chip-icon { width: 28px; height: 28px; font-size: 15px; }
     }
     @media (max-width: 400px) {
       /* Очень узкие: 1 колонка в статах */
@@ -625,7 +649,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
-      <div class="muted">Версия 2.0</div>
+      <div class="muted">Версия 3.0</div>
     </div>
   </footer>
 
@@ -634,6 +658,16 @@
       ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
       : window.location.origin;
     const PROF_API_URL = `${PROF_API_BASE}/api`;
+    const PROF_HEADERS = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    };
+    function profAuthHeaders() {
+      const u = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      const h = { ...PROF_HEADERS };
+      if (u?.access) h['Authorization'] = `Bearer ${u.access}`;
+      return h;
+    }
 
     let allAppointments = [];
     let currentTab = 'active';
@@ -705,7 +739,7 @@
 
         const res = await fetch(`${PROF_API_URL}/auth/token/refresh/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ refresh })
         });
         if (!res.ok) return null;
@@ -726,7 +760,7 @@
         const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
         const token = user?.access || localStorage.getItem('medqueue_access_token');
 
-        const headers = { 'Content-Type': 'application/json' };
+        const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         const response = await fetch(`${PROF_API_URL}/appointments/my_appointments/`, { headers });
@@ -736,7 +770,7 @@
           const newToken = await refreshAccessToken();
           if (newToken) {
             const retry = await fetch(`${PROF_API_URL}/appointments/my_appointments/`, {
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${newToken}` }
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${newToken}`, 'ngrok-skip-browser-warning': 'true' }
             });
             if (!retry.ok) throw new Error('auth failed');
             allAppointments = await retry.json();
@@ -951,7 +985,7 @@
       try {
         const r = await fetch(`${PROF_API_URL}/appointments/cancel/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ code })
         });
         if (r.ok) {
@@ -1073,7 +1107,7 @@
     const el=appendAiMsg('…','bot');
     aiHistory.push({role:'user',content:text});
     try{
-      const r=await fetch(`${API_URL}/ai/chat/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:aiHistory.slice(-10)})});
+      const r=await fetch(`${API_URL}/ai/chat/`,{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},body:JSON.stringify({message:text,history:aiHistory.slice(-10)})});
       const d=await r.json();const rep=d.reply||'Не удалось получить ответ.';
       el.textContent=rep;aiHistory.push({role:'assistant',content:rep});
     }catch{el.textContent='Ошибка подключения к серверу.';}

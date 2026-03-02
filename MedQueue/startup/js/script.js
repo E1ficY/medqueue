@@ -8,7 +8,10 @@ const AUTH_STORAGE_KEY = 'medqueue_current_user';
 
 function getAuthHeaders() {
   const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
   if (user?.access) headers['Authorization'] = `Bearer ${user.access}`;
   return headers;
 }
@@ -20,7 +23,7 @@ async function ensureFreshToken() {
     if (!user?.refresh) return false;
     const res = await fetch(`${API_URL}/auth/token/refresh/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
       body: JSON.stringify({ refresh: user.refresh })
     });
     if (!res.ok) {
