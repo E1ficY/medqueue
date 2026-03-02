@@ -75,6 +75,7 @@ def register_user(request):
     name         = request.data.get('name')
     email        = request.data.get('email')
     password     = request.data.get('password')
+    username     = (request.data.get('username') or '').strip()
     captcha_token = request.data.get('captcha_token')
     role         = request.data.get('role', 'patient')  # 'patient' | 'doctor'
     doctor_code  = (request.data.get('doctor_code') or '').strip().upper()
@@ -85,9 +86,22 @@ def register_user(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if not all([name, email, password]):
+    if not all([name, email, password, username]):
         return Response(
-            {'error': 'Все поля обязательны'},
+            {'error': 'Все поля обязательны (включая логин)'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Валидация логина
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+        return Response(
+            {'error': 'Логин: от 3 до 30 символов, только латинские буквы, цифры и _'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    if User.objects.filter(username=username).exists():
+        return Response(
+            {'error': 'Логин уже занят'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -115,8 +129,8 @@ def register_user(request):
     VerificationCode.objects.filter(email=email).delete()
     code = ''.join(random.choices(string.digits, k=6))
     VerificationCode.objects.create(
-        email=email, code=code, name=name, password=password,
-        role=role, doctor_code=doctor_code,
+        email=email, code=code, name=name, username=username,
+        password=password, role=role, doctor_code=doctor_code,
     )
     
     from_email = settings.EMAIL_HOST_USER
@@ -178,8 +192,15 @@ def verify_email(request):
         )
 
     try:
+        actual_username = verification.username or email
+        # Защита от гонок: проверить ещё раз
+        if User.objects.filter(username=actual_username).exists():
+            return Response(
+                {'error': 'Логин уже занят. Попробуйте другой.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user = User.objects.create_user(
-            username=email,
+            username=actual_username,
             email=email,
             password=verification.password,
             first_name=verification.name
@@ -203,6 +224,7 @@ def verify_email(request):
                 'id': user.id,
                 'name': user.first_name,
                 'email': user.email,
+                'username': user.username,
                 'role': verification.role,
             },
             **tokens
@@ -216,8 +238,9 @@ def verify_email(request):
 
 @api_view(['POST'])
 def login_user(request):
-    """Вход"""
-    email = request.data.get('email')
+    """Вход — принимает логин (username или email) + пароль"""
+    # Поддерживаем поля 'login' (новое) и 'email' (обратная совместимость)
+    login_id = (request.data.get('login') or request.data.get('email') or '').strip()
     password = request.data.get('password')
     captcha_token = request.data.get('captcha_token')
 
@@ -227,17 +250,26 @@ def login_user(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if not all([email, password]):
+    if not all([login_id, password]):
         return Response(
-            {'error': 'Email и пароль обязательны'},
+            {'error': 'Логин и пароль обязательны'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    user = authenticate(username=email, password=password)
+    # Сначала пробуем как username напрямую
+    user = authenticate(username=login_id, password=password)
+
+    # Если не вышло — ищем по email
+    if user is None:
+        try:
+            found = User.objects.get(email__iexact=login_id)
+            user = authenticate(username=found.username, password=password)
+        except User.DoesNotExist:
+            pass
     
     if user is None:
         return Response(
-            {'error': 'Неверные данные'},
+            {'error': 'Неверный логин или пароль'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
@@ -255,6 +287,7 @@ def login_user(request):
             'id': user.id,
             'name': user.first_name or user.username,
             'email': user.email,
+            'username': user.username,
             'role': role,
         },
         **tokens
@@ -282,9 +315,15 @@ def resend_code(request):
 
     old_name = verification.name
     old_password = verification.password
+    old_username = verification.username
+    old_role = verification.role
+    old_doctor_code = verification.doctor_code
     VerificationCode.objects.filter(email=email).delete()
     new_code = ''.join(random.choices(string.digits, k=6))
-    VerificationCode.objects.create(email=email, code=new_code, name=old_name, password=old_password)
+    VerificationCode.objects.create(
+        email=email, code=new_code, name=old_name, password=old_password,
+        username=old_username, role=old_role, doctor_code=old_doctor_code,
+    )
     
     from_email = settings.EMAIL_HOST_USER
     if not from_email:

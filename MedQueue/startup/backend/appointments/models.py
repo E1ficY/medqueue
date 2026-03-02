@@ -245,6 +245,7 @@ class VerificationCode(models.Model):
     email       = models.EmailField(verbose_name="Email")
     code        = models.CharField(max_length=6, verbose_name="Код")
     name        = models.CharField(max_length=200, verbose_name="Имя")
+    username    = models.CharField(max_length=150, blank=True, default='', verbose_name="Логин")
     password    = models.CharField(max_length=200, verbose_name="Пароль")
     role        = models.CharField(max_length=20, default='patient', verbose_name="Роль")
     doctor_code = models.CharField(max_length=12, blank=True, default='', verbose_name="Код врача")

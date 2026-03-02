@@ -407,8 +407,8 @@
     <div id="loginForm">
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-input" id="loginEmail" required>
+          <label class="form-label">Email или логин</label>
+          <input type="text" class="form-input" id="loginInput" placeholder="Ваш email или логин" required>
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
@@ -445,6 +445,10 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label class="form-label">Логин</label>
+          <input type="text" class="form-input" id="registerUsername" placeholder="Латиница, цифры и _ (3–30 символов)" pattern="[a-zA-Z0-9_]{3,30}" required>
+        </div>
         <div class="form-group">
           <label class="form-label">Имя</label>
           <input type="text" class="form-input" id="registerName" required>
@@ -585,6 +589,10 @@
         return;
       }
       const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      if (user && user.role === 'admin') {
+        window.location.href = 'admin-panel.html';
+        return;
+      }
       if (user && user.role === 'doctor') {
         window.location.href = 'doctor.html';
         return;
@@ -747,7 +755,7 @@
     function showForgotStep1() {
       hideAllForms();
       document.getElementById('forgotStep1').classList.remove('hidden');
-      document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value || '';
+      document.getElementById('forgotEmail').value = document.getElementById('loginInput').value || '';
       hideMessage();
     }
 
@@ -879,13 +887,13 @@
         return;
 
       }
-      const email = document.getElementById('loginEmail').value;
+      const loginVal = document.getElementById('loginInput').value;
       const password = document.getElementById('loginPassword').value;
       try {
         const response = await fetch(`${API_URL}/auth/login/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, captcha_token: captchaToken })
+          body: JSON.stringify({ login: loginVal, password, captcha_token: captchaToken })
 
         });
         const data = await response.json();
@@ -928,6 +936,7 @@
         return;
 
       }
+      const username = document.getElementById('registerUsername').value.trim();
       const name    = document.getElementById('registerName').value;
       const email   = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
@@ -955,7 +964,7 @@
         const response = await fetch(`${API_URL}/auth/register/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
+          body: JSON.stringify({ name, username, email, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
 
         });
         const data = await response.json();

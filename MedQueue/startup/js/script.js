@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Очищаем устаревшие версии кэша больниц
   localStorage.removeItem('medqueue_hospitals_cache');
   localStorage.removeItem('medqueue_hospitals_cache_v2');
+  localStorage.removeItem('medqueue_hospitals_cache_v3');
 
   updateAuthNav();
 
@@ -235,7 +236,7 @@ function showAuthPrompt() {
 }
 
 // === ЗАГРУЗКА БОЛЬНИЦ ИЗ API (с кэшем) ===
-const HOSPITALS_CACHE_KEY = 'medqueue_hospitals_cache_v3'; // v3 — чистые 20 больниц с координатами
+const HOSPITALS_CACHE_KEY = 'medqueue_hospitals_cache_v4'; // v4 — username login + admin panel
 const HOSPITALS_CACHE_TTL = 2 * 60 * 1000; // 2 минуты
 
 async function loadHospitals() {
