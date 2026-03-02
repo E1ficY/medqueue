@@ -460,6 +460,26 @@
       background: rgba(34,197,94,0.12);
       color: var(--accent-2);
     }
+
+    /* ===== MOBILE FIXES ===== */
+    @media (max-width: 600px) {
+      /* Шапка профиля — вертикально */
+      .profile-header-inner { flex-direction: column; text-align: center; gap: 14px; }
+      .profile-avatar { align-self: center; }
+      /* Статистика — 2 колонки вместо 3 */
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-number { font-size: 28px; }
+      /* Карточки */
+      .section-card { padding: 18px; }
+      .section-title { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .section-title h2 { font-size: 17px; }
+      /* Tabs — сжать */
+      .tab-btn { padding: 8px 8px; font-size: 12.5px; }
+    }
+    @media (max-width: 400px) {
+      /* Очень узкие: 1 колонка в статах */
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
   </style>
   <script src="../js/theme.js"></script>
 </head>

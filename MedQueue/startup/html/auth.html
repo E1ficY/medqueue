@@ -386,6 +386,26 @@
       background: rgba(20,184,166,0.12);
       color: #2dd4bf;
     }
+
+    /* ===== MOBILE FIXES ===== */
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .auth-card { padding: 22px 18px; border-radius: 16px; }
+      .logo-title { font-size: 18px; }
+      .role-btn { padding: 10px 6px; font-size: 12.5px; }
+      .role-btn .role-icon { font-size: 18px; }
+      .submit-btn { font-size: 15px; padding: 12px; }
+      /* Переключатель темы на странице auth — сдвигаем вниз чтобы не мешал */
+      .auth-card ~ .theme-switch,
+      body > .theme-switch {
+        bottom: 16px !important;
+        right: 16px !important;
+        top: auto !important;
+        left: auto !important;
+        border-radius: 50% !important;
+        padding: 8px !important;
+      }
+    }
   </style>
   <script src="../js/theme.js"></script>
 </head>

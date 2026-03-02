@@ -576,6 +576,18 @@ input::placeholder, textarea::placeholder { color: #b0bfc8; }
   .card { padding: 18px; }
   .btn { padding: 12px 20px; font-size: 14px; }
   .card-form { padding: 20px; }
+
+  /* Сдвигаем переключатель темы чтобы не перекрывал шапку */
+  .theme-switch {
+    top: auto !important;
+    bottom: 80px !important;
+    left: auto !important;
+    right: 12px !important;
+    border-radius: 50% !important;
+    padding: 8px !important;
+    border: 1px solid var(--border-soft) !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18) !important;
+  }
 }
 
 /* ========= PHONE WIDGET ========= */
@@ -805,4 +817,29 @@ input::placeholder, textarea::placeholder { color: #b0bfc8; }
 .theme-switch input:checked + .theme-slider::before {
   transform: translateX(22px);
   content: '🌙';
+}
+
+/* ===== MOBILE GLOBAL FIXES ===== */
+/* AI chat panel — не шире экрана */
+#aiChatPanel, #aiPanel {
+  width: min(340px, calc(100vw - 32px)) !important;
+}
+@media (max-width: 480px) {
+  #aiChatPanel, #aiPanel {
+    right: 12px !important;
+    bottom: 80px !important;
+    max-height: 70vh !important;
+  }
+  #aiChatBubble, #aiBubble {
+    bottom: 16px !important;
+    right: 12px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+  /* Prevent horizontal scroll on all pages */
+  body { overflow-x: hidden; }
+  main.wrap, .wrap { padding-left: 14px !important; padding-right: 14px !important; }
+  /* Buttons full-width when stacked */
+  .submit-wrap { flex-direction: column; }
+  .submit-wrap .btn { min-width: unset !important; width: 100%; }
 }

@@ -331,6 +331,17 @@
       .form-card { padding: 20px; }
       .page-hero { padding: 22px 20px; }
       .page-hero h2 { font-size: 22px; }
+      /* Прячем декоративное эмодзи на узких экранах */
+      .page-hero::before { display: none; }
+      /* Clinics grid — одна колонка */
+      .clinics-grid { grid-template-columns: 1fr !important; }
+      /* Дата/время — стакаем вертикально */
+      .dt-picker { flex-direction: column; gap: 12px; }
+      .dt-calendar { min-width: 0 !important; }
+      .dt-time-panel { min-width: 0 !important; }
+      .dt-time-slots { max-height: 180px; }
+      /* Calenddar cells немного компактнее */
+      .dt-cal-day { padding: 6px 2px; font-size: 13px; }
     }
 
     /* ===== DARK THEME OVERRIDES ===== */

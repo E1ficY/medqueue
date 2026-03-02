@@ -69,8 +69,50 @@ let hospitals = [];
 let myAppointments = [];
 let selectedType = 'all'; // Фильтр по типу клиник
 
+// === ЗАЩИТА СТРАНИЦ ПО РОЛИ ===
+// Страницы для пациентов (врачи и админы сюда не должны попадать)
+const PATIENT_PAGES = ['main.html', 'index.html', 'profile.html', 'recording.html', 'status.html', 'hospital.html'];
+// Страницы только для врача
+const DOCTOR_PAGES = ['doctor.html'];
+// Страницы только для админа
+const ADMIN_PAGES = ['admin-panel.html'];
+
+function enforceRoleAccess() {
+  const user = getCurrentUser();
+  if (!user) return; // Не авторизован — пусть страница сама обрабатывает
+
+  const path = window.location.pathname;
+  const page = path.split('/').pop() || 'main.html';
+  const role = user.role || 'patient';
+
+  const isPatientPage = PATIENT_PAGES.some(p => page.includes(p));
+  const isDoctorPage  = DOCTOR_PAGES.some(p => page.includes(p));
+  const isAdminPage   = ADMIN_PAGES.some(p => page.includes(p));
+
+  // Врач и Adminы не могут заходить на пациентские страницы
+  if (isPatientPage && (role === 'doctor' || role === 'admin')) {
+    window.location.replace(role === 'admin' ? 'admin-panel.html' : 'doctor.html');
+    return;
+  }
+
+  // Не-врач не может заходить на страницу врача
+  if (isDoctorPage && role !== 'doctor') {
+    window.location.replace(role === 'admin' ? 'admin-panel.html' : 'main.html');
+    return;
+  }
+
+  // Не-админ не может заходить на адмнку
+  if (isAdminPage && role !== 'admin') {
+    window.location.replace(role === 'doctor' ? 'doctor.html' : 'main.html');
+    return;
+  }
+}
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', async function() {
+  // Защита по роли — выполняется первой
+  enforceRoleAccess();
+
   // Очищаем устаревший кэш от предыдущих версий
   // Очищаем устаревшие версии кэша больниц
   localStorage.removeItem('medqueue_hospitals_cache');
