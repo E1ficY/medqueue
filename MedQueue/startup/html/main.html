@@ -1,0 +1,364 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedQueue – Удобная запись в клиники Алматы</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://mapgl.2gis.com/api/js/v1"></script>
+  <script src="../js/script.js"></script>
+  <style>
+
+    /* ---- Map ---- */
+    .hero-map {
+      border-radius: 20px;
+      overflow: hidden;
+      height: 420px;
+      min-width: 300px;
+      max-width: 100%;
+      flex: 1;
+      box-shadow: 0 8px 32px rgba(15,23,42,0.13), 0 0 0 1px rgba(20,184,166,0.18);
+      border: 2px solid rgba(20,184,166,0.30);
+      background: #e0f2fe;
+      position: relative;
+      /* Карта изолирована: z-index: 0 — navbar (z-index:2000) всегда сверху */
+      isolation: isolate;
+      z-index: 0;
+    }
+    #hospitalsMap {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* Переопределяем z-index 2GIS-элементов внутри .hero-map */
+    .hero-map [class*="DG"],
+    .hero-map [class*="dg"],
+    .hero-map canvas {
+      z-index: 1 !important;
+    }
+    @media (max-width: 768px) {
+      .hero-map { height: 300px; min-width: unset; }
+    }
+    [data-theme="dark"] .hero-map {
+      border-color: rgba(45,212,191,0.25);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(45,212,191,0.15);
+    }
+    .mapgl-popup-container {
+      border-radius: 14px !important;
+      box-shadow: 0 8px 28px rgba(15,23,42,0.16) !important;
+      border: 1px solid rgba(20,184,166,0.20) !important;
+      overflow: hidden;
+    }
+    .map-popup-btn {
+      display: block;
+      margin-top: 10px;
+      padding: 8px 0;
+      /* Teal → navy — новая палитра */
+      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      color: white;
+      text-align: center;
+      border-radius: 9px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .map-popup-btn:hover { opacity: .88; }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(20, 184, 166, 0.22);
+      background: transparent;
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .filter-btn:hover {
+      background: rgba(20, 184, 166, 0.10);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(20,184,166,0.30);
+    }
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .filter-btn {
+      border-color: rgba(45,212,191,0.20);
+      color: var(--accent-2);
+    }
+    [data-theme="dark"] .filter-btn:hover {
+      background: rgba(45,212,191,0.10);
+    }
+    [data-theme="dark"] .filter-btn.active {
+      background: linear-gradient(135deg, #1e293b, #2dd4bf);
+      color: #fff;
+    }
+  </style>
+  <script src="../js/theme.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html">MedQueue</a>
+
+      <!-- Mobile menu button -->
+
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+
+      <!-- Navigation -->
+
+      <nav id="mainNav">
+        <a href="main.html" class="nav-link active">Главная</a>
+        <a href="recording.html" class="nav-link">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+      </nav>
+    </div>
+      <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+  <script>
+
+  function toggleMobileMenu() {
+    const nav = document.getElementById('mainNav');
+    nav.classList.toggle('mobile-open');
+
+  }
+  </script>
+
+  <main>
+
+    <section class="hero">
+      <div class="wrap hero-inner">
+        <div class="hero-left">
+          <h1>Меньше очередей – быстрее помощь</h1>
+          <p class="lead">Онлайн-запись и динамический статус очереди в поликлиниках Алматы. Выберите клинику, врача и время – мы покажем примерное ожидание.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="recording.html">Записаться</a>
+            <a class="btn btn-outline" href="status.html">Проверить статус</a>
+            <a class="btn btn-outline" href="profile.html">Личный кабинет</a>
+            <a class="btn btn-outline" href="contacts%20and%20about.html">О проекте &amp; Контакты</a>
+          </div>
+        </div>
+        <div class="hero-map">
+          <div id="hospitalsMap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hospitals wrap">
+      <div class="section-head">
+        <h2>Клиники Алматы</h2>
+        <input id="search" class="search" placeholder="Поиск по названию или адресу..." />
+      </div>
+
+      <!-- Фильтры по типу клиник -->
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="filterByType('all', event)">Все клиники</button>
+        <button class="filter-btn" onclick="filterByType('Поликлиника', event)">🏥 Поликлиники</button>
+        <button class="filter-btn" onclick="filterByType('Детская', event)">👶 Детские</button>
+        <button class="filter-btn" onclick="filterByType('Больница', event)">🏨 Больницы</button>
+        <button class="filter-btn" onclick="filterByType('Спец. клиника', event)">⚕️ Спец. клиники</button>
+      </div>
+      <div id="hospList" class="grid"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
+      <div class="muted">Версия 2.0</div>
+    </div>
+  </footer>
+
+  <script>
+  // GPS-координаты больниц Алматы — все варианты названий (по данным 2ГИС/Google Maps)
+  const HOSPITAL_COORDS = {
+    // Государственные поликлиники
+    'Городская поликлиника №1':                   [43.2572, 76.9073],  // ул. Гоголя, 53
+    'Городская поликлиника №2':                   [43.2591, 76.8923],  // ул. Шухова, 37Б
+    'Городская поликлиника №3':                   [43.2589, 76.9782],  // ул. Розыбакиева, 74
+    'Городская поликлиника №4':                   [43.2612, 76.8961],  // ул. Торайгырова, 12
+    'Городская поликлиника №5':                   [43.2621, 76.9151],  // ул. Макатаева, 141
+    'Городская поликлиника №6':                   [43.2481, 76.8363],  // 4-й микрорайон, 3а
+    'Городская поликлиника №7':                   [43.2342, 76.9252],  // бульв. Бухар жырау, 14
+    'Городская поликлиника №9':                   [43.2803, 76.9611],  // ул. Утеген батыра, 21
+    'Городская поликлиника №12':                  [43.2251, 76.9312],  // ул. Попова, 23
+    'Городская поликлиника №15':                  [43.2823, 77.0381],  // мкр. Жетысу-1, 30
+    // Детские поликлиники — оба варианта написания
+    'Детская поликлиника №1':                     [43.2563, 76.9302],  // ул. Шевченко, 118
+    'Детская поликлиника №3':                     [43.2491, 76.9022],  // ул. Байзакова, 280
+    'Детская поликлиника №4':                     [43.2783, 76.9993],  // ул. Монтажная, 33
+    'Детская поликлиника №6':                     [43.2261, 76.8783],  // ул. Саина, 89
+    'Детская городская поликлиника №1':           [43.2563, 76.9302],
+    'Детская городская поликлиника №3':           [43.2491, 76.9022],
+    'Детская городская поликлиника №4':           [43.2783, 76.9993],
+    'Детская городская поликлиника №6':           [43.2261, 76.8783],
+    // Больницы — оба варианта (с аббревиатурой и без)
+    'Городская клиническая больница №1':          [43.2291, 76.8022],  // мкр. Калкаман, 2
+    'Городская клиническая больница №4':          [43.3191, 76.9631],  // ул. Папанина, 220
+    'Городская клиническая больница №7':          [43.2322, 76.8003],  // мкр. Калкаман, 20
+    'Центральная городская клиническая больница': [43.2042, 76.8782],  // ул. Ораза Жандосова, 6
+    'Больница скорой медицинской помощи':         [43.2553, 76.9293],  // ул. Казыбек би, 96
+    'Городская клиническая больница №4 (ГКБ №4)':[43.3191, 76.9631],
+    'Городская клиническая больница №7 (ГКБ №7)':[43.2322, 76.8003],
+    'Центральная городская клиническая больница (ЦГКБ)': [43.2042, 76.8782],
+    'Больница скорой медицинской помощи (БСМП)': [43.2553, 76.9293],
+    // Спец. клиники
+    'Городская поликлиника ветеранов ВОВ':        [43.2601, 76.9151],
+    'Стоматологическая поликлиника №1':           [43.2492, 76.9211],
+    'Стоматологическая поликлиника №3':           [43.2363, 76.9312],
+    'Кожно-венерологический диспансер':           [43.2481, 76.9532],
+    'Противотуберкулезный диспансер':             [43.2431, 76.8762],
+    'Институт радиационной медицины и экологии (ИРМ)': [43.2472, 76.8982],
+    'Республиканский диагностический центр (РДЦ)':[43.2492, 76.9211],
+    'Городской кардиологический центр':           [43.2131, 76.8892],
+    'Городской онкологический центр':             [43.2581, 76.9502],
+    // Частные клиники
+    'Медицинский центр «Медеу»':                  [43.2141, 76.9482],
+    'Клиника «Асем»':                             [43.2531, 76.8982],
+    'Медицинский центр «Interteach»':             [43.2472, 76.9232],
+    'Клиника «VITA»':                             [43.2281, 76.9422],
+    'Медицинский центр «Нур-Медикус»':            [43.2251, 76.9202],
+  };
+  // Резервные координаты на случай нового учреждения
+  const FALLBACK_POINTS = [
+    [43.238, 76.889], [43.270, 76.930], [43.200, 76.860], [43.290, 77.010],
+  ];
+
+  const HOSPITAL_ICONS = { 'Поликлиника': '🏥', 'Больница': '🏨', 'Детская': '👶', 'Спец. клиника': '⚕️' };
+
+  let _2gisMap = null;
+  let _activePopup = null;
+
+  function buildMap(hosp) {
+    // Инициализация карты 2ГИС MapGL
+    _2gisMap = new mapgl.Map('hospitalsMap', {
+      center: [76.900, 43.238],   // [lng, lat]
+      zoom: 12,
+      key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
+      zoomControl: true,
+    });
+
+    hosp.forEach(function(h, i) {
+      // Координаты: API → словарь → резервные; 2GIS ожидает [lng, lat]
+      let latLon;
+      if (h.latitude && h.longitude) {
+        latLon = [h.latitude, h.longitude];
+      } else {
+        latLon = HOSPITAL_COORDS[h.name] || FALLBACK_POINTS[i % FALLBACK_POINTS.length];
+      }
+      const coords = [latLon[1], latLon[0]]; // [lng, lat]
+
+      const icon = HOSPITAL_ICONS[h.type] || '🏥';
+
+      // Кастомный HTML-маркер — цветной пин с иконкой
+      const marker = new mapgl.HtmlMarker(_2gisMap, {
+        coordinates: coords,
+        html: `<div style="
+          width:36px;height:36px;
+          background:linear-gradient(135deg,#0f172a,#14b8a6);
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          border:3px solid white;
+          box-shadow:0 3px 10px rgba(15,23,42,0.40);
+          display:flex;align-items:center;justify-content:center;
+          cursor:pointer;
+        "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${icon}</span></div>`,
+        anchor: [18, 36],
+      });
+
+      // Попап по клику на маркер
+      marker.on('click', function() {
+        if (_activePopup) { _activePopup.destroy(); _activePopup = null; }
+        _activePopup = new mapgl.Popup(_2gisMap, {
+          coordinates: coords,
+          html: `<div style="min-width:200px;padding:4px;font-family:Inter,sans-serif;">
+            <div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px;">${icon} ${h.name}</div>
+            <div style="font-size:12px;color:#14b8a6;font-weight:600;margin-bottom:2px;">${h.type}</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📍 ${h.address || ''}</div>
+            <div style="font-size:12px;margin-bottom:10px;background:#f0fdfa;padding:6px 10px;border-radius:8px;">
+              Очередь: <b style="color:#0d9488">${h.queue || 0} чел.</b> · ~${h.waiting} мин
+            </div>
+            <a class="map-popup-btn" href="hospital.html?id=${h.id}">🏥 Подробнее о клинике →</a>
+          </div>`,
+          offset: [0, -44],
+        });
+      });
+    });
+  }
+
+  document.addEventListener('hospitalsReady', function() {
+    buildMap(window.hospitals);
+  });
+  </script>
+
+  <!-- ===== AI CHAT WIDGET ===== -->
+  <style>
+    #aiChatBubble{position:fixed;bottom:24px;right:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#0f172a,#14b8a6);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(20,184,166,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
+    #aiChatBubble:hover{transform:scale(1.1);}
+    #aiChatPanel{position:fixed;bottom:90px;right:24px;width:340px;max-height:480px;background:white;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.25);display:none;flex-direction:column;z-index:9998;overflow:hidden;font-family:'Inter',sans-serif;}
+    #aiChatPanel.open{display:flex;}
+    .ai-chat-header{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;padding:14px 16px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;}
+    .ai-chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb;}
+    .ai-msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;}
+    .ai-msg.bot{background:white;border:1px solid #e5e7eb;align-self:flex-start;border-bottom-left-radius:4px;}
+    .ai-msg.user{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;align-self:flex-end;border-bottom-right-radius:4px;}
+    .ai-chat-input-row{display:flex;gap:8px;padding:10px;background:white;border-top:1px solid #e5e7eb;}
+    .ai-chat-input-row input{flex:1;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;}
+    .ai-chat-input-row input:focus{border-color:#14b8a6;}
+    .ai-chat-input-row button{background:#0d9488;color:white;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:16px;}
+    [data-theme="dark"] #aiChatPanel{background:#111827;}
+    [data-theme="dark"] .ai-chat-msgs{background:#0d1117;}
+    [data-theme="dark"] .ai-msg.bot{background:#1f2937;border-color:rgba(56,189,248,0.15);color:#e5e7eb;}
+    [data-theme="dark"] .ai-chat-input-row{background:#111827;border-color:rgba(56,189,248,0.15);}
+    [data-theme="dark"] .ai-chat-input-row input{background:#0d1117;border-color:rgba(56,189,248,0.2);color:#e5e7eb;}
+  </style>
+  <button id="aiChatBubble" onclick="toggleAiChat()" title="МедAI">🤖</button>
+  <div id="aiChatPanel">
+    <div class="ai-chat-header">
+      <span>🤖 МедAI — помощник</span>
+      <button onclick="toggleAiChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div class="ai-chat-msgs" id="aiChatMsgs">
+      <div class="ai-msg bot">Привет! Я МедAI — ваш медицинский помощник. Задайте вопрос о здоровье, симптомах или записи к врачу. 😊</div>
+    </div>
+    <div class="ai-chat-input-row">
+      <input type="text" id="aiChatInput" placeholder="Ваш вопрос…" onkeydown="if(event.key==='Enter')sendAiMsg()">
+      <button onclick="sendAiMsg()">➤</button>
+    </div>
+  </div>
+  <script>
+  let aiHistory=[];
+  function toggleAiChat(){document.getElementById('aiChatPanel').classList.toggle('open');if(document.getElementById('aiChatPanel').classList.contains('open'))document.getElementById('aiChatInput').focus();}
+  async function sendAiMsg(){
+    const inp=document.getElementById('aiChatInput'),text=inp.value.trim();if(!text)return;inp.value='';
+    appendAiMsg(text,'user');
+    const el=appendAiMsg('…','bot');
+    aiHistory.push({role:'user',content:text});
+    try{
+      const r=await fetch(`${API_URL}/ai/chat/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:aiHistory.slice(-10)})});
+      const d=await r.json();const rep=d.reply||'Не удалось получить ответ.';
+      el.textContent=rep;aiHistory.push({role:'assistant',content:rep});
+    }catch{el.textContent='Ошибка подключения к серверу.';}
+    const m=document.getElementById('aiChatMsgs');m.scrollTop=m.scrollHeight;
+  }
+  function appendAiMsg(t,r){const m=document.getElementById('aiChatMsgs'),e=document.createElement('div');e.className='ai-msg '+r;e.textContent=t;m.appendChild(e);m.scrollTop=m.scrollHeight;return e;}
+  </script>
+</body>
+</html>

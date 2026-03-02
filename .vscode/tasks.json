@@ -4,7 +4,7 @@
 		{
 			"label": "Run Django Server",
 			"type": "shell",
-			"command": "& 'c:/Users/Acer/Desktop/Code/стартап/startup/backend/.venv/Scripts/python.exe' 'c:/Users/Acer/Desktop/Code/стартап/startup/backend/manage.py' runserver",
+			"command": "& 'c:/Users/Acer/Desktop/Code/MedQueue/startup/backend/.venv/Scripts/python.exe' 'c:/Users/Acer/Desktop/Code/MedQueue/startup/backend/manage.py' runserver",
 			"isBackground": true,
 			"problemMatcher": []
 		}

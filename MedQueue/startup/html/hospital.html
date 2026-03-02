@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedQueue — Карточка больницы</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <script src="https://mapgl.2gis.com/api/js/v1"></script>
+  <style>
+    /* ===== Hospital Detail Page Styles ===== */
+
+    /* Breadcrumb / back навигация */
+    .breadcrumb {
+      padding: 16px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .breadcrumb a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity .2s;
+    }
+    .breadcrumb a:hover { opacity: .75; }
+    .breadcrumb .sep { opacity: .4; }
+
+    /* ===== Hero banner split layout (text + mini-map) ===== */
+    .hospital-hero-banner {
+      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      padding: 40px 40px 36px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      gap: 28px;
+      align-items: stretch;
+    }
+    .hospital-hero-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .hero-content { flex: 1; min-width: 0; position: relative; }
+    .hero-map-preview {
+      width: 320px;
+      min-width: 220px;
+      height: 290px;
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      border: 2px solid rgba(20,184,166,0.40);
+    }
+    .hero-map-preview #heroMapCanvas { width: 100%; height: 290px; display: block; }
+    .hero-map-noloc {
+      width: 100%; height: 290px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg,#1e293b,#134e4a);
+      color: rgba(255,255,255,.5);
+      font-size: 48px;
+      gap: 8px;
+    }
+    .hero-map-noloc span { font-size: 13px; }
+    @media (max-width: 768px) {
+      .hospital-hero-banner { flex-direction: column; padding: 28px 20px 24px; }
+      .hero-map-preview { width: 100%; height: 200px; }
+    }
+    .hospital-type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(20,184,166,0.25);
+      border: 1px solid rgba(20,184,166,0.45);
+      color: #5eead4;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .hospital-hero-title {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.2;
+      margin: 0 0 20px;
+    }
+    .hospital-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .hospital-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.75);
+      font-size: 14px;
+    }
+    .hospital-meta-item span.icon {
+      font-size: 16px;
+      opacity: .9;
+    }
+    .hospital-meta-item a {
+      color: #5eead4;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .hospital-meta-item a:hover { text-decoration: underline; }
+
+    /* Stats Strip */
+    .hospital-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--border-soft);
+    }
+    .stat-cell {
+      padding: 20px 24px;
+      text-align: center;
+      border-right: 1px solid var(--border-soft);
+      transition: background .2s;
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-cell:hover { background: rgba(20,184,166,0.05); }
+    .stat-cell .stat-val {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-cell .stat-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ===== Main layout grid ===== */
+    .hospital-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 900px) {
+      .hospital-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Left content column ===== */
+    .content-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-soft);
+    }
+    .description-text {
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--text-secondary);
+    }
+
+    /* Specialty tabs */
+    .specialty-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .spec-tab {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border-soft);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .spec-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .spec-tab.active {
+      background: linear-gradient(135deg, #0f172a, var(--accent));
+      border-color: transparent;
+      color: #fff;
+    }
+
+    /* Doctors grid */
+    .doctors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .doctor-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 20px;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      cursor: pointer;
+    }
+    .doctor-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(20,184,166,0.12);
+      border-color: var(--accent);
+    }
+    .doctor-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+    .doctor-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .doctor-specialty {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+    }
+    .doctor-exp {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .doctor-book-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 9px 0;
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .doctor-book-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Doctors loading / empty state */
+    .doctors-loading,
+    .doctors-empty {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--text-muted);
+    }
+    .doctors-loading .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== Right sidebar ===== */
+    .sidebar-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .sidebar-map {
+      height: 220px;
+      width: 100%;
+      background: #e5e7eb;
+    }
+    /* 2GIS sidebar-map z-index fix — карта под шапкой */
+    .sidebar-map canvas,
+    .sidebar-map [class*="mapgl"] { z-index: 1 !important; }
+
+    .sidebar-body {
+      padding: 20px;
+    }
+    .sidebar-address {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .sidebar-address .dot { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+    .route-btn {
+      display: block;
+      width: 100%;
+      padding: 11px 0;
+      text-align: center;
+      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: opacity .2s, transform .2s;
+      margin-bottom: 0;
+    }
+    .route-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+    /* CTA-записаться */
+    .cta-book {
+      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .cta-book h3 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 8px;
+    }
+    .cta-book p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+      margin: 0 0 20px;
+    }
+    .cta-book a {
+      display: inline-block;
+      padding: 13px 28px;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.35);
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: background .2s, border-color .2s;
+      backdrop-filter: blur(6px);
+    }
+    .cta-book a:hover {
+      background: rgba(255,255,255,0.25);
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    /* Queue badge in sidebar */
+    .queue-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .queue-info .q-label { font-size: 13px; color: var(--text-muted); }
+    .queue-info .q-val { font-size: 20px; font-weight: 800; color: var(--accent); }
+
+    /* Skeleton loading for hero */
+    .skeleton {
+      background: linear-gradient(90deg, var(--card-bg) 25%, var(--border-soft) 50%, var(--card-bg) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER (из shared template) ===== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a href="main.html" class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="8" fill="url(#logoGrad)"/>
+          <path d="M14 7v14M7 14h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#0f172a"/><stop offset="1" stop-color="#14b8a6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>MedQueue</span>
+      </a>
+      <nav class="main-nav" id="mainNav">
+        <a href="main.html" class="nav-link">🏠 Главная</a>
+        <a href="recording.html" class="nav-link active">📅 Запись</a>
+        <a href="status.html" class="nav-link">📋 Статус</a>
+        <a href="contacts and about.html" class="nav-link">📞 Контакты</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌙</button>
+        <a href="auth.html" class="btn btn-outline btn-sm" id="authBtnHeader">Войти</a>
+        <button class="btn btn-primary btn-sm" id="profileBtnHeader" style="display:none"
+                onclick="location.href='profile.html'">👤 Профиль</button>
+        <button class="hamburger" id="hamburger" aria-label="Меню">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container" style="padding-top:90px;min-height:80vh">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" id="breadcrumb">
+      <a href="main.html">🏠 Главная</a>
+      <span class="sep">›</span>
+      <span id="breadcrumbName">Больница</span>
+    </nav>
+
+    <!-- Hero-блок конкретной больницы -->
+    <div class="hospital-hero" id="hospitalHero">
+      <div class="hospital-hero-banner">
+        <div class="hero-content">
+          <div class="hospital-type-badge" id="heroBadge">⏳ Загрузка...</div>
+          <h1 class="hospital-hero-title" id="heroTitle">Загружаем данные клиники…</h1>
+          <div class="hospital-meta-row" id="heroMeta"></div>
+        </div>
+        <div class="hero-map-preview" id="heroMapPreview">
+          <div id="heroMapCanvas"></div>
+        </div>
+      </div>
+      <div class="hospital-stats-strip" id="heroStats">
+        <div class="stat-cell">
+          <span class="stat-val" id="statQueue">—</span>
+          <span class="stat-lbl">Человек в очереди</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-val" id="statWait">—</span>
+          <span class="stat-lbl">Минут ожидания</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-val" id="statDoctors">—</span>
+          <span class="stat-lbl">Врачей</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout: левая колонка + правая боковая панель -->
+    <div class="hospital-layout">
+
+      <!-- ===== Левая колонка ===== -->
+      <div class="left-col">
+
+        <!-- Описание -->
+        <section class="content-section" id="descSection">
+          <h2 class="section-title">📋 О клинике</h2>
+          <p class="description-text" id="descText">Загрузка описания…</p>
+        </section>
+
+        <!-- Врачи -->
+        <section class="content-section">
+          <h2 class="section-title">👨‍⚕️ Врачи клиники</h2>
+          <!-- Табы специальностей -->
+          <div class="specialty-tabs" id="specTabs">
+            <div class="doctors-loading"><div class="spinner"></div>Загружаем врачей…</div>
+          </div>
+          <!-- Сетка карточек врачей -->
+          <div class="doctors-grid" id="doctorsGrid"></div>
+        </section>
+
+      </div>
+
+      <!-- ===== Правая боковая панель ===== -->
+      <aside class="right-sidebar">
+
+        <!-- Мини-карта -->
+        <div class="sidebar-section">
+          <div class="sidebar-map" id="sidebarMap"></div>
+          <div class="queue-info">
+            <span class="q-label">🕐 Текущая очередь</span>
+            <span class="q-val" id="sidebarQueue">—</span>
+          </div>
+          <div class="sidebar-body">
+            <div class="sidebar-address">
+              <span class="dot">📍</span>
+              <span id="sidebarAddress">Адрес загружается…</span>
+            </div>
+            <div class="sidebar-address" id="sidebarPhoneRow" style="display:none">
+              <span class="dot">📞</span>
+              <a id="sidebarPhone" href="#">—</a>
+            </div>
+            <a class="route-btn" id="routeBtn" href="#" target="_blank">🗺️ Открыть маршрут</a>
+          </div>
+        </div>
+
+        <!-- CTA - записаться -->
+        <div class="cta-book">
+          <h3>📅 Записаться сейчас</h3>
+          <p>Выберите удобное время и врача онлайн</p>
+          <a href="recording.html" id="ctaBookLink">➕ Записаться на приём</a>
+        </div>
+
+      </aside>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span class="footer-logo">MedQueue</span>
+      <span class="footer-copy">© 2026 · Все права защищены</span>
+      <div class="footer-links">
+        <a href="contacts and about.html">Контакты</a>
+        <a href="#">Политика конфиденциальности</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="../js/theme.js"></script>
+  <script>
+    // ==========================================
+    // MedQueue — Hospital Detail Page
+    // Динамическая загрузка данных больницы по ID
+    // ==========================================
+
+    const API_BASE = 'http://127.0.0.1:8000/api';
+
+    // Иконки по типу учреждения
+    const TYPE_ICONS = {
+      'Поликлиника':       '🏥',
+      'Больница':          '🏨',
+      'Детская':           '👶',
+      'Детская поликлиника': '👶',
+      'Спец. клиника':     '⚕️',
+      'Специализированный центр': '🔬',
+      'Стоматология':      '🦷',
+      'Кардиологический центр': '❤️',
+      'Онкологический центр':   '🎗️',
+    };
+
+    // Иконки специальностей врача
+    const SPEC_ICONS = {
+      'Терапевт':           '🩺',
+      'Педиатр':            '👶',
+      'Хирург':             '🔪',
+      'Кардиолог':          '❤️',
+      'Невролог':           '🧠',
+      'Эндокринолог':       '⚗️',
+      'Онколог':            '🎗️',
+      'Офтальмолог':        '👁️',
+      'ЛОР':                '👂',
+      'Ортопед':            '🦴',
+      'Психиатр':           '🧘',
+      'Дерматолог':         '🌿',
+      'Гинеколог':          '🌸',
+      'Уролог':             '💧',
+      'Гастроэнтеролог':    '🫁',
+      'Рентгенолог':        '🩻',
+      'Реаниматолог':       '🚑',
+      'Стоматолог':         '🦷',
+      'Нефролог':           '🫘',
+      'Нейрохирург':        '🧠',
+      'Травматолог':        '🦼',
+    };
+
+    // ──────────────────────────────────────────
+    // Утилиты
+    // ──────────────────────────────────────────
+
+    function getParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function getUser() {
+      try { return JSON.parse(localStorage.getItem('medqueue_current_user')); }
+      catch { return null; }
+    }
+
+    function typeIcon(type) {
+      return TYPE_ICONS[type] || '🏥';
+    }
+
+    // ──────────────────────────────────────────
+    // Загрузка данных больницы
+    // ──────────────────────────────────────────
+
+    async function loadHospital(id) {
+      try {
+        const res = await fetch(`${API_BASE}/hospitals/${id}/`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (err) {
+        console.error('Ошибка загрузки больницы:', err);
+        return null;
+      }
+    }
+
+    async function loadDoctors(id) {
+      try {
+        const res = await fetch(`${API_BASE}/hospitals/${id}/doctors/`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (err) {
+        console.error('Ошибка загрузки врачей:', err);
+        return [];
+      }
+    }
+
+    // ──────────────────────────────────────────
+    // Рендер Hero-секции
+    // ──────────────────────────────────────────
+
+    function renderHero(h) {
+      const icon = typeIcon(h.type);
+
+      // Badge типа
+      document.getElementById('heroBadge').innerHTML = `${icon} ${h.type || 'Медучреждение'}`;
+      // Заголовок
+      document.getElementById('heroTitle').textContent = h.name;
+      // Breadcrumb
+      document.getElementById('breadcrumbName').textContent = h.name;
+      // Заголовок вкладки браузера
+      document.title = `MedQueue — ${h.name}`;
+
+      // Мета-строка
+      const metaEl = document.getElementById('heroMeta');
+      metaEl.innerHTML = `
+        <div class="hospital-meta-item">
+          <span class="icon">📍</span>
+          <span>${h.address || 'Адрес не указан'}</span>
+        </div>
+        ${h.phone ? `<div class="hospital-meta-item">
+          <span class="icon">📞</span>
+          <a href="tel:${h.phone}">${h.phone}</a>
+        </div>` : ''}
+        ${h.latitude && h.longitude ? `<div class="hospital-meta-item">
+          <span class="icon">🗺️</span>
+          <span>${h.latitude.toFixed(4)}°N, ${h.longitude.toFixed(4)}°E</span>
+        </div>` : ''}
+      `;
+
+      // Статистика
+      document.getElementById('statQueue').textContent = h.current_queue ?? '—';
+      document.getElementById('statWait').textContent  = h.waiting_time  ?? '—';
+    }
+
+    // ──────────────────────────────────────────
+    // Рендер описания
+    // ──────────────────────────────────────────
+
+    function renderDescription(h) {
+      const desc = h.description ||
+        `${h.name} — современное медицинское учреждение Алматы, оказывающее широкий спектр медицинских услуг населению. ` +
+        `Опытный персонал и современное оборудование обеспечивают высокое качество медицинской помощи.`;
+      document.getElementById('descText').textContent = desc;
+    }
+
+    // ──────────────────────────────────────────
+    // Рендер боковой панели
+    // ──────────────────────────────────────────
+
+    function renderSidebar(h) {
+      document.getElementById('sidebarAddress').textContent = h.address || 'Адрес не указан';
+      document.getElementById('sidebarQueue').textContent   = (h.current_queue ?? '—') + ' чел.';
+
+      // Телефон
+      if (h.phone) {
+        const phoneRow = document.getElementById('sidebarPhoneRow');
+        const phoneLink = document.getElementById('sidebarPhone');
+        phoneRow.style.display = 'flex';
+        phoneLink.href = `tel:${h.phone}`;
+        phoneLink.textContent = h.phone;
+      }
+
+      // Ссылка на 2ГИС / OSM маршрут
+      const routeBtn = document.getElementById('routeBtn');
+      if (h.latitude && h.longitude) {
+        routeBtn.href = `https://2gis.kz/almaty/geo/${h.longitude},${h.latitude}`;
+      } else {
+        routeBtn.href = `https://www.openstreetmap.org/search?query=${encodeURIComponent(h.address || h.name)}`;
+      }
+
+      // CTA - Записаться
+      document.getElementById('ctaBookLink').href = `recording.html?hospital=${h.id}`;
+    }
+
+    // ──────────────────────────────────────────
+    // Мини-карта в hero-баннере
+    function initHeroMap(h) {
+      const lat = h.latitude;
+      const lng = h.longitude;
+      const canvas  = document.getElementById('heroMapCanvas');
+      if (!lat || !lng) {
+        canvas.innerHTML = `<div class="hero-map-noloc">${typeIcon(h.type)}<span>Координаты<br>не указаны</span></div>`;
+        return;
+      }
+      const heroMap = new mapgl.Map('heroMapCanvas', {
+        center: [lng, lat],
+        zoom: 15,
+        key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
+        zoomControl: false,
+      });
+      setTimeout(() => {
+        new mapgl.HtmlMarker(heroMap, {
+          coordinates: [lng, lat],
+          html: `<div style="
+            width:36px;height:36px;
+            background:linear-gradient(135deg,#0f172a,#14b8a6);
+            border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);
+            border:3px solid white;
+            box-shadow:0 3px 10px rgba(15,23,42,.45);
+            display:flex;align-items:center;justify-content:center;
+          "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${typeIcon(h.type)}</span></div>`,
+          anchor: [18, 36],
+        });
+      }, 400);
+    }
+
+    // Мини-карта в боковой панели
+    // ──────────────────────────────────────────
+
+    function initSidebarMap(h) {
+      const lat = h.latitude  || 43.238;
+      const lng = h.longitude || 76.900;
+      const icon = typeIcon(h.type);
+
+      const map = new mapgl.Map('sidebarMap', {
+        center: [lng, lat],
+        zoom: 15,
+        key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
+        zoomControl: false,
+      });
+
+      setTimeout(() => {
+        new mapgl.HtmlMarker(map, {
+          coordinates: [lng, lat],
+          html: `<div style="
+            width:32px;height:32px;
+            background:linear-gradient(135deg,#0f172a,#14b8a6);
+            border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);
+            border:2px solid white;
+            box-shadow:0 3px 8px rgba(15,23,42,.40);
+            display:flex;align-items:center;justify-content:center;
+          "><span style="transform:rotate(45deg);font-size:13px;line-height:1">${icon}</span></div>`,
+          anchor: [16, 32],
+        });
+        // Метка с названием клиники над маркером
+        new mapgl.HtmlMarker(map, {
+          coordinates: [lng, lat],
+          html: `<div style="
+            position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+            background:#0f172a;color:#fff;
+            font-family:Inter,sans-serif;font-size:12px;font-weight:700;
+            padding:4px 10px;border-radius:8px;white-space:nowrap;
+            box-shadow:0 2px 8px rgba(0,0,0,.35);
+            pointer-events:none;
+          ">${h.name}</div>`,
+          anchor: [0, 0],
+        });
+      }, 400);
+    }
+
+    // ──────────────────────────────────────────
+    // Рендер карточек врачей
+    // ──────────────────────────────────────────
+
+    let allDoctors = [];
+    let activeSpec = 'all';
+
+    function renderDoctors(doctors, filterSpec) {
+      const grid = document.getElementById('doctorsGrid');
+      const list = filterSpec === 'all'
+        ? doctors
+        : doctors.filter(d => d.specialty === filterSpec);
+
+      // Обновить счётчик в stats-strip
+      document.getElementById('statDoctors').textContent = doctors.length;
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="doctors-empty">
+          <p style="font-size:32px;margin-bottom:8px">👨‍⚕️</p>
+          <p>По данной специализации врачи не найдены</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = list.map(d => {
+        const specIcon = SPEC_ICONS[d.specialty] || '👨‍⚕️';
+        const cabinet  = d.cabinet ? ` · каб. ${d.cabinet}` : '';
+        const hours    = d.work_hours ? `⏰ ${d.work_hours}` : '';
+        const days     = d.work_days  ? `🗓 ${d.work_days}` : '';
+        return `
+          <div class="doctor-card" tabindex="0"
+               onclick="bookDoctor(${d.id})"
+               onkeydown="if(event.key==='Enter') bookDoctor(${d.id})">
+            <div class="doctor-avatar">${specIcon}</div>
+            <div class="doctor-name">${d.full_name}</div>
+            <div class="doctor-specialty">${d.specialty}${cabinet}</div>
+            ${hours ? `<div class="doctor-exp">${hours}</div>` : ''}
+            ${days  ? `<div class="doctor-exp">${days}</div>` : ''}
+            <button class="doctor-book-btn"
+                    onclick="event.stopPropagation();bookDoctor(${d.id})">
+              📅 Записаться
+            </button>
+          </div>`;
+      }).join('');
+    }
+
+    function buildSpecTabs(doctors) {
+      const specs = [...new Set(doctors.map(d => d.specialty))].sort();
+      const container = document.getElementById('specTabs');
+      container.innerHTML =
+        `<button class="spec-tab active" data-spec="all">Все (${doctors.length})</button>` +
+        specs.map(s => {
+          const cnt = doctors.filter(d => d.specialty === s).length;
+          const ic  = SPEC_ICONS[s] || '👨‍⚕️';
+          return `<button class="spec-tab" data-spec="${s}">${ic} ${s} (${cnt})</button>`;
+        }).join('');
+
+      // Обработчики кликов по табам
+      container.querySelectorAll('.spec-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelector('.spec-tab.active').classList.remove('active');
+          btn.classList.add('active');
+          activeSpec = btn.dataset.spec;
+          renderDoctors(allDoctors, activeSpec);
+        });
+      });
+    }
+
+    // ──────────────────────────────────────────
+    // Запись к конкретному врачу
+    // ──────────────────────────────────────────
+
+    function bookDoctor(doctorId) {
+      const hid = getParam('id');
+      location.href = `recording.html?hospital=${hid}&doctor=${doctorId}`;
+    }
+
+    // ──────────────────────────────────────────
+    // Авторизация в шапке
+    // ──────────────────────────────────────────
+
+    function updateHeaderAuth() {
+      const user = getUser();
+      const authBtn    = document.getElementById('authBtnHeader');
+      const profileBtn = document.getElementById('profileBtnHeader');
+      if (user && user.access) {
+        authBtn.style.display    = 'none';
+        profileBtn.style.display = 'inline-flex';
+      } else {
+        authBtn.style.display    = 'inline-flex';
+        profileBtn.style.display = 'none';
+      }
+    }
+
+    // Hamburger для мобильного меню
+    const hamburger = document.getElementById('hamburger');
+    const mainNav   = document.getElementById('mainNav');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        mainNav.classList.toggle('open');
+        hamburger.classList.toggle('active');
+      });
+    }
+
+    // ──────────────────────────────────────────
+    // INIT — точка входа
+    // ──────────────────────────────────────────
+
+    async function init() {
+      updateHeaderAuth();
+
+      const id = getParam('id');
+      if (!id) {
+        document.getElementById('heroTitle').textContent = 'Больница не найдена';
+        document.getElementById('descText').textContent  = 'Укажите ID больницы в параметре ?id=';
+        return;
+      }
+
+      // Загрузка данных больницы
+      const hospital = await loadHospital(id);
+
+      if (!hospital) {
+        document.getElementById('heroTitle').textContent = 'Ошибка загрузки';
+        document.getElementById('descText').textContent  = 'Не удалось загрузить данные. Проверьте соединение с сервером.';
+        document.getElementById('specTabs').innerHTML = '';
+        return;
+      }
+
+      // Заполняем все секции
+      renderHero(hospital);
+      renderDescription(hospital);
+      renderSidebar(hospital);
+      initHeroMap(hospital);   // Мини-карта в hero-баннере
+      initSidebarMap(hospital); // Мини-карта в боковой панели
+
+      // Загружаем врачей из специального endpoint
+      const doctorsBySpec = await loadDoctors(id);
+      // Разбиваем массив [{specialty, doctors:[...]}] в плоский список
+      allDoctors = doctorsBySpec.flatMap(g => g.doctors);
+      if (allDoctors.length > 0) {
+        buildSpecTabs(allDoctors);
+        renderDoctors(allDoctors, 'all');
+      } else {
+        document.getElementById('specTabs').innerHTML = '';
+        document.getElementById('doctorsGrid').innerHTML =
+          `<div class="doctors-empty">
+            <p style="font-size:32px;margin-bottom:8px">👨‍⚕️</p>
+            <p>Нет данных о врачах этой клиники</p>
+            <a href="auth.html?tab=register" style="margin-top:12px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#0f172a,#14b8a6);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px">👨‍⚕️ Регистрация врача</a>
+          </div>`;
+        document.getElementById('statDoctors').textContent = '0';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

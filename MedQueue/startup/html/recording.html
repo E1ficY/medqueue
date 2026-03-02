@@ -1,0 +1,920 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Записаться – MedQueue</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/script.js"></script>
+  <style>
+
+    .page-hero {
+      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      border-radius: 20px;
+      padding: 32px 36px;
+      color: white;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-hero::before {
+      content: '🏥';
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 80px;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .page-hero h2 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .page-hero p {
+      margin: 0;
+      opacity: 0.88;
+      font-size: 15px;
+    }
+
+    .form-card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 12px 40px rgba(20,184,166,0.10);
+      border: 1px solid rgba(20,184,166,0.15);
+    }
+
+    .specialties-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .spec-option {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .spec-option:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(20,184,166,0.05);
+    }
+
+    .spec-option.selected {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(20,184,166,0.14), rgba(15,23,42,0.06));
+      color: var(--accent);
+      box-shadow: 0 4px 12px rgba(20,184,166,0.18);
+    }
+
+    .spec-option .spec-icon {
+      font-size: 26px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .doctor-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+    }
+
+    .doctor-card:hover {
+      border-color: var(--accent);
+      background: rgba(22,163,74,0.04);
+    }
+
+    .doctor-card.selected {
+      border-color: var(--accent);
+      background: rgba(22,163,74,0.08);
+      box-shadow: 0 2px 10px rgba(22,163,74,0.15);
+    }
+
+    [data-theme="dark"] .doctor-card {
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    [data-theme="dark"] .doctor-card:hover,
+
+    [data-theme="dark"] .doctor-card.selected {
+      border-color: var(--accent);
+      background: rgba(22,163,74,0.12);
+    }
+
+    /* Make spec-option count text wrap nicely */
+
+    .spec-option .spec-count {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    .clinics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .clinic-mini-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .clinic-mini-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 6px 20px rgba(8,145,178,0.12);
+    }
+
+    .clinic-mini-card .clinic-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(22,163,74,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .clinic-mini-card .clinic-info .clinic-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: #0c4a6e;
+    }
+
+    .clinic-mini-card .clinic-info .clinic-meta {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .datetime-hint {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ====== CUSTOM DATE-TIME PICKER ====== */
+    .dt-picker {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .dt-calendar {
+      flex: 1;
+      min-width: 260px;
+    }
+    .dt-cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .dt-cal-header span {
+      font-weight: 800;
+      font-size: 15px;
+      color: #0c4a6e;
+    }
+    .dt-cal-nav {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--accent);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .dt-cal-nav:hover { background: rgba(22,163,74,0.1); }
+    .dt-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .dt-cal-dow {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+    }
+    .dt-cal-day {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      border: 2px solid transparent;
+      color: var(--text);
+    }
+    .dt-cal-day:hover:not(.disabled):not(.empty) {
+      background: rgba(20,184,166,0.10);
+      border-color: rgba(20,184,166,0.25);
+    }
+    .dt-cal-day.today { border-color: rgba(20,184,166,0.45); color: #14b8a6; }
+    .dt-cal-day.selected {
+      background: linear-gradient(135deg,#0f172a,#14b8a6);
+      color: white !important;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(20,184,166,0.35);
+    }
+    .dt-cal-day.disabled {
+      color: #d1d5db;
+      cursor: not-allowed;
+    }
+    .dt-cal-day.empty { cursor: default; }
+    .dt-time-panel {
+      flex: 1;
+      min-width: 200px;
+    }
+    .dt-time-panel h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0c4a6e;
+      margin: 0 0 10px;
+    }
+    .dt-time-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .dt-slot {
+      padding: 9px 4px;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid rgba(20,184,166,0.2);
+      color: var(--accent);
+      background: rgba(20,184,166,0.04);
+      transition: all .15s;
+      user-select: none;
+    }
+    .dt-slot:hover { background: rgba(20,184,166,0.12); border-color: var(--accent); }
+    .dt-slot.selected {
+      background: linear-gradient(135deg,#0f172a,#14b8a6);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 3px 10px rgba(20,184,166,0.3);
+    }
+    .dt-selected-label {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+    .dt-selected-label strong { color: #0c4a6e; }
+
+    /* dark overrides */
+    [data-theme="dark"] .dt-cal-header span,
+    [data-theme="dark"] .dt-time-panel h4 { color: var(--text); }
+    [data-theme="dark"] .dt-cal-day { color: var(--text); }
+    [data-theme="dark"] .dt-cal-day.disabled { color: #374151; }
+    [data-theme="dark"] .dt-slot { color: #a7f3d0; border-color: rgba(56,189,248,0.15); background: rgba(34,197,94,0.06); }
+    [data-theme="dark"] .dt-selected-label strong { color: #86efac; }
+
+    .submit-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .submit-wrap .btn { min-width: 200px; padding: 15px 28px; font-size: 16px; }
+
+    .submit-note { font-size: 13px; color: var(--muted); }
+
+    @media (max-width: 600px) {
+      .specialties-grid { grid-template-columns: repeat(3, 1fr); }
+      .form-card { padding: 20px; }
+      .page-hero { padding: 22px 20px; }
+      .page-hero h2 { font-size: 22px; }
+    }
+
+    /* ===== DARK THEME OVERRIDES ===== */
+    [data-theme="dark"] .form-card {
+      background: #111827;
+      border-color: rgba(56,189,248,0.15);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    [data-theme="dark"] .spec-option {
+      border-color: rgba(56,189,248,0.15);
+      color: var(--text-soft);
+      background: transparent;
+    }
+    [data-theme="dark"] .spec-option:hover {
+      border-color: var(--accent);
+      color: var(--accent-2);
+      background: rgba(56,189,248,0.08);
+    }
+    [data-theme="dark"] .spec-option.selected {
+      border-color: var(--accent);
+      background: rgba(56,189,248,0.12);
+      color: var(--text);
+    }
+    [data-theme="dark"] .clinic-mini-card {
+      border-color: rgba(56,189,248,0.14);
+      background: #131f2e;
+    }
+    [data-theme="dark"] .clinic-mini-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    [data-theme="dark"] .clinic-mini-card .clinic-info .clinic-name {
+      color: var(--text);
+    }
+    [data-theme="dark"] .form-group label,
+    [data-theme="dark"] .form-label {
+      color: var(--text-soft);
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: #0d1117 !important;
+      color: var(--text) !important;
+      border-color: rgba(56,189,248,0.20) !important;
+    }
+
+    [data-theme="dark"] .phone-region-btn {
+      background: #0d1117 !important;
+      border-color: rgba(56,189,248,0.20) !important;
+      color: var(--text) !important;
+    }
+    [data-theme="dark"] .phone-region-dropdown {
+      background: #111827 !important;
+      border-color: rgba(56,189,248,0.15) !important;
+    }
+    [data-theme="dark"] .appointment-summary,
+    [data-theme="dark"] .summary-card,
+    [data-theme="dark"] .confirm-card,
+    [data-theme="dark"] .step-card {
+      background: #111827 !important;
+      border-color: rgba(56,189,248,0.15) !important;
+    }
+    [data-theme="dark"] .form-card h3,
+    [data-theme="dark"] .form-card h4 {
+      color: var(--text);
+    }
+    [data-theme="dark"] .datetime-hint {
+      color: var(--muted);
+    }
+    [data-theme="dark"] .dt-cal-nav { color: #4ade80; }
+  </style>
+  <script src="../js/theme.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html">MedQueue</a>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <nav id="mainNav">
+        <a href="main.html" class="nav-link">Главная</a>
+        <a href="recording.html" class="nav-link active">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+
+      </nav>
+    </div>
+      <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+  <script>
+
+  function toggleMobileMenu() {
+    const nav = document.getElementById('mainNav');
+    nav.classList.toggle('mobile-open');
+
+  }
+  </script>
+
+  <main class="wrap" style="padding-top:32px; padding-bottom:60px; max-width:860px;">
+
+    <!-- Page hero banner -->
+
+    <div class="page-hero animate-in">
+      <h2>Записаться к врачу</h2>
+      <p>Выберите клинику, специалиста и удобное время – мы позаботимся об остальном</p>
+    </div>
+
+    <!-- Main form card -->
+
+    <div class="form-card animate-in">
+      <form id="appointmentForm">
+
+        <!-- Section 1: Personal info -->
+
+        <div class="form-section-title">👤 Личные данные</div>
+        <div class="form-grid-2">
+          <label class="field">
+            <span>ФИО пациента</span>
+            <div class="field-icon-wrap">
+              <span class="field-icon">👤</span>
+              <input type="text" id="appName" placeholder="Иванов Иван Иванович" required>
+            </div>
+          </label>
+          <label class="field">
+            <span>Номер телефона</span>
+            <div class="phone-wrap">
+              <button type="button" class="phone-region-btn" id="appRegionBtn" style="cursor:default;opacity:0.75;pointer-events:none;">
+                <span id="appPhoneFlag">&#127472;&#127487;</span>
+                <span id="appPhoneCodeDisplay">+7</span>
+                <span class="phone-chevron">&#9662;</span>
+              </button>
+              <input type="hidden" id="appPhoneCode" value="+7">
+              <input type="tel" id="appPhone" data-phone-input placeholder="(___) ___-__-__" autocomplete="tel-national" readonly style="background:#f0fdf4;color: #0369a1;cursor:default;">
+              <div class="phone-region-dropdown" id="appRegionDrop"></div>
+            </div>
+            <div style="font-size:12px;color:#6b7280;margin-top:5px;">
+              Номер из вашего профиля. <a href="profile.html" style="color:#14b8a6;text-decoration:underline;">Изменить в профиле</a>
+            </div>
+          </label>
+        </div>
+
+        <!-- Section 2: Clinic -->
+
+        <div class="form-section-title">🏥 Выбор клиники</div>
+        <label class="field">
+          <span>Больница / клиника</span>
+          <div class="custom-select-wrap">
+            <select class="js-hospital-select" id="hospitalSelectApp"></select>
+          </div>
+        </label>
+
+        <!-- Section 3: Specialty -->
+
+        <div class="form-section-title">🩺 Специальность врача</div>
+        <input type="hidden" id="appSpecialty" value="Терапевт">
+        <input type="hidden" id="appDoctor" value="">
+        <div id="specLoadingHint" style="display:none;font-size:13px;color:var(--muted);margin-bottom:8px;">
+          ⏳ Загрузка специальностей...
+        </div>
+        <div class="specialties-grid" id="specGrid">
+          <div class="spec-option selected" data-value="Терапевт" onclick="selectSpec(this)"><span class="spec-icon">🩺</span>Терапевт</div>
+          <div class="spec-option" data-value="Хирург" onclick="selectSpec(this)"><span class="spec-icon">🔪</span>Хирург</div>
+          <div class="spec-option" data-value="Стоматолог" onclick="selectSpec(this)"><span class="spec-icon">🦷</span>Стоматолог</div>
+          <div class="spec-option" data-value="Педиатр" onclick="selectSpec(this)"><span class="spec-icon">👶</span>Педиатр</div>
+          <div class="spec-option" data-value="Кардиолог" onclick="selectSpec(this)"><span class="spec-icon">❤️</span>Кардиолог</div>
+          <div class="spec-option" data-value="Невролог" onclick="selectSpec(this)"><span class="spec-icon">🧠</span>Невролог</div>
+          <div class="spec-option" data-value="Офтальмолог" onclick="selectSpec(this)"><span class="spec-icon">👁️</span>Офтальмолог</div>
+          <div class="spec-option" data-value="Дерматолог" onclick="selectSpec(this)"><span class="spec-icon">🌡️</span>Дерматолог</div>
+          <div class="spec-option" data-value="Эндокринолог" onclick="selectSpec(this)"><span class="spec-icon">💉</span>Эндокринолог</div>
+          <div class="spec-option" data-value="Гинеколог" onclick="selectSpec(this)"><span class="spec-icon">🌸</span>Гинеколог</div>
+          <div class="spec-option" data-value="Уролог" onclick="selectSpec(this)"><span class="spec-icon">🏥</span>Уролог</div>
+          <div class="spec-option" data-value="Психиатр" onclick="selectSpec(this)"><span class="spec-icon">🧘</span>Психиатр</div>
+        </div>
+
+        <!-- Doctor selector (appears when specialty is selected and hospital has doctors) -->
+        <div id="doctorPanel" style="display:none;margin-top:12px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">👨‍⚕️ Выберите врача <span style="font-weight:400;color:var(--muted)">(необязательно)</span></div>
+          <div id="doctorList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <!-- Section 4: DateTime -->
+
+        <div class="form-section-title">📅 Дата и время приёма</div>
+        <input type="hidden" id="appDatetime" required>
+        <div class="dt-picker">
+          <!-- Calendar -->
+          <div class="dt-calendar">
+            <div class="dt-cal-header">
+              <button type="button" class="dt-cal-nav" id="dtPrev">&#8249;</button>
+              <span id="dtMonthLabel"></span>
+              <button type="button" class="dt-cal-nav" id="dtNext">&#8250;</button>
+            </div>
+            <div class="dt-cal-grid" id="dtCalGrid"></div>
+          </div>
+          <!-- Time slots -->
+          <div class="dt-time-panel">
+            <h4 id="dtTimeTitle">Выберите сначала дату</h4>
+            <div class="dt-time-slots" id="dtTimeSlots"></div>
+          </div>
+        </div>
+        <div class="dt-selected-label" id="dtSelectedLabel">Дата и время не выбраны</div>
+
+        <!-- Section 5: Notes -->
+
+        <div class="form-section-title">💬 Дополнительно</div>
+        <label class="field">
+          <span>Комментарий к записи <span style="color:var(--muted);font-weight:400">(необязательно)</span></span>
+          <textarea id="appComment" placeholder="Опишите жалобы или пожелания к приёму..." rows="3" style="resize:vertical;"></textarea>
+        </label>
+
+        <!-- Submit -->
+
+        <div class="submit-wrap">
+          <button class="btn btn-primary" type="submit">✅ Записаться к врачу</button>
+          <span class="submit-note">🔒 Ваши данные защищены и не передаются третьим лицам</span>
+        </div>
+        <div id="appMsg" class="mini-msg" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <!-- Other clinics section -->
+
+    <section style="margin-top:36px;">
+      <div class="section-head">
+        <h3 style="margin:0;font-size:22px;font-weight:800;color: #0c4a6e;">🏥 Доступные клиники</h3>
+      </div>
+      <div id="hospList" class="grid" style="margin-top:4px;"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
+      <div class="muted">Версия 2.0</div>
+    </div>
+  </footer>
+  <script>
+  // Icons map for dynamic specialty grid
+  // ===== CUSTOM DATE-TIME PICKER =====
+  (function() {
+    const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const DAYS_RU   = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    let currentYear, currentMonth, selectedDate = null, selectedTime = null;
+
+    function init() {
+      const now = new Date();
+      currentYear  = now.getFullYear();
+      currentMonth = now.getMonth();
+      renderCalendar();
+      document.getElementById('dtPrev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
+      document.getElementById('dtNext').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
+    }
+
+    function renderCalendar() {
+      const grid  = document.getElementById('dtCalGrid');
+      const label = document.getElementById('dtMonthLabel');
+      label.textContent = MONTHS_RU[currentMonth] + ' ' + currentYear;
+      grid.innerHTML = '';
+      // Day-of-week headers
+      DAYS_RU.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'dt-cal-dow';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      // Monday-based offset (0=Mon,...,6=Sun)
+      let offset = firstDay.getDay() - 1;
+      if (offset < 0) offset = 6;
+      for (let i = 0; i < offset; i++) {
+        const el = document.createElement('div');
+        el.className = 'dt-cal-day empty';
+        grid.appendChild(el);
+      }
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const today = new Date(); today.setHours(0,0,0,0);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const dow  = date.getDay(); // 0=Sun,6=Sat
+        const past = date < today;
+        const isSun = dow === 0;
+        const el = document.createElement('div');
+        el.className = 'dt-cal-day' + (past || isSun ? ' disabled' : '') + (date.getTime()===today.getTime() ? ' today' : '');
+        el.textContent = d;
+        if (selectedDate && selectedDate.getTime() === date.getTime()) el.classList.add('selected');
+        if (!past && !isSun) {
+          el.onclick = () => selectDate(date, el);
+        }
+        grid.appendChild(el);
+      }
+    }
+
+    function selectDate(date, el) {
+      selectedDate = date;
+      selectedTime = null;
+      document.querySelectorAll('.dt-cal-day').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      renderTimeSlots(date);
+      updateHidden();
+    }
+
+    function renderTimeSlots(date) {
+      const panel = document.getElementById('dtTimeSlots');
+      const title = document.getElementById('dtTimeTitle');
+      panel.innerHTML = '';
+      const dow = date.getDay(); // 6=Sat
+      const isSat = dow === 6;
+      const startH = isSat ? 9  : 8;
+      const endH   = isSat ? 14 : 18;
+      title.textContent = isSat ? '⏱️ Суббота: 09:00–14:00' : '⏱️ Пн–Пт: 08:00–18:00';
+      for (let h = startH; h < endH; h++) {
+        for (let m of [0, 30]) {
+          const hh = String(h).padStart(2,'0');
+          const mm = String(m).padStart(2,'0');
+          const timeStr = hh + ':' + mm;
+          const el = document.createElement('div');
+          el.className = 'dt-slot' + (selectedTime === timeStr ? ' selected' : '');
+          el.textContent = timeStr;
+          el.onclick = () => {
+            selectedTime = timeStr;
+            document.querySelectorAll('.dt-slot').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            updateHidden();
+          };
+          panel.appendChild(el);
+        }
+      }
+    }
+
+    function updateHidden() {
+      const lbl = document.getElementById('dtSelectedLabel');
+      if (!selectedDate) { lbl.textContent = 'Дата и время не выбраны'; document.getElementById('appDatetime').value = ''; return; }
+      const DAYS_FULL = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+      const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+      const dayName = DAYS_FULL[selectedDate.getDay()];
+      const dateStr = selectedDate.getDate() + ' ' + MONTHS_GEN[selectedDate.getMonth()] + ' ' + selectedDate.getFullYear();
+      if (!selectedTime) {
+        lbl.innerHTML = '📅 <strong>' + dayName + ', ' + dateStr + '</strong> — выберите время';
+        document.getElementById('appDatetime').value = '';
+      } else {
+        lbl.innerHTML = '✅ <strong>' + dayName + ', ' + dateStr + ' в ' + selectedTime + '</strong>';
+        const y = selectedDate.getFullYear();
+        const mo = String(selectedDate.getMonth()+1).padStart(2,'0');
+        const d  = String(selectedDate.getDate()).padStart(2,'0');
+        document.getElementById('appDatetime').value = y+'-'+mo+'-'+d+'T'+selectedTime+':00';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  })();
+
+  const SPEC_ICONS = {
+    'Терапевт':'🩺','Хирург':'🔪','Стоматолог':'🦷','Педиатр':'👶',
+    'Кардиолог':'❤️','Невролог':'🧠','Офтальмолог':'👁️','Дерматолог':'🌡️',
+    'Эндокринолог':'💉','Гинеколог':'🌸','Уролог':'🏥','Психиатр':'🧘'
+  };
+  // Doctors data for current hospital, keyed by specialty
+  let _hospitalDoctors = {};
+
+  function selectSpec(el) {
+    document.querySelectorAll('.spec-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    const spec = el.dataset.value;
+    document.getElementById('appSpecialty').value = spec;
+    // Clear selected doctor when specialty changes
+    document.getElementById('appDoctor').value = '';
+    // Show doctors for this specialty if available
+    const panel = document.getElementById('doctorPanel');
+    const list  = document.getElementById('doctorList');
+    const docs  = _hospitalDoctors[spec];
+    if (docs && docs.length > 0) {
+      list.innerHTML = docs.map(d => `
+        <div class="doctor-card" id="doc-card-${d.id}" onclick="selectDoctor(${d.id}, '${d.full_name.replace(/'/g,"\\'")}', this)"
+             style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px">👨‍⚕️</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${d.full_name}</div>
+            <div style="font-size:12px;color:var(--muted)">Кабинет ${d.cabinet} · ${d.work_days} · ${d.work_hours}</div>
+          </div>
+          <div style="text-align:right;font-size:12px;color:var(--muted)">
+            <span style="background:rgba(8,145,178,0.08);color:#0891b2;padding:2px 8px;border-radius:20px;font-weight:600">
+              В очереди: ${d.current_queue}
+            </span>
+          </div>
+        </div>
+      `).join('');
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  function selectDoctor(id, name, el) {
+    document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
+    if (document.getElementById('appDoctor').value == id) {
+      // Deselect if same doctor clicked again
+      document.getElementById('appDoctor').value = '';
+    } else {
+      document.getElementById('appDoctor').value = id;
+      el.classList.add('selected');
+    }
+  }
+
+  async function loadHospitalDoctors(hospitalId) {
+    _hospitalDoctors = {};
+    const panel = document.getElementById('doctorPanel');
+    const hint  = document.getElementById('specLoadingHint');
+    panel.style.display = 'none';
+    document.getElementById('appDoctor').value = '';
+    if (!hospitalId) {
+      renderDefaultSpecGrid();
+      return;
+    }
+    hint.style.display = 'block';
+    try {
+      // API_URL is defined in script.js
+      const res = await fetch(`${API_URL}/hospitals/${hospitalId}/doctors/`);
+      if (!res.ok) throw new Error('network');
+      const groups = await res.json(); // [{specialty, doctors:[...]}]
+      if (!groups || groups.length === 0) {
+        renderDefaultSpecGrid();
+        return;
+      }
+      // Build lookup
+      groups.forEach(g => { _hospitalDoctors[g.specialty] = g.doctors; });
+      // Render specialty grid from server data
+      const grid = document.getElementById('specGrid');
+      grid.innerHTML = groups.map((g, i) => `
+        <div class="spec-option${i===0?' selected':''}" data-value="${g.specialty}" onclick="selectSpec(this)">
+          <span class="spec-icon">${SPEC_ICONS[g.specialty]||'🏥'}</span>
+          ${g.specialty}
+          <span class="spec-count">врачей: ${g.doctors.length}</span>
+        </div>
+      `).join('');
+      // Pre-select first specialty
+      document.getElementById('appSpecialty').value = groups[0].specialty;
+      // Auto-show doctors for first specialty
+      const firstCard = grid.querySelector('.spec-option');
+      if (firstCard) selectSpec(firstCard);
+
+    } catch(e) {
+      renderDefaultSpecGrid();
+    } finally {
+      hint.style.display = 'none';
+    }
+  }
+  // Expose globally so script.js can call it after populating hospital select
+  window.loadHospitalDoctors = loadHospitalDoctors;
+
+  function renderDefaultSpecGrid() {
+    const defaults = [
+      ['Терапевт','🩺'],['Хирург','🔪'],['Стоматолог','🦷'],['Педиатр','👶'],
+      ['Кардиолог','❤️'],['Невролог','🧠'],['Офтальмолог','👁️'],['Дерматолог','🌡️'],
+      ['Эндокринолог','💉'],['Гинеколог','🌸'],['Уролог','🏥'],['Психиатр','🧘']
+    ];
+    document.getElementById('specGrid').innerHTML = defaults.map((s,i) =>
+      `<div class="spec-option${i===0?' selected':''}" data-value="${s[0]}" onclick="selectSpec(this)">
+        <span class="spec-icon">${s[1]}</span>${s[0]}
+      </div>`
+    ).join('');
+    document.getElementById('appSpecialty').value = defaults[0][0];
+    document.getElementById('appDoctor').value = '';
+    document.getElementById('doctorPanel').style.display = 'none';
+  }
+  // Pre-fill name and phone from logged-in user
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      const remembered = JSON.parse(localStorage.getItem('medqueue_remembered') || 'null');
+      const prefill = user || remembered;
+      if (prefill) {
+        const nameInput = document.getElementById('appName');
+        if (nameInput && !nameInput.value && prefill.name) nameInput.value = prefill.name;
+        if (prefill.phone) _parseStoredPhone(prefill.phone, 'app');
+      }
+    } catch(e) {}
+    // Listen for hospital change to reload doctors
+    const appSelect = document.getElementById('hospitalSelectApp');
+    if (appSelect) {
+      appSelect.addEventListener('change', function() {
+        loadHospitalDoctors(this.value);
+      });
+    }
+
+    // Handle URL params: ?hospital= and ?doctor= (e.g. from hospital.html "Записаться")
+    const _urlParams = new URLSearchParams(window.location.search);
+    const _urlHospital = _urlParams.get('hospital');
+    const _urlDoctor   = _urlParams.get('doctor');
+    if (_urlHospital) {
+      // script.js populates the select asynchronously — retry until it's ready
+      const _tryPreSelect = async () => {
+        const sel = document.getElementById('hospitalSelectApp');
+        if (!sel) { setTimeout(_tryPreSelect, 300); return; }
+        sel.value = _urlHospital;
+        if (sel.value !== _urlHospital) {
+          // Hospitals not loaded yet, wait
+          setTimeout(_tryPreSelect, 300);
+          return;
+        }
+        // Load doctors for the hospital
+        await loadHospitalDoctors(_urlHospital);
+        // Pre-select the specific doctor if provided
+        if (_urlDoctor) {
+          // Try a direct card match first
+          const card = document.getElementById('doc-card-' + _urlDoctor);
+          if (card) {
+            card.click();
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            // Card might be in another specialty tab — search across all groups
+            for (const [spec, docs] of Object.entries(_hospitalDoctors)) {
+              const found = docs.find(d => String(d.id) === String(_urlDoctor));
+              if (found) {
+                // Switch to that specialty tab then select doctor
+                const tabEl = document.querySelector(`.spec-option[data-value="${spec}"]`);
+                if (tabEl) selectSpec(tabEl);
+                setTimeout(() => {
+                  const c = document.getElementById('doc-card-' + _urlDoctor);
+                  if (c) { c.click(); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                }, 100);
+                break;
+              }
+            }
+            // Fallback: just set the hidden input value directly
+            document.getElementById('appDoctor').value = _urlDoctor;
+          }
+        }
+      };
+      setTimeout(_tryPreSelect, 700); // give script.js time to populate selects
+    }
+  });
+  </script>
+
+  <!-- ===== AI CHAT WIDGET ===== -->
+  <style>
+    #aiChatBubble{position:fixed;bottom:24px;right:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#0f172a,#14b8a6);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(20,184,166,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
+    #aiChatBubble:hover{transform:scale(1.1);}
+    #aiChatPanel{position:fixed;bottom:90px;right:24px;width:340px;max-height:480px;background:white;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.25);display:none;flex-direction:column;z-index:9998;overflow:hidden;font-family:'Inter',sans-serif;}
+    #aiChatPanel.open{display:flex;}
+    .ai-chat-header{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;padding:14px 16px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;}
+    .ai-chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb;}
+    .ai-msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;}
+    .ai-msg.bot{background:white;border:1px solid #e5e7eb;align-self:flex-start;border-bottom-left-radius:4px;}
+    .ai-msg.user{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;align-self:flex-end;border-bottom-right-radius:4px;}
+    .ai-chat-input-row{display:flex;gap:8px;padding:10px;background:white;border-top:1px solid #e5e7eb;}
+    .ai-chat-input-row input{flex:1;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;}
+    .ai-chat-input-row input:focus{border-color:#14b8a6;}
+    .ai-chat-input-row button{background:#0d9488;color:white;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:16px;}
+    [data-theme="dark"] #aiChatPanel{background:#111827;}
+    [data-theme="dark"] .ai-chat-msgs{background:#0d1117;}
+    [data-theme="dark"] .ai-msg.bot{background:#1f2937;border-color:rgba(56,189,248,0.15);color:#e5e7eb;}
+    [data-theme="dark"] .ai-chat-input-row{background:#111827;border-color:rgba(56,189,248,0.15);}
+    [data-theme="dark"] .ai-chat-input-row input{background:#0d1117;border-color:rgba(56,189,248,0.2);color:#e5e7eb;}
+  </style>
+  <button id="aiChatBubble" onclick="toggleAiChat()" title="МедAI">🤖</button>
+  <div id="aiChatPanel">
+    <div class="ai-chat-header">
+      <span>🤖 МедAI — помощник</span>
+      <button onclick="toggleAiChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div class="ai-chat-msgs" id="aiChatMsgs">
+      <div class="ai-msg bot">Привет! Я МедAI — ваш медицинский помощник. Задайте вопрос о здоровье, симптомах или записи к врачу. 😊</div>
+    </div>
+    <div class="ai-chat-input-row">
+      <input type="text" id="aiChatInput" placeholder="Ваш вопрос…" onkeydown="if(event.key==='Enter')sendAiMsg()">
+      <button onclick="sendAiMsg()">➤</button>
+    </div>
+  </div>
+  <script>
+  let aiHistory=[];
+  function toggleAiChat(){document.getElementById('aiChatPanel').classList.toggle('open');if(document.getElementById('aiChatPanel').classList.contains('open'))document.getElementById('aiChatInput').focus();}
+  async function sendAiMsg(){
+    const inp=document.getElementById('aiChatInput'),text=inp.value.trim();if(!text)return;inp.value='';
+    appendAiMsg(text,'user');
+    const el=appendAiMsg('…','bot');
+    aiHistory.push({role:'user',content:text});
+    try{
+      const r=await fetch(`${API_URL}/ai/chat/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:aiHistory.slice(-10)})});
+      const d=await r.json();const rep=d.reply||'Не удалось получить ответ.';
+      el.textContent=rep;aiHistory.push({role:'assistant',content:rep});
+    }catch{el.textContent='Ошибка подключения к серверу.';}
+    const m=document.getElementById('aiChatMsgs');m.scrollTop=m.scrollHeight;
+  }
+  function appendAiMsg(t,r){const m=document.getElementById('aiChatMsgs'),e=document.createElement('div');e.className='ai-msg '+r;e.textContent=t;m.appendChild(e);m.scrollTop=m.scrollHeight;return e;}
+  </script>
+</body>
+</html>

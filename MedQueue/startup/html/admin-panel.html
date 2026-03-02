@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedQueue — Панель администратора</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal:#0d9488; --teal-l:#14b8a6; --navy:#0f172a;
+      --bg:#f0f4f8; --surface:#ffffff; --text:#1e293b;
+      --muted:#64748b; --border:#e2e8f0; --danger:#ef4444;
+      --radius:14px; --shadow:0 2px 14px rgba(0,0,0,.07);
+      --sidebar-w: 230px;
+    }
+    [data-theme="dark"] {
+      --bg:#080e1a; --surface:#111827; --text:#e2e8f0;
+      --muted:#94a3b8; --border:rgba(255,255,255,.08);
+      --shadow:0 2px 14px rgba(0,0,0,.4);
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+    /* ══════ TOPBAR ══════ */
+    .topbar {
+      background:linear-gradient(135deg,var(--navy) 0%,var(--teal) 100%);
+      color:#fff; height:62px; padding:0 28px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:300;
+      box-shadow:0 2px 20px rgba(0,0,0,.25); flex-shrink:0;
+    }
+    .topbar-brand { font-size:18px; font-weight:900; display:flex; align-items:center; gap:10px; }
+    .topbar-brand .sep { opacity:.45; font-weight:400; font-size:13px; }
+    .topbar-right { display:flex; align-items:center; gap:16px; }
+    .admin-chip {
+      display:flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,.12); border-radius:100px;
+      padding:5px 14px 5px 5px; font-size:13px; font-weight:600;
+    }
+    .admin-chip .av {
+      width:30px; height:30px; border-radius:50%;
+      background:linear-gradient(135deg,#f59e0b,#ef4444);
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:800;
+    }
+    .switch { position:relative; display:inline-block; width:40px; height:22px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; inset:0; background:rgba(255,255,255,.25); border-radius:22px; cursor:pointer; transition:.2s; }
+    .slider::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+    .switch input:checked + .slider { background:rgba(20,184,166,.7); }
+    .switch input:checked + .slider::before { transform:translateX(18px); }
+    .btn-logout { border:1.5px solid rgba(255,255,255,.35); background:transparent; color:#fff; padding:7px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:background .15s; font-family:'Inter',sans-serif; }
+    .btn-logout:hover { background:rgba(255,255,255,.12); }
+
+    /* ══════ SHELL ══════ */
+    .shell { flex:1; display:flex; }
+
+    /* ══════ SIDEBAR ══════ */
+    .sidebar {
+      width:var(--sidebar-w); flex-shrink:0;
+      background:var(--surface); border-right:1px solid var(--border);
+      display:flex; flex-direction:column;
+      position:sticky; top:62px; height:calc(100vh - 62px);
+      overflow-y:auto;
+    }
+    .nav-section-title {
+      font-size:10.5px; font-weight:800; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.8px;
+      padding:22px 18px 8px;
+    }
+    .nav-item {
+      display:flex; align-items:center; gap:12px;
+      padding:11px 18px; font-size:13.5px; font-weight:600; color:var(--muted);
+      cursor:pointer; transition:all .12s; border-radius:0;
+      border-left:3px solid transparent;
+    }
+    .nav-item:hover { color:var(--text); background:rgba(13,148,136,.06); }
+    .nav-item.active { color:var(--teal); background:rgba(13,148,136,.09); border-left-color:var(--teal); }
+    .nav-icon { font-size:18px; width:22px; text-align:center; }
+
+    /* ══════ CONTENT ══════ */
+    .content { flex:1; padding:28px 28px 60px; min-width:0; }
+
+    /* ══════ SECTIONS ══════ */
+    .section { display:none; }
+    .section.active { display:block; }
+
+    /* section heading */
+    .sec-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+    .sec-head h2 { font-size:22px; font-weight:900; }
+    .sec-head .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+
+    /* ══════ STATS CARDS ══════ */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:28px; }
+    .stat-card {
+      background:var(--surface); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:20px 22px;
+      border-top:4px solid var(--teal);
+    }
+    .stat-card.red   { border-top-color:#ef4444; }
+    .stat-card.blue  { border-top-color:#3b82f6; }
+    .stat-card.amber { border-top-color:#f59e0b; }
+    .stat-card.green { border-top-color:#22c55e; }
+    .stat-val { font-size:36px; font-weight:900; color:var(--teal); line-height:1; }
+    .stat-card.red   .stat-val { color:#ef4444; }
+    .stat-card.blue  .stat-val { color:#3b82f6; }
+    .stat-card.amber .stat-val { color:#f59e0b; }
+    .stat-card.green .stat-val { color:#22c55e; }
+    .stat-lbl { font-size:12.5px; color:var(--muted); font-weight:700; margin-top:6px; }
+
+    /* ══════ TABLE CARD ══════ */
+    .table-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { background:var(--bg); padding:11px 16px; font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+    tbody td { padding:13px 16px; font-size:14px; color:var(--text); border-bottom:1px solid var(--border); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:rgba(13,148,136,.03); }
+
+    /* ══════ BADGES ══════ */
+    .badge { display:inline-block; padding:4px 10px; border-radius:100px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+    .b-green { background:#dcfce7; color:#166534; }
+    .b-red   { background:#fee2e2; color:#991b1b; }
+    .b-blue  { background:#dbeafe; color:#1e40af; }
+    .b-gray  { background:#f1f5f9; color:#475569; }
+    [data-theme="dark"] .b-green { background:rgba(22,163,74,.2);  color:#86efac; }
+    [data-theme="dark"] .b-red   { background:rgba(239,68,68,.2);  color:#fca5a5; }
+    [data-theme="dark"] .b-blue  { background:rgba(59,130,246,.2); color:#93c5fd; }
+    [data-theme="dark"] .b-gray  { background:rgba(255,255,255,.07); color:var(--muted); }
+
+    /* ══════ BUTTONS ══════ */
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:9px 18px; border-radius:10px; border:none;
+      font-size:13.5px; font-weight:700; cursor:pointer;
+      font-family:'Inter',sans-serif; transition:all .15s;
+    }
+    .btn-primary { background:var(--teal); color:#fff; }
+    .btn-primary:hover { background:var(--teal-l); }
+    .btn-danger  { background:var(--danger); color:#fff; }
+    .btn-danger:hover  { opacity:.85; }
+    .btn-ghost   { background:transparent; border:2px solid var(--border); color:var(--text); }
+    .btn-ghost:hover   { border-color:var(--teal); color:var(--teal); }
+    .btn-sm { padding:5px 12px; font-size:12px; border-radius:7px; }
+
+    /* ══════ SEARCH BAR ══════ */
+    .search-bar {
+      display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap;
+    }
+    .search-input {
+      flex:1; min-width:200px; padding:9px 14px;
+      border:1.5px solid var(--border); border-radius:10px;
+      font-size:14px; font-family:'Inter',sans-serif;
+      background:var(--surface); color:var(--text); outline:none;
+    }
+    .search-input:focus { border-color:var(--teal); }
+    select.search-input { cursor:pointer; }
+
+    /* ══════ MODAL ══════ */
+    .modal-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+      z-index:1000; display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .2s;
+    }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal {
+      background:var(--surface); border-radius:20px;
+      box-shadow:0 16px 60px rgba(0,0,0,.35);
+      padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
+    }
+    .modal h3 { font-size:18px; font-weight:800; margin-bottom:20px; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:10px 14px; border:1.5px solid var(--border);
+      border-radius:10px; font-size:14px; font-family:'Inter',sans-serif;
+      background:var(--bg); color:var(--text); outline:none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--teal); }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+
+    /* ══════ INVITE CODE DISPLAY ══════ */
+    .code-box {
+      background:var(--bg); border:2px dashed var(--teal);
+      border-radius:12px; padding:18px 24px; text-align:center; margin:12px 0;
+    }
+    .code-val {
+      font-size:28px; font-weight:900; letter-spacing:3px;
+      color:var(--teal); font-family:monospace;
+    }
+    .code-hint { font-size:12px; color:var(--muted); margin-top:6px; }
+
+    /* ══════ PLACEHOLDER ══════ */
+    .placeholder { text-align:center; padding:64px 20px; color:var(--muted); }
+    .placeholder .icon { font-size:52px; margin-bottom:14px; }
+
+    /* ══════ TOAST ══════ */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; opacity:0; pointer-events:none; transition:opacity .25s; white-space:nowrap; }
+    .toast.show { opacity:1; }
+
+    @media(max-width:720px) {
+      .sidebar { display:none; }
+      .content { padding:16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════ TOPBAR ══════ -->
+<header class="topbar">
+  <div class="topbar-brand">🏥 MedQueue <span class="sep">/ Администратор</span></div>
+  <div class="topbar-right">
+    <label class="switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+    <div class="admin-chip"><div class="av">👑</div><span id="topbarAdmin">Загрузка…</span></div>
+    <button class="btn-logout" onclick="logout()">Выйти</button>
+  </div>
+</header>
+
+<!-- ══════ SHELL ══════ -->
+<div class="shell" id="shell" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section-title">Меню</div>
+    <div class="nav-item active" onclick="showSection('dashboard')">
+      <span class="nav-icon">📊</span> Дашборд
+    </div>
+    <div class="nav-item" onclick="showSection('doctors')">
+      <span class="nav-icon">👨‍⚕️</span> Врачи
+    </div>
+    <div class="nav-item" onclick="showSection('invites')">
+      <span class="nav-icon">🔑</span> Инвайт-коды
+    </div>
+    <div class="nav-item" onclick="showSection('hospitals')">
+      <span class="nav-icon">🏥</span> Больницы
+    </div>
+    <div class="nav-item" onclick="showSection('users')">
+      <span class="nav-icon">👥</span> Пользователи
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="section active" id="sec-dashboard">
+      <div class="sec-head">
+        <div><h2>Дашборд</h2><div class="sub">Общая статистика системы</div></div>
+        <button class="btn btn-ghost" onclick="loadStats()">🔄 Обновить</button>
+      </div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="placeholder" style="grid-column:1/-1;padding:32px"><div class="icon">⏳</div>Загрузка…</div>
+      </div>
+    </div>
+
+    <!-- ══ DOCTORS ══ -->
+    <div class="section" id="sec-doctors">
+      <div class="sec-head">
+        <div><h2>Управление врачами</h2><div class="sub">Добавляйте, редактируйте и удаляйте врачей</div></div>
+        <button class="btn btn-primary" onclick="openDoctorModal()">+ Добавить врача</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="docSearch" placeholder="Поиск по имени или специальности…" oninput="filterDoctors()">
+        <select class="search-input" id="docHospitalFilter" onchange="filterDoctors()" style="max-width:260px;">
+          <option value="">Все больницы</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <div class="placeholder" id="docPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
+        <table id="docTable" style="display:none;">
+          <thead><tr>
+            <th>ФИО</th><th>Специальность</th><th>Больница</th>
+            <th>Кабинет</th><th>Часы</th><th>Статус</th><th>Действия</th>
+          </tr></thead>
+          <tbody id="docBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ INVITES ══ -->
+    <div class="section" id="sec-invites">
+      <div class="sec-head">
+        <div><h2>Инвайт-коды</h2><div class="sub">Коды для регистрации врачей в системе</div></div>
+        <button class="btn btn-primary" onclick="openInviteModal()">+ Создать код</button>
+      </div>
+      <div class="table-card">
+        <div class="placeholder" id="invPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
+        <table id="invTable" style="display:none;">
+          <thead><tr>
+            <th>Код</th><th>Специальность</th><th>Больница</th>
+            <th>Статус</th><th>Использовал</th><th>Создан</th><th></th>
+          </tr></thead>
+          <tbody id="invBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ HOSPITALS ══ -->
+    <div class="section" id="sec-hospitals">
+      <div class="sec-head">
+        <div><h2>Больницы</h2><div class="sub">Список медицинских учреждений (только просмотр)</div></div>
+      </div>
+      <div class="table-card">
+        <div class="placeholder" id="hosPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
+        <table id="hosTable" style="display:none;">
+          <thead><tr><th>Название</th><th>Тип</th><th>Адрес</th><th>Врачей</th></tr></thead>
+          <tbody id="hosBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ USERS ══ -->
+    <div class="section" id="sec-users">
+      <div class="sec-head">
+        <div><h2>Пользователи</h2><div class="sub">Все зарегистрированные аккаунты</div></div>
+      </div>
+      <div class="table-card">
+        <div class="placeholder" id="usrPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
+        <table id="usrTable" style="display:none;">
+          <thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Регистрация</th><th>Статус</th></tr></thead>
+          <tbody id="usrBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /shell -->
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loadScreen" style="display:flex;align-items:center;justify-content:center;height:80vh;flex-direction:column;gap:16px;color:var(--muted);font-size:16px;">
+  <div style="font-size:48px;">⏳</div>Проверка доступа…
+</div>
+
+<!-- ══════ MODAL: ADD/EDIT DOCTOR ══════ -->
+<div class="modal-overlay" id="doctorModal">
+  <div class="modal">
+    <h3 id="doctorModalTitle">Добавить врача</h3>
+    <input type="hidden" id="editDoctorId">
+    <div class="form-group">
+      <label>ФИО врача *</label>
+      <input id="dFullName" placeholder="Иванов Иван Иванович">
+    </div>
+    <div class="form-group">
+      <label>Специальность *</label>
+      <select id="dSpecialty">
+        <option value="">— выберите —</option>
+        <option>Терапевт</option><option>Педиатр</option><option>Хирург</option>
+        <option>Кардиолог</option><option>Невролог</option><option>Офтальмолог</option>
+        <option>Отоларинголог</option><option>Дерматолог</option><option>Эндокринолог</option>
+        <option>Гинеколог</option><option>Уролог</option><option>Онколог</option>
+        <option>Психиатр</option><option>Ортопед</option><option>Травматолог</option>
+        <option>Гастроэнтеролог</option><option>Пульмонолог</option><option>Нефролог</option>
+        <option>Ревматолог</option><option>Инфекционист</option><option>Стоматолог</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Учреждение *</label>
+      <select id="dHospital"><option value="">— выберите —</option></select>
+    </div>
+    <div class="form-group">
+      <label>Кабинет</label>
+      <input id="dCabinet" placeholder="Напр.: 215">
+    </div>
+    <div class="form-group">
+      <label>Рабочие дни</label>
+      <input id="dDays" value="Пн-Пт" placeholder="Пн-Пт">
+    </div>
+    <div class="form-group">
+      <label>Часы работы</label>
+      <input id="dHours" value="08:00-18:00" placeholder="08:00-18:00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDoctorModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveDoctor()">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: CREATE INVITE CODE ══════ -->
+<div class="modal-overlay" id="inviteModal">
+  <div class="modal">
+    <h3>Создать инвайт-код</h3>
+    <div class="form-group">
+      <label>Специальность (необязательно)</label>
+      <select id="iSpecialty">
+        <option value="">— без специальности —</option>
+        <option>Терапевт</option><option>Педиатр</option><option>Хирург</option>
+        <option>Кардиолог</option><option>Невролог</option><option>Офтальмолог</option>
+        <option>Отоларинголог</option><option>Дерматолог</option><option>Эндокринолог</option>
+        <option>Гинеколог</option><option>Уролог</option><option>Онколог</option>
+        <option>Психиатр</option><option>Ортопед</option><option>Травматолог</option>
+        <option>Гастроэнтеролог</option><option>Пульмонолог</option><option>Нефролог</option>
+        <option>Ревматолог</option><option>Инфекционист</option><option>Стоматолог</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Учреждение (необязательно)</label>
+      <select id="iHospital"><option value="">— без привязки —</option></select>
+    </div>
+    <div id="createdCodeBox" style="display:none;">
+      <div class="code-box">
+        <div class="code-val" id="createdCode">MEDQ-XXXXXX</div>
+        <div class="code-hint">Передайте этот код врачу для регистрации в системе</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeInviteModal()">Закрыть</button>
+      <button class="btn btn-primary" id="genCodeBtn" onclick="generateCode()">⚡ Сгенерировать</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── THEME ───────────────────────────────────────── */
+(function(){
+  const t = localStorage.getItem('medqueue_theme') || 'light';
+  if(t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+  window.addEventListener('DOMContentLoaded', function(){
+    const cb = document.getElementById('themeToggle');
+    if(cb) cb.checked = (t === 'dark');
+  });
+})();
+function toggleTheme(){
+  const d = document.getElementById('themeToggle').checked;
+  document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+  localStorage.setItem('medqueue_theme', d ? 'dark' : 'light');
+}
+
+/* ── CONFIG ──────────────────────────────────────── */
+const API_BASE = window.location.protocol === 'file:'
+  ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
+  : window.location.origin;
+const API = `${API_BASE}/api`;
+const AUTH_KEY = 'medqueue_current_user';
+
+/* ── HELPERS ─────────────────────────────────────── */
+function getUser(){ return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
+function logout(){ localStorage.removeItem(AUTH_KEY); window.location.href = 'auth.html'; }
+
+async function apiFetch(url, opts = {}){
+  let user = getUser();
+  if(!user){ logout(); return null; }
+  const hdrs = {'Content-Type':'application/json', ...(opts.headers||{})};
+  if(user.access) hdrs['Authorization'] = `Bearer ${user.access}`;
+  let res = await fetch(url, {...opts, headers: hdrs});
+  if(res.status === 401){
+    try{
+      const rt = await fetch(`${API}/auth/token/refresh/`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({refresh: user.refresh})
+      });
+      if(rt.ok){
+        const tk = await rt.json();
+        user.access = tk.access;
+        localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+        hdrs['Authorization'] = `Bearer ${user.access}`;
+        res = await fetch(url, {...opts, headers: hdrs});
+      } else { logout(); return null; }
+    } catch { logout(); return null; }
+  }
+  return res;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ── INIT ────────────────────────────────────────── */
+let hospitals = [];
+
+async function init(){
+  const user = getUser();
+  if(!user){ window.location.href = 'auth.html?next=admin-panel.html'; return; }
+
+  // Check admin role
+  const roleOk = user.role === 'admin';
+  if(!roleOk){
+    // Try to verify via API
+    const res = await apiFetch(`${API}/admin/stats/`);
+    if(!res || res.status === 403){
+      alert('Доступ запрещён. Требуется роль администратора.');
+      window.location.href = 'profile.html';
+      return;
+    }
+  }
+
+  document.getElementById('topbarAdmin').textContent = user.name || user.email || 'Администратор';
+  document.getElementById('loadScreen').style.display = 'none';
+  document.getElementById('shell').style.display = '';
+
+  // Load hospitals for dropdowns
+  await loadHospitalList();
+  loadStats();
+}
+
+/* ── SECTIONS ────────────────────────────────────── */
+const SECTION_LOADERS = {
+  dashboard: loadStats,
+  doctors: loadDoctors,
+  invites: loadInvites,
+  hospitals: loadHospitals,
+  users: loadUsers,
+};
+
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.textContent.toLowerCase().includes(
+      name === 'dashboard' ? 'дашборд' :
+      name === 'doctors'   ? 'врач' :
+      name === 'invites'   ? 'инвайт' :
+      name === 'hospitals' ? 'больниц' : 'пользовател'
+    )) n.classList.add('active');
+  });
+  if(SECTION_LOADERS[name]) SECTION_LOADERS[name]();
+}
+
+/* ── DASHBOARD ───────────────────────────────────── */
+async function loadStats(){
+  document.getElementById('statsGrid').innerHTML =
+    '<div class="placeholder" style="grid-column:1/-1;padding:32px"><div class="icon">⏳</div>Загрузка…</div>';
+  const res = await apiFetch(`${API}/admin/stats/`);
+  if(!res) return;
+  const d = await res.json();
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-val">${d.hospitals}</div><div class="stat-lbl">🏥 Больниц</div></div>
+    <div class="stat-card blue"><div class="stat-val">${d.doctors}</div><div class="stat-lbl">👨‍⚕️ Активных врачей</div></div>
+    <div class="stat-card green"><div class="stat-val">${d.users}</div><div class="stat-lbl">👥 Пациентов</div></div>
+    <div class="stat-card amber"><div class="stat-val">${d.appointments}</div><div class="stat-lbl">📋 Всего записей</div></div>
+    <div class="stat-card red"><div class="stat-val">${d.confirmed}</div><div class="stat-lbl">✅ Подтверждённых</div></div>
+    <div class="stat-card"><div class="stat-val">${d.invite_codes}</div><div class="stat-lbl">🔑 Свободных кодов</div></div>
+  `;
+}
+
+/* ── HOSPITAL LIST (for dropdowns) ──────────────── */
+async function loadHospitalList(){
+  const res = await apiFetch(`${API}/admin/hospitals/`);
+  if(!res) return;
+  hospitals = await res.json();
+  const selectors = ['dHospital', 'iHospital', 'docHospitalFilter'];
+  selectors.forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const defaultOpt = sel.options[0]?.text;
+    sel.innerHTML = `<option value="">${defaultOpt || '— все —'}</option>`;
+    hospitals.forEach(h => {
+      sel.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+    });
+  });
+}
+
+/* ── DOCTORS ─────────────────────────────────────── */
+let allDoctors = [];
+
+async function loadDoctors(){
+  document.getElementById('docPlaceholder').style.display = '';
+  document.getElementById('docTable').style.display = 'none';
+  const res = await apiFetch(`${API}/admin/doctors/`);
+  if(!res) return;
+  allDoctors = await res.json();
+  filterDoctors();
+}
+
+function filterDoctors(){
+  const q = (document.getElementById('docSearch')?.value || '').toLowerCase();
+  const hid = document.getElementById('docHospitalFilter')?.value || '';
+  let list = allDoctors;
+  if(q) list = list.filter(d =>
+    d.full_name.toLowerCase().includes(q) || d.specialty.toLowerCase().includes(q));
+  if(hid) list = list.filter(d => String(d.hospital.id) === hid);
+  renderDoctors(list);
+}
+
+function renderDoctors(list){
+  const ph = document.getElementById('docPlaceholder');
+  const tbl = document.getElementById('docTable');
+  if(!list.length){
+    ph.innerHTML = '<div class="icon">👨‍⚕️</div>Врачи не найдены';
+    ph.style.display = '';
+    tbl.style.display = 'none';
+    return;
+  }
+  ph.style.display = 'none';
+  tbl.style.display = '';
+  document.getElementById('docBody').innerHTML = list.map(d => `
+    <tr>
+      <td><b>${d.full_name}</b></td>
+      <td>${d.specialty}</td>
+      <td>${d.hospital.name}</td>
+      <td>${d.cabinet || '—'}</td>
+      <td style="white-space:nowrap">${d.work_hours||'—'} <span style="color:var(--muted);font-size:12px">${d.work_days||''}</span></td>
+      <td>${d.is_active
+        ? '<span class="badge b-green">Активен</span>'
+        : '<span class="badge b-gray">Неактивен</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="openDoctorModal(${d.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDoctor(${d.id},'${escHtml(d.full_name)}')" style="margin-left:6px">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openDoctorModal(id){
+  document.getElementById('editDoctorId').value = '';
+  document.getElementById('doctorModalTitle').textContent = 'Добавить врача';
+  ['dFullName','dCabinet','dDays','dHours'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('dDays').value  = 'Пн-Пт';
+  document.getElementById('dHours').value = '08:00-18:00';
+  document.getElementById('dSpecialty').value = '';
+  document.getElementById('dHospital').value = '';
+
+  if(id){
+    const doc = allDoctors.find(d => d.id === id);
+    if(!doc) return;
+    document.getElementById('doctorModalTitle').textContent = 'Редактировать врача';
+    document.getElementById('editDoctorId').value = id;
+    document.getElementById('dFullName').value  = doc.full_name;
+    document.getElementById('dSpecialty').value = doc.specialty;
+    document.getElementById('dHospital').value  = doc.hospital.id;
+    document.getElementById('dCabinet').value   = doc.cabinet || '';
+    document.getElementById('dDays').value      = doc.work_days || 'Пн-Пт';
+    document.getElementById('dHours').value     = doc.work_hours || '08:00-18:00';
+  }
+  document.getElementById('doctorModal').classList.add('open');
+}
+
+function closeDoctorModal(){
+  document.getElementById('doctorModal').classList.remove('open');
+}
+
+async function saveDoctor(){
+  const id       = document.getElementById('editDoctorId').value;
+  const full_name  = document.getElementById('dFullName').value.trim();
+  const specialty  = document.getElementById('dSpecialty').value;
+  const hospital_id= document.getElementById('dHospital').value;
+  const cabinet    = document.getElementById('dCabinet').value.trim();
+  const work_days  = document.getElementById('dDays').value.trim();
+  const work_hours = document.getElementById('dHours').value.trim();
+
+  if(!full_name || !specialty || !hospital_id){
+    showToast('⚠️ Заполните ФИО, специальность и учреждение'); return;
+  }
+
+  const body = {full_name, specialty, hospital_id: Number(hospital_id), cabinet, work_days, work_hours};
+  let res;
+  if(id){
+    res = await apiFetch(`${API}/admin/doctors/${id}/`, {method:'PATCH', body: JSON.stringify(body)});
+  } else {
+    res = await apiFetch(`${API}/admin/doctors/`, {method:'POST', body: JSON.stringify(body)});
+  }
+  if(!res) return;
+  const d = await res.json();
+  if(d.ok || d.id){
+    showToast(id ? '✅ Врач обновлён' : '✅ Врач добавлен');
+    closeDoctorModal();
+    await loadDoctors();
+    loadStats();
+  } else {
+    showToast('Ошибка: ' + (d.error || JSON.stringify(d)));
+  }
+}
+
+async function deleteDoctor(id, name){
+  if(!confirm(`Удалить врача «${name}»?`)) return;
+  const res = await apiFetch(`${API}/admin/doctors/${id}/`, {method:'DELETE'});
+  if(!res) return;
+  const d = await res.json();
+  if(d.ok){ showToast('🗑️ Врач удалён'); loadDoctors(); loadStats(); }
+  else showToast('Ошибка: ' + (d.error||'?'));
+}
+
+/* ── INVITE CODES ────────────────────────────────── */
+async function loadInvites(){
+  document.getElementById('invPlaceholder').style.display = '';
+  document.getElementById('invTable').style.display = 'none';
+  const res = await apiFetch(`${API}/admin/invite-codes/`);
+  if(!res) return;
+  const list = await res.json();
+  if(!list.length){
+    document.getElementById('invPlaceholder').innerHTML = '<div class="icon">🔑</div>Кодов не найдено. Создайте первый!';
+    document.getElementById('invPlaceholder').style.display = '';
+    return;
+  }
+  document.getElementById('invPlaceholder').style.display = 'none';
+  document.getElementById('invTable').style.display = '';
+  document.getElementById('invBody').innerHTML = list.map(c => `
+    <tr>
+      <td><b style="font-family:monospace;font-size:15px;letter-spacing:1px">${c.code}</b></td>
+      <td>${c.specialty || '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${c.hospital ? c.hospital.name : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${c.is_used
+        ? '<span class="badge b-blue">Использован</span>'
+        : '<span class="badge b-green">Свободен</span>'}</td>
+      <td>${c.used_by || '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="color:var(--muted);font-size:13px">${c.created_at}</td>
+      <td>${!c.is_used
+        ? `<button class="btn btn-danger btn-sm" onclick="deleteInvite(${c.id})">🗑️</button>`
+        : ''}</td>
+    </tr>`).join('');
+}
+
+function openInviteModal(){
+  document.getElementById('iSpecialty').value = '';
+  document.getElementById('iHospital').value = '';
+  document.getElementById('createdCodeBox').style.display = 'none';
+  document.getElementById('genCodeBtn').style.display = '';
+  document.getElementById('inviteModal').classList.add('open');
+}
+function closeInviteModal(){
+  document.getElementById('inviteModal').classList.remove('open');
+  loadInvites();
+  loadStats();
+}
+
+async function generateCode(){
+  const specialty = document.getElementById('iSpecialty').value;
+  const hid       = document.getElementById('iHospital').value;
+  const body = {specialty};
+  if(hid) body.hospital_id = Number(hid);
+  const res = await apiFetch(`${API}/admin/invite-codes/`, {method:'POST', body: JSON.stringify(body)});
+  if(!res) return;
+  const d = await res.json();
+  if(d.ok){
+    document.getElementById('createdCode').textContent = d.code;
+    document.getElementById('createdCodeBox').style.display = '';
+    document.getElementById('genCodeBtn').textContent = '⚡ Ещё один';
+    showToast('✅ Код создан: ' + d.code);
+  } else showToast('Ошибка: ' + (d.error||'?'));
+}
+
+async function deleteInvite(id){
+  if(!confirm('Отозвать этот код?')) return;
+  const res = await apiFetch(`${API}/admin/invite-codes/${id}/`, {method:'DELETE'});
+  if(!res) return;
+  const d = await res.json();
+  if(d.ok){ showToast('🗑️ Код удалён'); loadInvites(); loadStats(); }
+  else showToast('Ошибка: ' + (d.error||'?'));
+}
+
+/* ── HOSPITALS ───────────────────────────────────── */
+async function loadHospitals(){
+  document.getElementById('hosPlaceholder').style.display = '';
+  document.getElementById('hosTable').style.display = 'none';
+  const res = await apiFetch(`${API}/admin/hospitals/`);
+  if(!res) return;
+  const list = await res.json();
+  document.getElementById('hosPlaceholder').style.display = 'none';
+  document.getElementById('hosTable').style.display = '';
+  document.getElementById('hosBody').innerHTML = list.map(h => `
+    <tr>
+      <td><b>${h.name}</b></td>
+      <td><span class="badge b-blue">${h.type}</span></td>
+      <td style="color:var(--muted);font-size:13px">${h.address}</td>
+      <td style="font-weight:700;color:var(--teal)">${h.doctor_count}</td>
+    </tr>`).join('');
+}
+
+/* ── USERS ───────────────────────────────────────── */
+async function loadUsers(){
+  document.getElementById('usrPlaceholder').style.display = '';
+  document.getElementById('usrTable').style.display = 'none';
+  const res = await apiFetch(`${API}/admin/users/`);
+  if(!res) return;
+  const list = await res.json();
+  document.getElementById('usrPlaceholder').style.display = 'none';
+  document.getElementById('usrTable').style.display = '';
+  const ROLE = {
+    admin:   '<span class="badge b-red">Администратор</span>',
+    doctor:  '<span class="badge b-blue">Врач</span>',
+    patient: '<span class="badge b-green">Пациент</span>',
+  };
+  document.getElementById('usrBody').innerHTML = list.map(u => `
+    <tr>
+      <td><b>${u.name || u.email}</b></td>
+      <td style="color:var(--muted)">${u.email}</td>
+      <td>${ROLE[u.role] || u.role}</td>
+      <td style="color:var(--muted);font-size:13px">${u.joined}</td>
+      <td>${u.is_active
+        ? '<span class="badge b-green">Активен</span>'
+        : '<span class="badge b-gray">Заблокирован</span>'}</td>
+    </tr>`).join('');
+}
+
+/* ── TOOLS ───────────────────────────────────────── */
+function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ── CLOSE MODALS ON OVERLAY CLICK ──────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('doctorModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeDoctorModal(); });
+  document.getElementById('inviteModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeInviteModal(); });
+  init();
+});
+</script>
+</body>
+</html>
