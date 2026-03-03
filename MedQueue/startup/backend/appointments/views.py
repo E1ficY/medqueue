@@ -163,6 +163,40 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             'code': code
         })
 
+    @action(detail=False, methods=['patch'], url_path='update_comment',
+            permission_classes=[AllowAny])
+    def update_comment(self, request):
+        """
+        Обновить/добавить комментарий к записи по коду.
+
+        PATCH /api/appointments/update_comment/
+        Body: {"code": "ABC123", "comment": "текст комментария"}
+        """
+        code = request.data.get('code', '').upper()
+        comment = request.data.get('comment', '')
+
+        if not code:
+            return Response(
+                {'error': 'Код записи обязателен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        appointment = get_object_or_404(Appointment, code=code)
+
+        # Проверяем права: авторизованный пользователь может менять только свои записи
+        if request.user.is_authenticated:
+            if appointment.user and appointment.user != request.user:
+                return Response(
+                    {'error': 'Нет доступа'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        appointment.comment = comment.strip()
+        appointment.save(update_fields=['comment'])
+
+        serializer = AppointmentStatusSerializer(appointment)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_appointments(self, request):
         """

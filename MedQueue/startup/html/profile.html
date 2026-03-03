@@ -6,7 +6,7 @@
   <title>Личный кабинет  MedQueue</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/script.js"></script>
+  <script src="../js/script.js?v=1.0.2"></script>
   <style>
     /* ---- Profile header ---- */
     .profile-header {
@@ -876,10 +876,19 @@
                 <div class="meta-value"> ~${app.estimated_wait_time} мин</div>
               </div>` : ''}
             </div>
-            ${app.comment ? `
-            <div style="margin:10px 0 4px;padding:10px 14px;background:rgba(13,148,136,0.07);border-left:3px solid #14b8a6;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);">
-              <span style="font-weight:700;color:#0d9488;">💬 Ваш комментарий:</span> ${app.comment}
-            </div>` : ''}
+            <div id="comment-display-${app.code}" style="margin-top:10px;">
+              ${app.comment ? `<div style="padding:10px 14px;background:rgba(13,148,136,0.07);border-left:3px solid #14b8a6;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                <div><span style="font-weight:700;color:#0d9488;">💬 Ваш комментарий:</span> ${app.comment}</div>
+                <button onclick="editComment('${app.code}')" style="background:none;border:none;color:#14b8a6;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;padding:0;">✏️ изм.</button></div>` : `<button onclick="editComment('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:5px 12px;">💬 Добавить комментарий</button>`
+              }
+            </div>
+            <div id="comment-editor-${app.code}" style="display:none;margin-top:8px;">
+              <textarea id="comment-input-${app.code}" style="width:100%;box-sizing:border-box;border:1.5px solid #14b8a6;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Опишите жалобы или пожелания к приёму..." rows="3"></textarea>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button onclick="saveCommentEdit('${app.code}')" class="btn btn-primary" style="font-size:12px;padding:6px 16px;">✅ Сохранить</button>
+                <button onclick="cancelCommentEdit('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:6px 14px;">Отмена</button>
+              </div>
+            </div>
             <div class="appt-actions">
               <button onclick="viewCode('${app.code}')" class="btn btn-outline">
                  Код: <strong>${app.code}</strong>
@@ -1003,6 +1012,54 @@
         }
       } catch (e) {
         alert('Не удалось отменить запись');
+      }
+    }
+
+    function editComment(code) {
+      const appt = allAppointments.find(a => a.code === code);
+      const inputEl = document.getElementById('comment-input-' + code);
+      if (inputEl && appt) inputEl.value = appt.comment || '';
+      const display = document.getElementById('comment-display-' + code);
+      const editor  = document.getElementById('comment-editor-' + code);
+      if (display) display.style.display = 'none';
+      if (editor)  editor.style.display  = 'block';
+      if (inputEl) inputEl.focus();
+    }
+
+    function cancelCommentEdit(code) {
+      const display = document.getElementById('comment-display-' + code);
+      const editor  = document.getElementById('comment-editor-' + code);
+      if (display) display.style.display = '';
+      if (editor)  editor.style.display  = 'none';
+    }
+
+    async function saveCommentEdit(code) {
+      const inputEl = document.getElementById('comment-input-' + code);
+      if (!inputEl) return;
+      const comment = inputEl.value.trim();
+
+      const user  = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      const token = user?.access || localStorage.getItem('medqueue_access_token');
+      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      try {
+        const r = await fetch(`${PROF_API_URL}/appointments/update_comment/`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ code, comment })
+        });
+        if (r.ok) {
+          const appt = allAppointments.find(a => a.code === code);
+          if (appt) appt.comment = comment;
+          renderAppointments(currentTab);
+        } else {
+          alert('Не удалось сохранить комментарий');
+          cancelCommentEdit(code);
+        }
+      } catch (e) {
+        alert('Ошибка сети');
+        cancelCommentEdit(code);
       }
     }
   </script>
