@@ -648,7 +648,8 @@ async function handleAppointmentSubmit(e) {
         hospital: parseInt(hospitalId),
         specialty: specialty,
         doctor: doctorId,
-        datetime: datetime
+        datetime: datetime,
+        comment: comment || undefined
       })
     });
     
