@@ -138,6 +138,7 @@ class Appointment(models.Model):
         default='confirmed',
         verbose_name="Статус"
     )
+    comment = models.TextField(blank=True, default='', verbose_name="Комментарий пациента")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

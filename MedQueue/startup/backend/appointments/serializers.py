@@ -75,9 +75,11 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             'doctor',
             'specialty',
             'datetime',
+            'comment',
         ]
         extra_kwargs = {
             'doctor': {'required': False, 'allow_null': True},
+            'comment': {'required': False, 'allow_blank': True},
         }
 
     def validate(self, data):
@@ -122,5 +124,6 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
             'queue_position',
             'estimated_wait_time',
             'status',
+            'comment',
             'created_at',
         ]

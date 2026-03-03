@@ -294,6 +294,7 @@ def doctor_appointments(request):
             'queue_position': appt.queue_position,
             'status': appt.status,
             'user_email': appt.user.email if appt.user else None,
+            'comment': appt.comment or '',
         })
 
     return Response(data)

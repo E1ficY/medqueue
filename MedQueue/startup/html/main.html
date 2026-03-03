@@ -6,64 +6,26 @@
   <title>MedQueue – Удобная запись в клиники Алматы</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="https://mapgl.2gis.com/api/js/v1"></script>
   <script src="../js/script.js"></script>
   <style>
 
-    /* ---- Map ---- */
-    .hero-map {
-      border-radius: 20px;
-      overflow: hidden;
-      height: 420px;
-      min-width: 300px;
-      max-width: 100%;
+    /* ---- Hero illustration ---- */
+    .hero-illustration {
       flex: 1;
-      box-shadow: 0 8px 32px rgba(15,23,42,0.13), 0 0 0 1px rgba(20,184,166,0.18);
-      border: 2px solid rgba(20,184,166,0.30);
-      background: #e0f2fe;
-      position: relative;
-      /* Карта изолирована: z-index: 0 — navbar (z-index:2000) всегда сверху */
-      isolation: isolate;
-      z-index: 0;
+      min-width: 300px;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #hospitalsMap {
+    .hero-illustration svg {
       width: 100%;
-      height: 100%;
-      display: block;
-    }
-    /* Переопределяем z-index 2GIS-элементов внутри .hero-map */
-    .hero-map [class*="DG"],
-    .hero-map [class*="dg"],
-    .hero-map canvas {
-      z-index: 1 !important;
+      height: auto;
+      filter: drop-shadow(0 12px 40px rgba(13,148,136,0.22));
     }
     @media (max-width: 768px) {
-      .hero-map { height: 300px; min-width: unset; }
+      .hero-illustration { min-width: unset; max-width: 100%; }
     }
-    [data-theme="dark"] .hero-map {
-      border-color: rgba(45,212,191,0.25);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(45,212,191,0.15);
-    }
-    .mapgl-popup-container {
-      border-radius: 14px !important;
-      box-shadow: 0 8px 28px rgba(15,23,42,0.16) !important;
-      border: 1px solid rgba(20,184,166,0.20) !important;
-      overflow: hidden;
-    }
-    .map-popup-btn {
-      display: block;
-      margin-top: 10px;
-      padding: 8px 0;
-      /* Teal → navy — новая палитра */
-      background: linear-gradient(135deg, #0f172a, #14b8a6);
-      color: white;
-      text-align: center;
-      border-radius: 9px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 13px;
-    }
-    .map-popup-btn:hover { opacity: .88; }
 
     .filter-tabs {
       display: flex;
@@ -154,8 +116,116 @@
             <a class="btn btn-outline" href="contacts%20and%20about.html">О проекте &amp; Контакты</a>
           </div>
         </div>
-        <div class="hero-map">
-          <div id="hospitalsMap"></div>
+        <div class="hero-illustration">
+          <svg viewBox="0 0 480 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background card -->
+            <rect x="40" y="30" width="400" height="360" rx="28" fill="url(#bgGrad)" opacity="0.13"/>
+            <rect x="40" y="30" width="400" height="360" rx="28" stroke="url(#strokeGrad)" stroke-width="1.5"/>
+
+            <!-- Hospital building -->
+            <rect x="170" y="180" width="140" height="130" rx="6" fill="url(#buildingGrad)"/>
+            <rect x="155" y="178" width="170" height="18" rx="5" fill="#0d9488"/>
+            <!-- Cross on building -->
+            <rect x="229" y="200" width="22" height="6" rx="3" fill="white" opacity="0.9"/>
+            <rect x="237" y="192" width="6" height="22" rx="3" fill="white" opacity="0.9"/>
+            <!-- Windows -->
+            <rect x="182" y="222" width="24" height="20" rx="4" fill="white" opacity="0.25"/>
+            <rect x="216" y="222" width="24" height="20" rx="4" fill="white" opacity="0.25"/>
+            <rect x="250" y="222" width="24" height="20" rx="4" fill="white" opacity="0.25"/>
+            <rect x="282" y="222" width="24" height="20" rx="4" fill="white" opacity="0.25"/>
+            <rect x="182" y="252" width="24" height="20" rx="4" fill="white" opacity="0.18"/>
+            <rect x="250" y="252" width="24" height="20" rx="4" fill="white" opacity="0.18"/>
+            <rect x="282" y="252" width="24" height="20" rx="4" fill="white" opacity="0.18"/>
+            <!-- Door -->
+            <rect x="218" y="278" width="44" height="32" rx="5" fill="#0f172a" opacity="0.5"/>
+            <circle cx="257" cy="295" r="3" fill="#14b8a6"/>
+
+            <!-- Phone UI card (left) -->
+            <rect x="58" y="110" width="110" height="180" rx="18" fill="#0f172a" stroke="#14b8a6" stroke-width="1.5"/>
+            <rect x="68" y="80" width="90" height="155" rx="12" fill="#1e293b"/>
+            <!-- Phone screen content -->
+            <rect x="75" y="90" width="76" height="8" rx="4" fill="#14b8a6" opacity="0.7"/>
+            <rect x="75" y="104" width="50" height="5" rx="2.5" fill="#64748b"/>
+            <!-- Calendar icon line -->
+            <rect x="75" y="116" width="14" height="14" rx="3" fill="#0d9488" opacity="0.8"/>
+            <rect x="75" y="117" width="14" height="3" rx="1" fill="#14b8a6"/>
+            <rect x="93" y="118" width="40" height="5" rx="2.5" fill="#94a3b8"/>
+            <rect x="93" y="126" width="28" height="4" rx="2" fill="#475569"/>
+            <!-- Check line -->
+            <rect x="75" y="136" width="14" height="14" rx="3" fill="#059669" opacity="0.8"/>
+            <polyline points="78,143 81,146 85,140" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="93" y="138" width="44" height="5" rx="2.5" fill="#94a3b8"/>
+            <rect x="93" y="146" width="30" height="4" rx="2" fill="#475569"/>
+            <!-- Clock line -->
+            <rect x="75" y="156" width="14" height="14" rx="3" fill="#7c3aed" opacity="0.7"/>
+            <circle cx="82" cy="163" r="4" fill="none" stroke="white" stroke-width="1.2"/>
+            <line x1="82" y1="163" x2="82" y2="160" stroke="white" stroke-width="1"/>
+            <line x1="82" y1="163" x2="84" y2="163" stroke="white" stroke-width="1"/>
+            <rect x="93" y="158" width="36" height="5" rx="2.5" fill="#94a3b8"/>
+            <!-- Button -->
+            <rect x="75" y="178" width="58" height="14" rx="7" fill="url(#btnGrad)"/>
+            <rect x="82" y="182" width="44" height="6" rx="3" fill="white" opacity="0.3"/>
+
+            <!-- Queue card (right) -->
+            <rect x="312" y="90" width="120" height="160" rx="16" fill="white" opacity="0.07" stroke="#14b8a6" stroke-width="1.2"/>
+            <rect x="322" y="102" width="60" height="6" rx="3" fill="#14b8a6" opacity="0.8"/>
+            <rect x="322" y="112" width="40" height="4" rx="2" fill="#64748b"/>
+            <!-- Queue people icons -->
+            <!-- Person 1 (active/teal) -->
+            <circle cx="338" cy="138" r="9" fill="#0d9488"/>
+            <rect x="329" y="150" width="18" height="12" rx="5" fill="#0d9488" opacity="0.7"/>
+            <rect x="322" y="148" width="34" height="3" rx="1.5" fill="#14b8a6" opacity="0.4"/>
+            <rect x="360" y="134" width="50" height="5" rx="2.5" fill="#14b8a6" opacity="0.9"/>
+            <rect x="360" y="142" width="36" height="4" rx="2" fill="#475569"/>
+            <!-- Person 2 -->
+            <circle cx="338" cy="176" r="7" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <rect x="330" y="186" width="16" height="10" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+            <rect x="360" y="172" width="44" height="5" rx="2.5" fill="#475569"/>
+            <rect x="360" y="180" width="30" height="4" rx="2" fill="#2d3748"/>
+            <!-- Person 3 -->
+            <circle cx="338" cy="210" r="7" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <rect x="330" y="220" width="16" height="10" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+            <rect x="360" y="206" width="38" height="5" rx="2.5" fill="#475569"/>
+            <rect x="360" y="214" width="24" height="4" rx="2" fill="#2d3748"/>
+            <!-- Queue label badge -->
+            <rect x="318" y="228" width="108" height="16" rx="8" fill="#0d9488" opacity="0.15"/>
+            <rect x="332" y="232" width="80" height="6" rx="3" fill="#0d9488" opacity="0.6"/>
+
+            <!-- Connection lines phone ↔ hospital -->
+            <path d="M158 155 Q200 140 210 185" stroke="#14b8a6" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>
+            <!-- Connection lines hospital ↔ queue -->
+            <path d="M310 185 Q330 160 316 150" stroke="#14b8a6" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>
+
+            <!-- Floating badge: «~12 мин» -->
+            <rect x="80" y="52" width="82" height="26" rx="13" fill="#0d9488"/>
+            <text x="121" y="69" text-anchor="middle" fill="white" font-family="Inter,sans-serif" font-size="11" font-weight="700">⏱ ~12 мин</text>
+
+            <!-- Floating badge: «✓ Запись» -->
+            <rect x="318" y="52" width="80" height="26" rx="13" fill="#059669"/>
+            <text x="358" y="69" text-anchor="middle" fill="white" font-family="Inter,sans-serif" font-size="11" font-weight="700">✓ Запись</text>
+
+            <!-- Bottom label -->
+            <text x="240" y="390" text-anchor="middle" fill="#14b8a6" font-family="Inter,sans-serif" font-size="13" font-weight="700" opacity="0.7">Онлайн-запись · Живая очередь · Алматы</text>
+
+            <defs>
+              <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#14b8a6"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#0f172a" stop-opacity="0.1"/>
+              </linearGradient>
+              <linearGradient id="buildingGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#1e3a4a"/>
+              </linearGradient>
+              <linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#14b8a6"/>
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
       </div>
     </section>
@@ -185,128 +255,6 @@
       <div class="muted">Версия 3.0</div>
     </div>
   </footer>
-
-  <script>
-  // GPS-координаты больниц Алматы — все варианты названий (по данным 2ГИС/Google Maps)
-  const HOSPITAL_COORDS = {
-    // Государственные поликлиники
-    'Городская поликлиника №1':                   [43.2572, 76.9073],  // ул. Гоголя, 53
-    'Городская поликлиника №2':                   [43.2591, 76.8923],  // ул. Шухова, 37Б
-    'Городская поликлиника №3':                   [43.2589, 76.9782],  // ул. Розыбакиева, 74
-    'Городская поликлиника №4':                   [43.2612, 76.8961],  // ул. Торайгырова, 12
-    'Городская поликлиника №5':                   [43.2621, 76.9151],  // ул. Макатаева, 141
-    'Городская поликлиника №6':                   [43.2481, 76.8363],  // 4-й микрорайон, 3а
-    'Городская поликлиника №7':                   [43.2342, 76.9252],  // бульв. Бухар жырау, 14
-    'Городская поликлиника №9':                   [43.2803, 76.9611],  // ул. Утеген батыра, 21
-    'Городская поликлиника №12':                  [43.2251, 76.9312],  // ул. Попова, 23
-    'Городская поликлиника №15':                  [43.2823, 77.0381],  // мкр. Жетысу-1, 30
-    // Детские поликлиники — оба варианта написания
-    'Детская поликлиника №1':                     [43.2563, 76.9302],  // ул. Шевченко, 118
-    'Детская поликлиника №3':                     [43.2491, 76.9022],  // ул. Байзакова, 280
-    'Детская поликлиника №4':                     [43.2783, 76.9993],  // ул. Монтажная, 33
-    'Детская поликлиника №6':                     [43.2261, 76.8783],  // ул. Саина, 89
-    'Детская городская поликлиника №1':           [43.2563, 76.9302],
-    'Детская городская поликлиника №3':           [43.2491, 76.9022],
-    'Детская городская поликлиника №4':           [43.2783, 76.9993],
-    'Детская городская поликлиника №6':           [43.2261, 76.8783],
-    // Больницы — оба варианта (с аббревиатурой и без)
-    'Городская клиническая больница №1':          [43.2291, 76.8022],  // мкр. Калкаман, 2
-    'Городская клиническая больница №4':          [43.3191, 76.9631],  // ул. Папанина, 220
-    'Городская клиническая больница №7':          [43.2322, 76.8003],  // мкр. Калкаман, 20
-    'Центральная городская клиническая больница': [43.2042, 76.8782],  // ул. Ораза Жандосова, 6
-    'Больница скорой медицинской помощи':         [43.2553, 76.9293],  // ул. Казыбек би, 96
-    'Городская клиническая больница №4 (ГКБ №4)':[43.3191, 76.9631],
-    'Городская клиническая больница №7 (ГКБ №7)':[43.2322, 76.8003],
-    'Центральная городская клиническая больница (ЦГКБ)': [43.2042, 76.8782],
-    'Больница скорой медицинской помощи (БСМП)': [43.2553, 76.9293],
-    // Спец. клиники
-    'Городская поликлиника ветеранов ВОВ':        [43.2601, 76.9151],
-    'Стоматологическая поликлиника №1':           [43.2492, 76.9211],
-    'Стоматологическая поликлиника №3':           [43.2363, 76.9312],
-    'Кожно-венерологический диспансер':           [43.2481, 76.9532],
-    'Противотуберкулезный диспансер':             [43.2431, 76.8762],
-    'Институт радиационной медицины и экологии (ИРМ)': [43.2472, 76.8982],
-    'Республиканский диагностический центр (РДЦ)':[43.2492, 76.9211],
-    'Городской кардиологический центр':           [43.2131, 76.8892],
-    'Городской онкологический центр':             [43.2581, 76.9502],
-    // Частные клиники
-    'Медицинский центр «Медеу»':                  [43.2141, 76.9482],
-    'Клиника «Асем»':                             [43.2531, 76.8982],
-    'Медицинский центр «Interteach»':             [43.2472, 76.9232],
-    'Клиника «VITA»':                             [43.2281, 76.9422],
-    'Медицинский центр «Нур-Медикус»':            [43.2251, 76.9202],
-  };
-  // Резервные координаты на случай нового учреждения
-  const FALLBACK_POINTS = [
-    [43.238, 76.889], [43.270, 76.930], [43.200, 76.860], [43.290, 77.010],
-  ];
-
-  const HOSPITAL_ICONS = { 'Поликлиника': '🏥', 'Больница': '🏨', 'Детская': '👶', 'Спец. клиника': '⚕️' };
-
-  let _2gisMap = null;
-  let _activePopup = null;
-
-  function buildMap(hosp) {
-    // Инициализация карты 2ГИС MapGL
-    _2gisMap = new mapgl.Map('hospitalsMap', {
-      center: [76.900, 43.238],   // [lng, lat]
-      zoom: 12,
-      key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
-      zoomControl: true,
-    });
-
-    hosp.forEach(function(h, i) {
-      // Координаты: API → словарь → резервные; 2GIS ожидает [lng, lat]
-      let latLon;
-      if (h.latitude && h.longitude) {
-        latLon = [h.latitude, h.longitude];
-      } else {
-        latLon = HOSPITAL_COORDS[h.name] || FALLBACK_POINTS[i % FALLBACK_POINTS.length];
-      }
-      const coords = [latLon[1], latLon[0]]; // [lng, lat]
-
-      const icon = HOSPITAL_ICONS[h.type] || '🏥';
-
-      // Кастомный HTML-маркер — цветной пин с иконкой
-      const marker = new mapgl.HtmlMarker(_2gisMap, {
-        coordinates: coords,
-        html: `<div style="
-          width:36px;height:36px;
-          background:linear-gradient(135deg,#0f172a,#14b8a6);
-          border-radius:50% 50% 50% 0;
-          transform:rotate(-45deg);
-          border:3px solid white;
-          box-shadow:0 3px 10px rgba(15,23,42,0.40);
-          display:flex;align-items:center;justify-content:center;
-          cursor:pointer;
-        "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${icon}</span></div>`,
-        anchor: [18, 36],
-      });
-
-      // Попап по клику на маркер
-      marker.on('click', function() {
-        if (_activePopup) { _activePopup.destroy(); _activePopup = null; }
-        _activePopup = new mapgl.Popup(_2gisMap, {
-          coordinates: coords,
-          html: `<div style="min-width:200px;padding:4px;font-family:Inter,sans-serif;">
-            <div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px;">${icon} ${h.name}</div>
-            <div style="font-size:12px;color:#14b8a6;font-weight:600;margin-bottom:2px;">${h.type}</div>
-            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">📍 ${h.address || ''}</div>
-            <div style="font-size:12px;margin-bottom:10px;background:#f0fdfa;padding:6px 10px;border-radius:8px;">
-              Очередь: <b style="color:#0d9488">${h.queue || 0} чел.</b> · ~${h.waiting} мин
-            </div>
-            <a class="map-popup-btn" href="hospital.html?id=${h.id}">🏥 Подробнее о клинике →</a>
-          </div>`,
-          offset: [0, -44],
-        });
-      });
-    });
-  }
-
-  document.addEventListener('hospitalsReady', function() {
-    buildMap(window.hospitals);
-  });
-  </script>
 
   <!-- ===== AI CHAT WIDGET ===== -->
   <style>

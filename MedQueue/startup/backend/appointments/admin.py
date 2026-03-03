@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Hospital, Appointment, VerificationCode, Doctor, DoctorInviteCode, UserProfile
+from .models import Hospital, Appointment, VerificationCode, PasswordResetCode, Doctor, DoctorInviteCode, UserProfile
 
 
 @admin.register(DoctorInviteCode)
@@ -63,11 +63,17 @@ class AppointmentAdmin(admin.ModelAdmin):
         'datetime',
         'queue_position',
         'status',
+        'has_comment',
         'created_at'
     ]
     list_filter = ['status', 'specialty', 'hospital', 'created_at']
     search_fields = ['code', 'patient_name', 'hospital__name']
     readonly_fields = ['code', 'created_at', 'updated_at', 'estimated_wait_time']
+    
+    def has_comment(self, obj):
+        return bool(obj.comment and obj.comment.strip())
+    has_comment.short_description = 'Комментарий'
+    has_comment.boolean = True
     
     fieldsets = (
         ('Информация о записи', {
@@ -78,6 +84,9 @@ class AppointmentAdmin(admin.ModelAdmin):
         }),
         ('Статус', {
             'fields': ('status',)
+        }),
+        ('Комментарий пациента', {
+            'fields': ('comment',)
         }),
         ('Системная информация', {
             'fields': ('created_at', 'updated_at'),
@@ -106,6 +115,20 @@ class VerificationCodeAdmin(admin.ModelAdmin):
     list_display = ['email', 'code', 'name', 'created_at']
     readonly_fields = ['created_at']
     search_fields = ['email', 'name']
+
+
+@admin.register(PasswordResetCode)
+class PasswordResetCodeAdmin(admin.ModelAdmin):
+    """Коды сброса пароля"""
+    list_display = ['email', 'code', 'created_at', 'is_expired_display']
+    readonly_fields = ['created_at']
+    search_fields = ['email']
+    ordering = ['-created_at']
+
+    def is_expired_display(self, obj):
+        return obj.is_expired()
+    is_expired_display.short_description = 'Истёк?'
+    is_expired_display.boolean = True
 
 
 @admin.register(Doctor)
