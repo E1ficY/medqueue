@@ -814,6 +814,11 @@ function initStatusPage() {
                   🕐 ${datetime.toLocaleDateString('ru-RU')} в ${datetime.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
                 </div>
               </div>
+              ${appointment.comment ? `
+              <div style="border-top:1px solid #e5e7eb; padding-top:12px;">
+                <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">КОММЕНТАРИЙ К ЗАПИСИ</div>
+                <div style="font-size:14px; color:#111827; background:#f0fdfa; padding:10px 12px; border-radius:8px; border-left:3px solid #14b8a6;">${appointment.comment}</div>
+              </div>` : ''}
             </div>
           </div>
           
