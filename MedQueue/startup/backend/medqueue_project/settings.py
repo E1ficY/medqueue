@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,9 +29,14 @@ FRONTEND_DIR = BASE_DIR.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'bubblier-felton-luringly.ngrok-free.dev']
+ALLOWED_HOSTS = [
+    host.strip() for host in os.getenv(
+        'ALLOWED_HOSTS',
+        '127.0.0.1,localhost,bubblier-felton-luringly.ngrok-free.dev'
+    ).split(',') if host.strip()
+]
 
 
 # Application definition
@@ -131,17 +137,29 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # Разрешение по умолчанию — AllowAny, чтобы гости могли делать записи
-    # Конкретные эндпоинты (my_appointments) используют IsAuthenticated явно
+    # По умолчанию API требует авторизацию, публичные методы открываются точечно.
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'appointments.throttles.IPThrottle',
+        'appointments.throttles.UserThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'ip': '120/min',
+        'user': '240/min',
+        'auth_login': '10/min',
+        'auth_register': '5/min',
+        'auth_verify': '10/min',
+        'auth_resend': '3/min',
+        'auth_password_reset': '5/hour',
+        'ai_chat': '30/min',
+    },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
 }
 
 # SimpleJWT — настройки токенов
-from datetime import timedelta
 SIMPLE_JWT = {
     # access-токен живёт 1 час, refresh — 30 дней
     'ACCESS_TOKEN_LIFETIME':  timedelta(hours=1),
@@ -154,6 +172,21 @@ SIMPLE_JWT = {
 # CORS настройки
 CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000', 'http://127.0.0.1:8001', 'http://localhost:8001', 'https://bubblier-felton-luringly.ngrok-free.dev']
+
+# Базовые security-заголовки и защита cookies
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'same-origin'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Язык и timezone
 LANGUAGE_CODE = 'ru-ru'

@@ -1,10 +1,14 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
 import os
@@ -14,6 +18,21 @@ import urllib.parse
 import urllib.request
 
 from .models import VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode, Doctor
+from .security import (
+    get_client_ip,
+    is_login_locked,
+    register_login_failure,
+    clear_login_failures,
+    check_email_send_allowed,
+)
+from .throttles import (
+    AuthLoginThrottle,
+    AuthRegisterThrottle,
+    AuthVerifyThrottle,
+    AuthResendThrottle,
+    PasswordResetThrottle,
+    AIChatThrottle,
+)
 
 
 def get_tokens_for_user(user):
@@ -23,6 +42,10 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
+
+
+def normalize_email(value):
+    return (value or '').strip().lower()
 
 
 def verify_recaptcha_token(token, remote_ip=None):
@@ -54,6 +77,7 @@ def verify_recaptcha_token(token, remote_ip=None):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def validate_doctor_code(request):
     """Проверяет правильность кода врача перед отправкой формы"""
     code = (request.data.get('code') or '').strip().upper()
@@ -70,17 +94,20 @@ def validate_doctor_code(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthRegisterThrottle])
 def register_user(request):
     """Регистрация пользователя"""
-    name         = request.data.get('name')
-    email        = request.data.get('email')
+    name         = (request.data.get('name') or '').strip()
+    email        = normalize_email(request.data.get('email'))
     password     = request.data.get('password')
     username     = (request.data.get('username') or '').strip()
     captcha_token = request.data.get('captcha_token')
     role         = request.data.get('role', 'patient')  # 'patient' | 'doctor'
     doctor_code  = (request.data.get('doctor_code') or '').strip().upper()
+    client_ip = get_client_ip(request)
 
-    if not verify_recaptcha_token(captcha_token, request.META.get('REMOTE_ADDR')):
+    if not verify_recaptcha_token(captcha_token, client_ip):
         return Response(
             {'error': 'Проверка CAPTCHA не пройдена'},
             status=status.HTTP_400_BAD_REQUEST
@@ -99,9 +126,20 @@ def register_user(request):
             {'error': 'Логин: от 3 до 30 символов, только латинские буквы, цифры и _'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    if User.objects.filter(username=username).exists():
+    existing_by_email = User.objects.filter(email=email).first()
+    if User.objects.filter(username=username).exclude(pk=getattr(existing_by_email, 'pk', None)).exists():
         return Response(
             {'error': 'Логин уже занят'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Проверка сложности пароля Django-валидаторами
+    try:
+        probe_user = existing_by_email or User(username=username, email=email, first_name=name)
+        validate_password(password, user=probe_user)
+    except ValidationError as exc:
+        return Response(
+            {'error': ' '.join(exc.messages)},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -119,19 +157,45 @@ def register_user(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    if User.objects.filter(email=email).exists():
+    if existing_by_email and existing_by_email.is_active:
         return Response(
             {'error': 'Email уже зарегистрирован'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    allowed, err_msg = check_email_send_allowed('register', email, client_ip)
+    if not allowed:
+        return Response({'error': err_msg}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     
-    # Удаляем старые коды для этого email и создаём новый
-    VerificationCode.objects.filter(email=email).delete()
-    code = ''.join(random.choices(string.digits, k=6))
-    VerificationCode.objects.create(
-        email=email, code=code, name=name, username=username,
-        password=password, role=role, doctor_code=doctor_code,
-    )
+    # Создаём/обновляем НЕактивный аккаунт: пароль хранится только как хеш в auth_user.
+    with transaction.atomic():
+        if existing_by_email:
+            user = existing_by_email
+            user.username = username
+            user.first_name = name
+            user.is_active = False
+            user.set_password(password)
+            user.save(update_fields=['username', 'first_name', 'is_active', 'password'])
+        else:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=name,
+                is_active=False,
+            )
+
+        VerificationCode.objects.filter(email=email).delete()
+        code = ''.join(random.choices(string.digits, k=6))
+        VerificationCode.objects.create(
+            email=email,
+            code=code,
+            name=name,
+            username=username,
+            password='',
+            role=role,
+            doctor_code=doctor_code,
+        )
     
     from_email = settings.EMAIL_HOST_USER
     if not from_email:
@@ -155,14 +219,16 @@ def register_user(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
-    return Response({'message': f'Код отправлен на {email}'})
+    return Response({'message': f'Код отправлен на {email}'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthVerifyThrottle])
 def verify_email(request):
     """Подтверждение email"""
-    email = request.data.get('email')
-    code = request.data.get('code')
+    email = normalize_email(request.data.get('email'))
+    code = (request.data.get('code') or '').strip()
     
     if not all([email, code]):
         return Response(
@@ -192,39 +258,49 @@ def verify_email(request):
         )
 
     try:
-        actual_username = verification.username or email
-        # Защита от гонок: проверить ещё раз
-        if User.objects.filter(username=actual_username).exists():
-            return Response(
-                {'error': 'Логин уже занят. Попробуйте другой.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        user = User.objects.create_user(
-            username=actual_username,
-            email=email,
-            password=verification.password,
-            first_name=verification.name
-        )
-
-        # Создаём UserProfile с ролью
-        UserProfile.objects.create(user=user, role=verification.role)
-
-        # Если врач — помечаем код приглашения как использованный и создаём Doctor-запись
-        if verification.role == 'doctor' and verification.doctor_code:
-            invite_qs = DoctorInviteCode.objects.filter(code=verification.doctor_code, is_used=False)
-            invite_obj = invite_qs.first()
-            invite_qs.update(is_used=True, used_by=user)
-            # Автоматически создаём запись Doctor чтобы портал врача сразу начал работать
-            if invite_obj and invite_obj.hospital:
-                Doctor.objects.create(
-                    user=user,
-                    hospital=invite_obj.hospital,
-                    specialty=invite_obj.specialty or '',
-                    full_name=user.first_name or user.username,
-                    is_active=True,
+        with transaction.atomic():
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return Response(
+                    {'error': 'Пользователь для верификации не найден. Повторите регистрацию.'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-        verification.delete()
+            # Защита от гонок: если username уже занят другим пользователем — ошибка.
+            actual_username = verification.username or user.username or email
+            if User.objects.filter(username=actual_username).exclude(pk=user.pk).exists():
+                return Response(
+                    {'error': 'Логин уже занят. Повторите регистрацию с другим логином.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user.username = actual_username
+            if verification.name:
+                user.first_name = verification.name
+            user.is_active = True
+            user.save(update_fields=['username', 'first_name', 'is_active'])
+
+            # Создаём/обновляем UserProfile с ролью
+            profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'role': verification.role or 'patient'})
+            profile.role = verification.role or profile.role or 'patient'
+            profile.save(update_fields=['role'])
+
+            # Если врач — помечаем код приглашения как использованный и создаём Doctor-запись
+            if verification.role == 'doctor' and verification.doctor_code:
+                invite_qs = DoctorInviteCode.objects.filter(code=verification.doctor_code, is_used=False)
+                invite_obj = invite_qs.first()
+                invite_qs.update(is_used=True, used_by=user)
+                # Автоматически создаём запись Doctor чтобы портал врача сразу начал работать
+                if invite_obj and invite_obj.hospital and not Doctor.objects.filter(user=user).exists():
+                    Doctor.objects.create(
+                        user=user,
+                        hospital=invite_obj.hospital,
+                        specialty=invite_obj.specialty or '',
+                        full_name=user.first_name or user.username,
+                        is_active=True,
+                    )
+
+            verification.delete()
         tokens = get_tokens_for_user(user)
 
         return Response({
@@ -246,14 +322,23 @@ def verify_email(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthLoginThrottle])
 def login_user(request):
     """Вход — принимает логин (username или email) + пароль"""
     # Поддерживаем поля 'login' (новое) и 'email' (обратная совместимость)
     login_id = (request.data.get('login') or request.data.get('email') or '').strip()
     password = request.data.get('password')
     captcha_token = request.data.get('captcha_token')
+    client_ip = get_client_ip(request)
 
-    if not verify_recaptcha_token(captcha_token, request.META.get('REMOTE_ADDR')):
+    if is_login_locked(login_id.lower(), client_ip):
+        return Response(
+            {'error': 'Слишком много неудачных попыток входа. Попробуйте позже.'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    if not verify_recaptcha_token(captcha_token, client_ip):
         return Response(
             {'error': 'Проверка CAPTCHA не пройдена'},
             status=status.HTTP_400_BAD_REQUEST
@@ -277,10 +362,20 @@ def login_user(request):
             pass
     
     if user is None:
+        register_login_failure(login_id.lower(), client_ip)
         return Response(
             {'error': 'Неверный логин или пароль'},
             status=status.HTTP_401_UNAUTHORIZED
         )
+
+    if not user.is_active:
+        register_login_failure(login_id.lower(), client_ip)
+        return Response(
+            {'error': 'Аккаунт не активирован. Подтвердите email кодом.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    clear_login_failures(login_id.lower(), client_ip)
     
     tokens = get_tokens_for_user(user)
 
@@ -304,9 +399,12 @@ def login_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthResendThrottle])
 def resend_code(request):
     """Повторная отправка"""
-    email = request.data.get('email')
+    email = normalize_email(request.data.get('email'))
+    client_ip = get_client_ip(request)
     
     if not email:
         return Response(
@@ -322,15 +420,18 @@ def resend_code(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    allowed, err_msg = check_email_send_allowed('resend', email, client_ip)
+    if not allowed:
+        return Response({'error': err_msg}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
     old_name = verification.name
-    old_password = verification.password
     old_username = verification.username
     old_role = verification.role
     old_doctor_code = verification.doctor_code
     VerificationCode.objects.filter(email=email).delete()
     new_code = ''.join(random.choices(string.digits, k=6))
     VerificationCode.objects.create(
-        email=email, code=new_code, name=old_name, password=old_password,
+        email=email, code=new_code, name=old_name, password='',
         username=old_username, role=old_role, doctor_code=old_doctor_code,
     )
     
@@ -364,11 +465,18 @@ def resend_code(request):
 # ==========================================
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
 def password_reset_request(request):
     """Шаг 1: пользователь вводит email, ему приходит код сброса пароля"""
-    email = (request.data.get('email') or '').strip().lower()
+    email = normalize_email(request.data.get('email'))
+    client_ip = get_client_ip(request)
     if not email:
         return Response({'error': 'Email обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    allowed, err_msg = check_email_send_allowed('password_reset', email, client_ip)
+    if not allowed:
+        return Response({'error': err_msg}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     # Не раскрываем, есть ли такой аккаунт (защита от перебора email)
     user = User.objects.filter(email=email).first()
@@ -402,17 +510,16 @@ def password_reset_request(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
 def password_reset_confirm(request):
     """Шаг 2: подтверждает код и устанавливает новый пароль"""
-    email    = (request.data.get('email') or '').strip().lower()
+    email    = normalize_email(request.data.get('email'))
     code     = (request.data.get('code') or '').strip()
     new_pass = (request.data.get('new_password') or '').strip()
 
     if not all([email, code, new_pass]):
         return Response({'error': 'Все поля обязательны'}, status=400)
-    if len(new_pass) < 6:
-        return Response({'error': 'Пароль должен быть не менее 6 символов'}, status=400)
-
     reset = PasswordResetCode.objects.filter(email=email).order_by('-created_at').first()
     if not reset or reset.code != code:
         return Response({'error': 'Неверный или устаревший код'}, status=400)
@@ -423,6 +530,11 @@ def password_reset_confirm(request):
     user = User.objects.filter(email=email).first()
     if not user:
         return Response({'error': 'Пользователь не найден'}, status=400)
+
+    try:
+        validate_password(new_pass, user=user)
+    except ValidationError as exc:
+        return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
     user.set_password(new_pass)
     user.save()
@@ -451,6 +563,8 @@ SYSTEM_PROMPT_AI = (
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AIChatThrottle])
 def ai_chat(request):
     """
     POST /api/ai/chat/

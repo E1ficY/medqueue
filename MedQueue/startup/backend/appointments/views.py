@@ -171,7 +171,7 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         })
 
     @action(detail=False, methods=['patch'], url_path='update_comment',
-            permission_classes=[AllowAny])
+            permission_classes=[IsAuthenticated])
     def update_comment(self, request):
         """
         Обновить/добавить комментарий к записи по коду.
@@ -190,13 +190,12 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
         appointment = get_object_or_404(Appointment, code=code)
 
-        # Проверяем права: авторизованный пользователь может менять только свои записи
-        if request.user.is_authenticated:
-            if appointment.user and appointment.user != request.user:
-                return Response(
-                    {'error': 'Нет доступа'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+        # Только владелец записи может менять комментарий.
+        if appointment.user != request.user:
+            return Response(
+                {'error': 'Нет доступа'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         appointment.comment = comment.strip()
         appointment.save(update_fields=['comment'])
