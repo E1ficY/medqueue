@@ -29,7 +29,8 @@ FRONTEND_DIR = BASE_DIR.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+# Для локальной разработки по умолчанию оставляем DEBUG=True.
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
     host.strip() for host in os.getenv(
@@ -180,7 +181,9 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
-if not DEBUG:
+ENABLE_SSL_REDIRECT = os.getenv('ENABLE_SSL_REDIRECT', 'False') == 'True'
+
+if not DEBUG and ENABLE_SSL_REDIRECT:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
