@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     HospitalViewSet, AppointmentViewSet,
-    doctor_me, doctor_appointments, doctor_update_appointment,
+    doctor_me, doctor_appointments, doctor_update_appointment, doctor_update_recommendation,
+    subscription_plans, subscription_me, subscription_save_card, subscription_verify_card, subscription_activate,
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
 )
@@ -28,6 +29,13 @@ urlpatterns = [
     path('doctor/me/', doctor_me),
     path('doctor/appointments/', doctor_appointments),
     path('doctor/appointments/<int:appointment_id>/', doctor_update_appointment),
+    path('doctor/appointments/<int:appointment_id>/recommendation/', doctor_update_recommendation),
+    # Subscriptions (patients only for private actions)
+    path('subscription/plans/', subscription_plans),
+    path('subscription/me/', subscription_me),
+    path('subscription/card/', subscription_save_card),
+    path('subscription/card/verify/', subscription_verify_card),
+    path('subscription/activate/', subscription_activate),
     # Admin panel
     path('admin/stats/', admin_stats),
     path('admin/hospitals/', admin_hospitals),

@@ -1,4 +1,7 @@
 from collections import defaultdict
+from datetime import timedelta
+import random
+import string
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -6,7 +9,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile, SPECIALTIES_CHOICES
+from .models import (
+    Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile,
+    UserSubscription, PaymentCard, PaymentTransaction, CardVerificationCode,
+    SPECIALTIES_CHOICES,
+)
 from .serializers import (
     HospitalSerializer,
     HospitalDetailSerializer,
@@ -213,6 +220,327 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 # ─────────────────────────────────────────────
+#  SUBSCRIPTIONS (ONLY PATIENTS)
+# ─────────────────────────────────────────────
+
+SUBSCRIPTION_PLANS = {
+    'free': {
+        'id': 'free',
+        'title': 'Start',
+        'price_kzt': 0,
+        'period': 'month',
+        'is_popular': False,
+        'benefits': [
+            'Онлайн-запись к врачу и статус очереди',
+            'Личный кабинет и история приёмов',
+            'Уведомления о времени приёма',
+        ],
+    },
+    'plus': {
+        'id': 'plus',
+        'title': 'Care Plus',
+        'price_kzt': 2990,
+        'period': 'month',
+        'is_popular': True,
+        'benefits': [
+            'Приоритетные временные слоты в популярных клиниках',
+            'Расширенные напоминания и рекомендации после приёма',
+            'Автоматический заказ такси после завершения приёма',
+        ],
+    },
+}
+
+
+def _get_user_role(user):
+    profile = getattr(user, 'profile', None)
+    return profile.role if profile else 'patient'
+
+
+def _require_patient(request):
+    if not request.user.is_authenticated:
+        return None, Response({'error': 'Требуется авторизация'}, status=401)
+    role = _get_user_role(request.user)
+    if role != 'patient':
+        return None, Response({'error': 'Подписка доступна только пользователям-пациентам'}, status=403)
+    return request.user, None
+
+
+def _detect_card_brand(card_number: str):
+    if card_number.startswith('4'):
+        return 'VISA'
+    if card_number[:2] in {'51', '52', '53', '54', '55'} or card_number.startswith('2'):
+        return 'MASTERCARD'
+    if card_number.startswith('34') or card_number.startswith('37'):
+        return 'AMEX'
+    return 'CARD'
+
+
+def _make_tx_ref():
+    suffix = ''.join(random.choices(string.digits, k=8))
+    return f"MQP{timezone.now().strftime('%y%m%d')}{suffix}"
+
+
+def _issue_card_verification_code(user, card):
+    CardVerificationCode.objects.filter(user=user, is_used=False).delete()
+    code = ''.join(random.choices(string.digits, k=6))
+    expires_at = timezone.now() + timedelta(minutes=10)
+    return CardVerificationCode.objects.create(
+        user=user,
+        card=card,
+        code=code,
+        expires_at=expires_at,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def subscription_plans(request):
+    """GET /api/subscription/plans/ — публичный список планов."""
+    return Response({'plans': [SUBSCRIPTION_PLANS['free'], SUBSCRIPTION_PLANS['plus']]})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def subscription_me(request):
+    """GET /api/subscription/me/ — текущая подписка пациента + карта + платежи."""
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    sub, _ = UserSubscription.objects.get_or_create(
+        user=user,
+        defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
+    )
+    plan_data = SUBSCRIPTION_PLANS.get(sub.plan, SUBSCRIPTION_PLANS['free'])
+
+    card = PaymentCard.objects.filter(user=user).first()
+    txs = PaymentTransaction.objects.filter(user=user)[:5]
+    pending_code = CardVerificationCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
+
+    return Response({
+        'subscription': {
+            'plan_id': sub.plan,
+            'plan_title': plan_data['title'],
+            'status': sub.status,
+            'price_kzt': plan_data['price_kzt'],
+            'benefits': plan_data['benefits'],
+            'auto_taxi_enabled': sub.auto_taxi_enabled,
+            'started_at': sub.started_at.isoformat() if sub.started_at else None,
+            'next_billing_date': sub.next_billing_date.isoformat() if sub.next_billing_date else None,
+        },
+        'card': {
+            'card_holder': card.card_holder,
+            'brand': card.brand,
+            'last4': card.last4,
+            'masked_pan': f"**** **** **** {card.last4}",
+            'exp_month': card.exp_month,
+            'exp_year': card.exp_year,
+            'is_verified': card.is_verified,
+        } if card else None,
+        'card_verification_required': bool(card and not card.is_verified),
+        'card_verification_expires_at': pending_code.expires_at.isoformat() if pending_code and not pending_code.is_expired() else None,
+        'transactions': [
+            {
+                'transaction_ref': t.transaction_ref,
+                'amount': float(t.amount),
+                'currency': t.currency,
+                'status': t.status,
+                'merchant_name': t.merchant_name,
+                'description': t.description,
+                'authorization_code': t.authorization_code,
+                'card_masked': (f"{t.card_brand} •••• {t.card_last4}" if t.card_last4 else '—'),
+                'paid_at': t.paid_at.isoformat() if t.paid_at else None,
+                'created_at': t.created_at.isoformat(),
+            }
+            for t in txs
+        ]
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_save_card(request):
+    """POST /api/subscription/card/ — сохранить карту пациента и запросить код подтверждения."""
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    card_number = ''.join(ch for ch in str(request.data.get('card_number', '')) if ch.isdigit())
+    card_holder = (request.data.get('card_holder') or '').strip()
+    exp_month = int(request.data.get('exp_month') or 0)
+    exp_year = int(request.data.get('exp_year') or 0)
+    cvc = ''.join(ch for ch in str(request.data.get('cvc', '')) if ch.isdigit())
+
+    if len(card_number) < 12 or len(card_number) > 19:
+        return Response({'error': 'Некорректный номер карты'}, status=400)
+    if not card_holder or len(card_holder) < 3:
+        return Response({'error': 'Укажите имя держателя карты'}, status=400)
+    if exp_month < 1 or exp_month > 12:
+        return Response({'error': 'Некорректный месяц действия карты'}, status=400)
+    current_year = timezone.now().year
+    if exp_year < current_year or exp_year > current_year + 15:
+        return Response({'error': 'Некорректный год действия карты'}, status=400)
+    if len(cvc) < 3 or len(cvc) > 4:
+        return Response({'error': 'Некорректный CVC/CVV код'}, status=400)
+
+    brand = _detect_card_brand(card_number)
+    last4 = card_number[-4:]
+    token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))
+
+    card, _ = PaymentCard.objects.update_or_create(
+        user=user,
+        defaults={
+            'card_holder': card_holder,
+            'brand': brand,
+            'last4': last4,
+            'exp_month': exp_month,
+            'exp_year': exp_year,
+            'token': token,
+            'is_verified': False,
+        }
+    )
+
+    verify_obj = _issue_card_verification_code(user, card)
+
+    return Response({
+        'ok': True,
+        'message': 'Карта сохранена. Введите код подтверждения от банка',
+        'bank_message': f"Банк отправил SMS-код подтверждения на карту •••• {card.last4}",
+        'requires_verification': True,
+        'verification_expires_at': verify_obj.expires_at.isoformat(),
+        'card': {
+            'card_holder': card.card_holder,
+            'brand': card.brand,
+            'last4': card.last4,
+            'masked_pan': f"**** **** **** {card.last4}",
+            'exp_month': card.exp_month,
+            'exp_year': card.exp_year,
+            'is_verified': card.is_verified,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_verify_card(request):
+    """POST /api/subscription/card/verify/ — подтверждение карты кодом из банка."""
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    code = ''.join(ch for ch in str(request.data.get('code', '')) if ch.isdigit())
+    if len(code) != 6:
+        return Response({'error': 'Введите 6-значный код подтверждения'}, status=400)
+
+    card = PaymentCard.objects.filter(user=user).first()
+    if not card:
+        return Response({'error': 'Сначала добавьте карту'}, status=400)
+
+    verify_obj = CardVerificationCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
+    if not verify_obj:
+        return Response({'error': 'Код подтверждения не найден. Добавьте карту снова'}, status=400)
+    if verify_obj.is_expired():
+        return Response({'error': 'Код подтверждения истёк. Запросите новый'}, status=400)
+    if verify_obj.code != code:
+        return Response({'error': 'Неверный код подтверждения'}, status=400)
+
+    verify_obj.is_used = True
+    verify_obj.save(update_fields=['is_used'])
+    card.is_verified = True
+    card.save(update_fields=['is_verified', 'updated_at'])
+
+    return Response({
+        'ok': True,
+        'message': 'Карта успешно подтверждена',
+        'card': {
+            'card_holder': card.card_holder,
+            'brand': card.brand,
+            'last4': card.last4,
+            'masked_pan': f"**** **** **** {card.last4}",
+            'exp_month': card.exp_month,
+            'exp_year': card.exp_year,
+            'is_verified': card.is_verified,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_activate(request):
+    """POST /api/subscription/activate/ — активировать выбранный тариф."""
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    plan_id = (request.data.get('plan_id') or 'free').strip().lower()
+    if plan_id not in SUBSCRIPTION_PLANS:
+        return Response({'error': 'Выбранный тариф не существует'}, status=400)
+
+    sub, _ = UserSubscription.objects.get_or_create(
+        user=user,
+        defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
+    )
+    selected = SUBSCRIPTION_PLANS[plan_id]
+    card = PaymentCard.objects.filter(user=user).first()
+
+    if plan_id == 'plus' and not card:
+        return Response({'error': 'Для тарифа Care Plus сначала добавьте платежную карту'}, status=400)
+    if plan_id == 'plus' and card and not card.is_verified:
+        return Response({'error': 'Сначала подтвердите карту кодом из банка'}, status=400)
+
+    amount = selected['price_kzt']
+    transaction = PaymentTransaction.objects.create(
+        user=user,
+        subscription=sub,
+        amount=amount,
+        currency='KZT',
+        status='processing',
+        transaction_ref=_make_tx_ref(),
+        merchant_name='MedQueue Health Services',
+        card_last4=card.last4 if card else '',
+        card_brand=card.brand if card else '',
+        description=f"Оплата тарифа {selected['title']}",
+    )
+
+    # Симулируем реалистичный жизненный цикл платежа.
+    transaction.status = 'paid'
+    transaction.authorization_code = ''.join(random.choices(string.digits, k=6))
+    transaction.paid_at = timezone.now()
+    transaction.save(update_fields=['status', 'authorization_code', 'paid_at'])
+
+    sub.plan = plan_id
+    sub.status = 'active'
+    sub.auto_taxi_enabled = (plan_id == 'plus')
+    sub.next_billing_date = timezone.now().date() + timedelta(days=30) if plan_id == 'plus' else None
+    sub.save(update_fields=['plan', 'status', 'auto_taxi_enabled', 'next_billing_date', 'updated_at'])
+
+    return Response({
+        'ok': True,
+        'message': f"Тариф {selected['title']} успешно активирован",
+        'subscription': {
+            'plan_id': sub.plan,
+            'plan_title': selected['title'],
+            'price_kzt': selected['price_kzt'],
+            'auto_taxi_enabled': sub.auto_taxi_enabled,
+            'next_billing_date': sub.next_billing_date.isoformat() if sub.next_billing_date else None,
+            'benefits': selected['benefits'],
+        },
+        'payment_receipt': {
+            'status': transaction.status,
+            'status_timeline': ['PROCESSING', 'AUTHORIZED', 'CAPTURED'],
+            'transaction_ref': transaction.transaction_ref,
+            'authorization_code': transaction.authorization_code,
+            'amount': float(transaction.amount),
+            'currency': transaction.currency,
+            'merchant_name': transaction.merchant_name,
+            'paid_at': transaction.paid_at.isoformat() if transaction.paid_at else None,
+            'card_masked': f"{transaction.card_brand} •••• {transaction.card_last4}" if transaction.card_last4 else 'NO-CARD',
+            'description': transaction.description,
+        }
+    })
+
+
+# ─────────────────────────────────────────────
 #  DOCTOR PORTAL  —  /api/doctor/...
 # ─────────────────────────────────────────────
 
@@ -329,6 +657,7 @@ def doctor_appointments(request):
             'status': appt.status,
             'user_email': appt.user.email if appt.user else None,
             'comment': appt.comment or '',
+            'doctor_recommendation': appt.doctor_recommendation or '',
         })
 
     return Response(data)
@@ -357,6 +686,28 @@ def doctor_update_appointment(request, appointment_id):
     appt.status = new_status
     appt.save(update_fields=['status', 'updated_at'])
     return Response({'ok': True, 'id': appt.id, 'status': appt.status})
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def doctor_update_recommendation(request, appointment_id):
+    """
+    PATCH /api/doctor/appointments/<id>/recommendation/
+    Body: {"doctor_recommendation": "Что взять, как лечиться дальше"}
+    """
+    hospital, doctor_entry, err = _require_doctor(request)
+    if err:
+        return err
+
+    if doctor_entry:
+        appt = get_object_or_404(Appointment, id=appointment_id, doctor=doctor_entry)
+    else:
+        appt = get_object_or_404(Appointment, id=appointment_id, hospital=hospital)
+
+    recommendation = (request.data.get('doctor_recommendation') or '').strip()
+    appt.doctor_recommendation = recommendation
+    appt.save(update_fields=['doctor_recommendation', 'updated_at'])
+    return Response({'ok': True, 'id': appt.id, 'doctor_recommendation': appt.doctor_recommendation})
 
 
 # ═══════════════════════════════════════════════════════════════

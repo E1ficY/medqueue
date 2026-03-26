@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Hospital, Appointment, VerificationCode, PasswordResetCode, Doctor, DoctorInviteCode, UserProfile
+from .models import (
+    Hospital, Appointment, VerificationCode, PasswordResetCode, Doctor, DoctorInviteCode, UserProfile,
+    PaymentCard, CardVerificationCode,
+)
 
 
 @admin.register(DoctorInviteCode)
@@ -146,3 +149,21 @@ class DoctorAdmin(admin.ModelAdmin):
             'fields': ('work_days', 'work_hours', 'is_active')
         }),
     )
+
+
+@admin.register(PaymentCard)
+class PaymentCardAdmin(admin.ModelAdmin):
+    """Сохранённые карты пациентов."""
+    list_display = ['user', 'brand', 'last4', 'exp_month', 'exp_year', 'is_verified', 'updated_at']
+    list_filter = ['brand', 'is_verified']
+    search_fields = ['user__username', 'user__email', 'last4', 'card_holder']
+    readonly_fields = ['token', 'created_at', 'updated_at']
+
+
+@admin.register(CardVerificationCode)
+class CardVerificationCodeAdmin(admin.ModelAdmin):
+    """Коды подтверждения карты (для demo-проверки через админку)."""
+    list_display = ['user', 'card', 'code', 'is_used', 'expires_at', 'created_at']
+    list_filter = ['is_used', 'created_at']
+    search_fields = ['user__username', 'user__email', 'code', 'card__last4']
+    readonly_fields = ['created_at']

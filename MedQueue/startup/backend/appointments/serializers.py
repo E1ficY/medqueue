@@ -108,6 +108,13 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
     doctor_name      = serializers.CharField(source='doctor.full_name', read_only=True, default=None)
     doctor_cabinet   = serializers.CharField(source='doctor.cabinet',   read_only=True, default=None)
     estimated_wait_time = serializers.ReadOnlyField()
+    auto_taxi_available = serializers.SerializerMethodField()
+
+    def get_auto_taxi_available(self, obj):
+        if not obj.user:
+            return False
+        sub = getattr(obj.user, 'subscription', None)
+        return bool(sub and sub.status == 'active' and sub.auto_taxi_enabled)
 
     class Meta:
         model = Appointment
@@ -125,5 +132,7 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
             'estimated_wait_time',
             'status',
             'comment',
+            'doctor_recommendation',
+            'auto_taxi_available',
             'created_at',
         ]

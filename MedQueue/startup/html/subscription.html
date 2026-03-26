@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedQueue — Подписка</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <script src="../js/theme.js"></script>
+  <style>
+    :root {
+      --sub-bg-1: #0b1220;
+      --sub-bg-2: #0f766e;
+      --sub-accent: #14b8a6;
+      --sub-accent-soft: rgba(20, 184, 166, 0.16);
+      --sub-line: rgba(148, 163, 184, 0.2);
+      --sub-text-muted: #64748b;
+    }
+    body { font-family: 'Manrope', sans-serif; }
+    .sub-wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 56px;
+    }
+    .sub-hero {
+      background: radial-gradient(circle at 20% 10%, rgba(20,184,166,.35), transparent 42%),
+                  radial-gradient(circle at 100% 0%, rgba(14,165,233,.2), transparent 35%),
+                  linear-gradient(135deg, var(--sub-bg-1), var(--sub-bg-2));
+      color: #ecfeff;
+      border-radius: 22px;
+      padding: 28px;
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: 0 18px 50px rgba(15,23,42,.28);
+      margin-bottom: 20px;
+    }
+    .sub-hero h1 { margin: 0 0 10px; font-size: clamp(28px, 5vw, 42px); line-height: 1.05; }
+    .sub-hero p { margin: 0; font-size: 15px; opacity: .92; max-width: 760px; }
+    .sub-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+    }
+    .sub-card {
+      background: #fff;
+      border: 1px solid var(--sub-line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 26px rgba(2,8,23,.08);
+    }
+    .plan-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .plan-item {
+      border: 1.5px solid var(--sub-line);
+      border-radius: 15px;
+      padding: 16px;
+      position: relative;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+    .plan-item.popular { border-color: rgba(20,184,166,.45); box-shadow: 0 8px 18px rgba(20,184,166,.15); }
+    .plan-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: #0f766e;
+      color: #ecfeff;
+      letter-spacing: .03em;
+    }
+    .plan-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+    .plan-price { font-size: 30px; font-weight: 800; color: #0f766e; margin: 8px 0; }
+    .plan-price small { font-size: 13px; color: var(--sub-text-muted); }
+    .plan-benefits { margin: 0; padding: 0; list-style: none; }
+    .plan-benefits li { font-size: 13px; color: #334155; margin-bottom: 7px; }
+    .plan-btn {
+      margin-top: 8px;
+      width: 100%;
+      border: none;
+      border-radius: 11px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, #0f172a, #0f766e);
+      color: #fff;
+    }
+    .plan-btn.free { background: #e2e8f0; color: #0f172a; }
+    .muted { color: var(--sub-text-muted); font-size: 13px; }
+
+    .card-form { display: grid; gap: 10px; margin-top: 12px; }
+    .f-label { font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block; }
+    .f-input {
+      width: 100%;
+      border: 1.5px solid var(--sub-line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .f-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 4px var(--sub-accent-soft); }
+    .row { display: grid; grid-template-columns: 1fr 110px 90px; gap: 8px; }
+    .save-card-btn {
+      border: none;
+      border-radius: 11px;
+      padding: 11px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #0f172a, #0ea5e9);
+    }
+
+    .current-sub {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ecfeff 0%, #f8fafc 100%);
+      border: 1px solid rgba(14,165,233,.2);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(20,184,166,.16);
+      color: #0f766e;
+    }
+
+    .receipt {
+      margin-top: 12px;
+      border: 1px solid rgba(16,185,129,.35);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f0fdf4;
+      display: none;
+    }
+    .receipt.show { display: block; }
+    .receipt-top {
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #065f46, #0f766e);
+      color: #ecfeff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: .03em;
+    }
+    .receipt-body { padding: 14px; font-size: 13px; color: #14532d; display: grid; gap: 6px; }
+    .receipt-line { display: flex; justify-content: space-between; gap: 10px; }
+    .receipt-line span:last-child { font-weight: 700; color: #064e3b; text-align: right; }
+    .verify-box {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px dashed rgba(14,165,233,.45);
+      border-radius: 12px;
+      background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+      display: none;
+    }
+    .verify-box.show { display: block; }
+    .verify-title { font-size: 13px; font-weight: 800; color: #1d4ed8; margin-bottom: 8px; }
+    .verify-row { display: flex; gap: 8px; }
+    .verify-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, #1d4ed8, #0284c7);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .verify-help { margin-top: 7px; font-size: 12px; color: #475569; }
+
+    [data-theme="dark"] .sub-card {
+      background: #111827;
+      border-color: rgba(56,189,248,.18);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    }
+    [data-theme="dark"] .sub-card h2,
+    [data-theme="dark"] .plan-title { color: #e2e8f0; }
+    [data-theme="dark"] .muted,
+    [data-theme="dark"] .plan-benefits li,
+    [data-theme="dark"] .f-label { color: #94a3b8; }
+    [data-theme="dark"] .plan-item {
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      border-color: rgba(56,189,248,.2);
+    }
+    [data-theme="dark"] .plan-btn.free { background: #334155; color: #e2e8f0; }
+    [data-theme="dark"] .f-input {
+      background: #0f172a;
+      border-color: rgba(56,189,248,.22);
+      color: #e2e8f0;
+    }
+    [data-theme="dark"] .f-input::placeholder { color: #64748b; }
+    [data-theme="dark"] .current-sub {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-color: rgba(56,189,248,.25);
+    }
+    [data-theme="dark"] .badge { background: rgba(20,184,166,.24); color: #ccfbf1; }
+    [data-theme="dark"] .receipt { background: #052e2b; border-color: rgba(20,184,166,.35); }
+    [data-theme="dark"] .receipt-body { color: #a7f3d0; }
+    [data-theme="dark"] .receipt-line span:last-child { color: #ccfbf1; }
+    [data-theme="dark"] .verify-box {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-color: rgba(59,130,246,.45);
+    }
+    [data-theme="dark"] .verify-title { color: #93c5fd; }
+    [data-theme="dark"] .verify-help { color: #94a3b8; }
+
+    @media (max-width: 980px) {
+      .sub-grid { grid-template-columns: 1fr; }
+      .plan-list { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html">MedQueue</a>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <nav id="mainNav">
+        <a href="main.html" class="nav-link">Главная</a>
+        <a href="recording.html" class="nav-link">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+        <a href="subscription.html" class="nav-link active">Подписка</a>
+      </nav>
+    </div>
+    <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+
+  <main class="sub-wrap">
+    <section class="sub-hero">
+      <h1>Подписка MedQueue для пациентов</h1>
+      <p>Два прозрачных тарифа без скрытых условий: бесплатный для ежедневных задач и расширенный с приоритетом и авто-заказом такси после приёма.</p>
+    </section>
+
+    <section class="sub-grid">
+      <div class="sub-card">
+        <h2 style="margin:0;font-size:21px;">Выберите тариф</h2>
+        <p class="muted" style="margin:6px 0 0;">Подписка доступна только пользователям с ролью пациента.</p>
+        <div class="plan-list" id="plansContainer"></div>
+
+        <div class="current-sub" id="currentSub">
+          <div class="badge" id="currentBadge">Текущий тариф: загрузка...</div>
+          <div class="muted" id="currentDetails" style="margin-top:7px;"></div>
+        </div>
+      </div>
+
+      <div class="sub-card">
+        <h2 style="margin:0;font-size:21px;">Платежная карта</h2>
+        <p class="muted" style="margin:6px 0 0;">Для тарифа Care Plus карта обязательна. Номер хранится только в маскированном виде.</p>
+
+        <form class="card-form" onsubmit="saveCard(event)">
+          <div>
+            <label class="f-label" for="cardNumber">Номер карты</label>
+            <input id="cardNumber" class="f-input" inputmode="numeric" placeholder="4444 3333 2222 1111" maxlength="23" required />
+          </div>
+          <div>
+            <label class="f-label" for="cardHolder">Имя держателя</label>
+            <input id="cardHolder" class="f-input" placeholder="IVAN IVANOV" required />
+          </div>
+          <div class="row">
+            <div>
+              <label class="f-label" for="expMonth">Месяц</label>
+              <input id="expMonth" class="f-input" inputmode="numeric" placeholder="12" maxlength="2" required />
+            </div>
+            <div>
+              <label class="f-label" for="expYear">Год</label>
+              <input id="expYear" class="f-input" inputmode="numeric" placeholder="2029" maxlength="4" required />
+            </div>
+            <div>
+              <label class="f-label" for="cvc">CVC</label>
+              <input id="cvc" class="f-input" inputmode="numeric" placeholder="123" maxlength="4" required />
+            </div>
+          </div>
+          <button class="save-card-btn" type="submit">Сохранить карту</button>
+        </form>
+
+        <div class="current-sub" style="margin-top:12px;">
+          <div class="badge" id="cardBadge">Карта: не добавлена</div>
+          <div class="muted" id="cardDetails" style="margin-top:7px;">Добавьте карту, чтобы активировать платный тариф.</div>
+        </div>
+
+        <div class="verify-box" id="verifyBox">
+          <div class="verify-title">Подтверждение карты</div>
+          <div class="verify-row">
+            <input id="verifyCode" class="f-input" inputmode="numeric" maxlength="6" placeholder="Код из SMS (6 цифр)" />
+            <button class="verify-btn" onclick="verifyCard()">Подтвердить</button>
+          </div>
+          <div class="verify-help" id="verifyHelp">Введите код подтверждения, который «прислал банк».</div>
+        </div>
+
+        <div class="receipt" id="receiptCard">
+          <div class="receipt-top">ПЛАТЕЖ ПРОВЕДЕН</div>
+          <div class="receipt-body" id="receiptBody"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const nav = document.getElementById('mainNav');
+      nav.classList.toggle('mobile-open');
+    }
+
+    const API_BASE = window.location.protocol === 'file:'
+      ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
+      : window.location.origin;
+    const API = `${API_BASE}/api`;
+    const AUTH_KEY = 'medqueue_current_user';
+
+    let cachedPlans = [];
+    let cachedCard = null;
+
+    function getUser() {
+      try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
+      catch { return null; }
+    }
+
+    async function authFetch(url, options = {}) {
+      const user = getUser();
+      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...(options.headers || {}) };
+      if (user?.access) headers.Authorization = `Bearer ${user.access}`;
+      return fetch(url, { ...options, headers });
+    }
+
+    function formatAmount(v) {
+      return `${Number(v || 0).toLocaleString('ru-RU')} тг`;
+    }
+
+    async function init() {
+      const user = getUser();
+      if (!user) {
+        window.location.href = 'auth.html?tab=login&next=subscription.html';
+        return;
+      }
+      if (user.role !== 'patient') {
+        alert('Подписка доступна только пользователям-пациентам.');
+        window.location.href = user.role === 'doctor' ? 'doctor.html' : 'main.html';
+        return;
+      }
+
+      const [plansRes, meRes] = await Promise.all([
+        fetch(`${API}/subscription/plans/`, { headers: { 'ngrok-skip-browser-warning': 'true' } }),
+        authFetch(`${API}/subscription/me/`),
+      ]);
+
+      if (!plansRes.ok || !meRes.ok) {
+        alert('Не удалось загрузить данные подписки. Проверьте сервер.');
+        return;
+      }
+
+      const plansData = await plansRes.json();
+      const meData = await meRes.json();
+
+      cachedPlans = plansData.plans || [];
+      cachedCard = meData.card || null;
+
+      renderPlans(meData.subscription?.plan_id || 'free');
+      renderCurrent(meData.subscription || null);
+      renderCard(cachedCard, meData.card_verification_required, meData.card_verification_expires_at);
+      if (Array.isArray(meData.transactions) && meData.transactions.length) {
+        renderReceipt(meData.transactions[0]);
+      }
+    }
+
+    function renderPlans(activePlanId) {
+      const c = document.getElementById('plansContainer');
+      c.innerHTML = (cachedPlans || []).map(plan => {
+        const isFree = plan.id === 'free';
+        const active = plan.id === activePlanId;
+        return `
+          <article class="plan-item ${plan.is_popular ? 'popular' : ''}">
+            ${plan.is_popular ? '<span class="plan-tag">Популярный</span>' : ''}
+            <div class="plan-title">${plan.title}</div>
+            <div class="plan-price">${formatAmount(plan.price_kzt)} <small>/ мес</small></div>
+            <ul class="plan-benefits">${plan.benefits.map(b => `<li>• ${b}</li>`).join('')}</ul>
+            <button class="plan-btn ${isFree ? 'free' : ''}" onclick="activatePlan('${plan.id}')">
+              ${active ? 'Активен' : (isFree ? 'Выбрать бесплатно' : 'Подключить тариф')}
+            </button>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderCurrent(subscription) {
+      if (!subscription) return;
+      document.getElementById('currentBadge').textContent = `Текущий тариф: ${subscription.plan_title}`;
+      const billing = subscription.next_billing_date
+        ? `Следующее списание: ${new Date(subscription.next_billing_date).toLocaleDateString('ru-RU')}`
+        : 'Списаний нет';
+      const taxi = subscription.auto_taxi_enabled
+        ? 'Авто-заказ такси после приёма включен.'
+        : 'Авто-заказ такси недоступен на текущем тарифе.';
+      document.getElementById('currentDetails').textContent = `${billing} • ${taxi}`;
+    }
+
+    function renderCard(card, verificationRequired = false, verificationExpiresAt = null) {
+      const verifyBox = document.getElementById('verifyBox');
+      const verifyHelp = document.getElementById('verifyHelp');
+      if (!card) {
+        document.getElementById('cardBadge').textContent = 'Карта: не добавлена';
+        document.getElementById('cardDetails').textContent = 'Добавьте карту, чтобы активировать платный тариф.';
+        verifyBox.classList.remove('show');
+        return;
+      }
+      const verified = !!card.is_verified;
+      document.getElementById('cardBadge').textContent = `Карта: ${card.brand} ${card.masked_pan} ${verified ? '• подтверждена' : '• ожидает подтверждения'}`;
+      document.getElementById('cardDetails').textContent = `Держатель: ${card.card_holder} • Срок: ${String(card.exp_month).padStart(2, '0')}/${card.exp_year}`;
+
+      if (verificationRequired || !verified) {
+        verifyBox.classList.add('show');
+        verifyHelp.textContent = verificationExpiresAt
+          ? `Код действует до ${new Date(verificationExpiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
+          : 'Введите код подтверждения, который «прислал банк». Код можно увидеть в админке Django.';
+      } else {
+        verifyBox.classList.remove('show');
+      }
+    }
+
+    function renderReceipt(tx) {
+      const card = tx.card_masked || '—';
+      document.getElementById('receiptBody').innerHTML = `
+        <div class="receipt-line"><span>Статус</span><span>${tx.status === 'paid' ? 'CAPTURED' : tx.status.toUpperCase()}</span></div>
+        <div class="receipt-line"><span>Транзакция</span><span>${tx.transaction_ref || '—'}</span></div>
+        <div class="receipt-line"><span>Авторизация</span><span>${tx.authorization_code || '—'}</span></div>
+        <div class="receipt-line"><span>Сумма</span><span>${formatAmount(tx.amount)} ${tx.currency || 'KZT'}</span></div>
+        <div class="receipt-line"><span>Карта</span><span>${card}</span></div>
+        <div class="receipt-line"><span>Мерчант</span><span>${tx.merchant_name || 'MedQueue Health Services'}</span></div>
+        <div class="receipt-line"><span>Время</span><span>${tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : '—'}</span></div>
+      `;
+      document.getElementById('receiptCard').classList.add('show');
+    }
+
+    async function saveCard(e) {
+      e.preventDefault();
+      const payload = {
+        card_number: (document.getElementById('cardNumber').value || '').replace(/\s+/g, ''),
+        card_holder: (document.getElementById('cardHolder').value || '').trim().toUpperCase(),
+        exp_month: Number(document.getElementById('expMonth').value || 0),
+        exp_year: Number(document.getElementById('expYear').value || 0),
+        cvc: (document.getElementById('cvc').value || '').trim(),
+      };
+
+      const r = await authFetch(`${API}/subscription/card/`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        alert(d.error || 'Не удалось сохранить карту');
+        return;
+      }
+      cachedCard = d.card;
+      renderCard(cachedCard, d.requires_verification, d.verification_expires_at);
+      alert((d.bank_message || 'Карта добавлена') + '. Введите код подтверждения ниже.');
+    }
+
+    async function verifyCard() {
+      const code = (document.getElementById('verifyCode').value || '').trim();
+      if (!/^\d{6}$/.test(code)) {
+        alert('Введите 6-значный код подтверждения.');
+        return;
+      }
+
+      const r = await authFetch(`${API}/subscription/card/verify/`, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        alert(d.error || 'Не удалось подтвердить карту');
+        return;
+      }
+
+      cachedCard = d.card;
+      renderCard(cachedCard, false, null);
+      document.getElementById('verifyCode').value = '';
+      alert(d.message || 'Карта подтверждена.');
+    }
+
+    async function activatePlan(planId) {
+      const r = await authFetch(`${API}/subscription/activate/`, {
+        method: 'POST',
+        body: JSON.stringify({ plan_id: planId }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        alert(d.error || 'Не удалось активировать тариф');
+        return;
+      }
+      renderPlans(d.subscription.plan_id);
+      renderCurrent(d.subscription);
+      if (d.payment_receipt) renderReceipt(d.payment_receipt);
+      alert(d.message || 'Тариф обновлён');
+    }
+
+    document.getElementById('cardNumber').addEventListener('input', function () {
+      const raw = this.value.replace(/\D/g, '').slice(0, 16);
+      this.value = raw.replace(/(.{4})/g, '$1 ').trim();
+    });
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

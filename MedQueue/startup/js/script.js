@@ -74,7 +74,7 @@ let selectedType = 'all'; // Фильтр по типу клиник
 
 // === ЗАЩИТА СТРАНИЦ ПО РОЛИ ===
 // Страницы для пациентов (врачи и админы сюда не должны попадать)
-const PATIENT_PAGES = ['main.html', 'index.html', 'profile.html', 'recording.html', 'status.html', 'hospital.html'];
+const PATIENT_PAGES = ['main.html', 'index.html', 'profile.html', 'recording.html', 'status.html', 'hospital.html', 'subscription.html'];
 // Страницы только для врача
 const DOCTOR_PAGES = ['doctor.html'];
 // Страницы только для админа
@@ -819,6 +819,11 @@ function initStatusPage() {
                 <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">КОММЕНТАРИЙ К ЗАПИСИ</div>
                 <div style="font-size:14px; color:#111827; background:#f0fdfa; padding:10px 12px; border-radius:8px; border-left:3px solid #14b8a6;">${appointment.comment}</div>
               </div>` : ''}
+              ${appointment.doctor_recommendation ? `
+              <div style="border-top:1px solid #e5e7eb; padding-top:12px;">
+                <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">РЕКОМЕНДАЦИИ ВРАЧА</div>
+                <div style="font-size:14px; color:#1f2937; background:#eff6ff; padding:10px 12px; border-radius:8px; border-left:3px solid #3b82f6;">${appointment.doctor_recommendation}</div>
+              </div>` : ''}
             </div>
           </div>
           
@@ -837,6 +842,13 @@ function initStatusPage() {
               💡 <strong>Совет:</strong> Приходите за 10 минут до приёма. Мы пришлём SMS, когда подойдёт ваша очередь.
             </div>
           </div>
+
+          ${appointment.auto_taxi_available ? `
+          <div style="background:#ecfeff; padding:12px; border-radius:8px; border:1px solid #a5f3fc; margin-bottom:12px;">
+            <div style="font-size:13px; color:#155e75;">
+              🚕 <strong>Care Plus:</strong> после завершения приёма система может автоматически оформить заказ такси.
+            </div>
+          </div>` : ''}
           
           <button class="btn btn-outline" style="width:100%;" onclick="cancelAppointment('${appointment.code}')">
             Отменить запись

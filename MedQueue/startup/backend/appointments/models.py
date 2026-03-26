@@ -139,6 +139,7 @@ class Appointment(models.Model):
         verbose_name="Статус"
     )
     comment = models.TextField(blank=True, default='', verbose_name="Комментарий пациента")
+    doctor_recommendation = models.TextField(blank=True, default='', verbose_name="Рекомендации врача")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -249,6 +250,112 @@ class UserProfile(models.Model):
     @property
     def is_doctor(self):
         return self.role == 'doctor'
+
+
+class PaymentCard(models.Model):
+    """Сохранённая карта пациента (храним только безопасные данные)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='payment_card')
+    card_holder = models.CharField(max_length=120, verbose_name="Держатель карты")
+    brand = models.CharField(max_length=20, default='VISA', verbose_name="Платежная система")
+    last4 = models.CharField(max_length=4, verbose_name="Последние 4 цифры")
+    exp_month = models.PositiveSmallIntegerField(verbose_name="Месяц")
+    exp_year = models.PositiveSmallIntegerField(verbose_name="Год")
+    token = models.CharField(max_length=64, blank=True, default='', verbose_name="Токен")
+    is_verified = models.BooleanField(default=False, verbose_name="Подтверждена")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Платёжная карта"
+        verbose_name_plural = "Платёжные карты"
+
+    def __str__(self):
+        return f"{self.user.username} • {self.brand} ****{self.last4}"
+
+
+class UserSubscription(models.Model):
+    """Подписка пациента."""
+    PLAN_CHOICES = [
+        ('free', 'Базовая (0 тг)'),
+        ('plus', 'Care Plus (2 990 тг/мес)'),
+    ]
+    STATUS_CHOICES = [
+        ('active', 'Активна'),
+        ('cancelled', 'Отменена'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free', verbose_name="Тариф")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="Статус")
+    auto_taxi_enabled = models.BooleanField(default=False, verbose_name="Авто-заказ такси")
+    started_at = models.DateTimeField(auto_now_add=True)
+    next_billing_date = models.DateField(null=True, blank=True, verbose_name="Следующее списание")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+    def __str__(self):
+        return f"{self.user.username} • {self.get_plan_display()}"
+
+
+class PaymentTransaction(models.Model):
+    """История платежей подписки."""
+    STATUS_CHOICES = [
+        ('processing', 'Обрабатывается'),
+        ('paid', 'Оплачен'),
+        ('failed', 'Ошибка'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_transactions')
+    subscription = models.ForeignKey(
+        UserSubscription,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Сумма")
+    currency = models.CharField(max_length=10, default='KZT', verbose_name="Валюта")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing', verbose_name="Статус")
+    transaction_ref = models.CharField(max_length=32, unique=True, verbose_name="Номер транзакции")
+    merchant_name = models.CharField(max_length=120, default='MedQueue Health Services', verbose_name="Мерчант")
+    card_last4 = models.CharField(max_length=4, blank=True, default='', verbose_name="Последние 4")
+    card_brand = models.CharField(max_length=20, blank=True, default='', verbose_name="Платежная система")
+    description = models.CharField(max_length=255, blank=True, default='', verbose_name="Описание")
+    authorization_code = models.CharField(max_length=12, blank=True, default='', verbose_name="Код авторизации")
+    paid_at = models.DateTimeField(null=True, blank=True, verbose_name="Оплачено")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Платёж"
+        verbose_name_plural = "Платежи"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.transaction_ref} • {self.amount} {self.currency}"
+
+
+class CardVerificationCode(models.Model):
+    """Код подтверждения карты от банка (demo flow)."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='card_verification_codes')
+    card = models.ForeignKey(PaymentCard, on_delete=models.CASCADE, related_name='verification_codes')
+    code = models.CharField(max_length=6, verbose_name="Код")
+    is_used = models.BooleanField(default=False, verbose_name="Использован")
+    expires_at = models.DateTimeField(verbose_name="Действует до")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Код подтверждения карты"
+        verbose_name_plural = "Коды подтверждения карты"
+        ordering = ['-created_at']
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"{self.user.username} • {self.code}"
 
 
 class VerificationCode(models.Model):

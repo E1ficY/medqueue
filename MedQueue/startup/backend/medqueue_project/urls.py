@@ -15,6 +15,7 @@ urlpatterns = [
     path('hospital.html', TemplateView.as_view(template_name='hospital.html')),
     path('doctor.html', TemplateView.as_view(template_name='doctor.html')),
     path('admin-panel.html', TemplateView.as_view(template_name='admin-panel.html')),
+    path('subscription.html', TemplateView.as_view(template_name='subscription.html')),
     path('admin/', admin.site.urls),
     path('api/', include('appointments.urls')),
 ]
