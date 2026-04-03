@@ -1,8 +1,12 @@
 from django.db import models
+from django.db.models import Avg, Count
 from django.contrib.auth.models import User
 from django.utils import timezone
 import random
 import string
+
+
+UNIFORM_MINUTES_PER_PATIENT = 15
 
 
 class Hospital(models.Model):
@@ -41,6 +45,42 @@ class Hospital(models.Model):
             status='confirmed',
             datetime__gte=timezone.now()
         ).count()
+
+    @property
+    def estimated_waiting_time(self):
+        """Единый расчет ожидания для всех больниц."""
+        queue_count = self.current_queue
+        if queue_count <= 0:
+            return 0
+        return queue_count * UNIFORM_MINUTES_PER_PATIENT
+
+    @property
+    def waiting_time_reason(self):
+        queue_count = self.current_queue
+        if queue_count <= 0:
+            return 'Ожидание 0 минут, потому что в очереди сейчас нет пациентов.'
+        return (
+            f'Расчет: {queue_count} чел. x {UNIFORM_MINUTES_PER_PATIENT} мин = '
+            f'{self.estimated_waiting_time} мин.'
+        )
+
+    @property
+    def reviews_count(self):
+        return DoctorReview.objects.filter(
+            doctor__hospital=self,
+            doctor__is_active=True,
+        ).count()
+
+    @property
+    def avg_rating(self):
+        result = DoctorReview.objects.filter(
+            doctor__hospital=self,
+            doctor__is_active=True,
+        ).aggregate(avg=Avg('rating'))
+        value = result.get('avg')
+        if value is None:
+            return 0.0
+        return round(float(value), 1)
 
 
 SPECIALTIES_CHOICES = [
@@ -86,6 +126,18 @@ class Doctor(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.specialty}) — {self.hospital.name}"
+
+    @property
+    def reviews_count(self):
+        return self.reviews.count()
+
+    @property
+    def avg_rating(self):
+        reviews = self.reviews.all()
+        if not reviews:
+            return 0.0
+        total = sum(item.rating for item in reviews)
+        return round(total / reviews.count(), 1)
 
     @property
     def current_queue(self):
@@ -140,6 +192,8 @@ class Appointment(models.Model):
     )
     comment = models.TextField(blank=True, default='', verbose_name="Комментарий пациента")
     doctor_recommendation = models.TextField(blank=True, default='', verbose_name="Рекомендации врача")
+    exam_summary = models.TextField(blank=True, default='', verbose_name="Итоги обследования")
+    prescribed_medications = models.TextField(blank=True, default='', verbose_name="Назначенные препараты")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -181,7 +235,20 @@ class Appointment(models.Model):
     @property
     def estimated_wait_time(self):
         """Примерное время ожидания в минутах"""
-        return self.queue_position * 5
+        people_ahead = max((self.queue_position or 1) - 1, 0)
+        if people_ahead == 0:
+            return 0
+        return people_ahead * UNIFORM_MINUTES_PER_PATIENT
+
+    @property
+    def estimated_wait_reason(self):
+        people_ahead = max((self.queue_position or 1) - 1, 0)
+        if people_ahead <= 0:
+            return 'Ожидание 0 минут, вы первый(ая) в очереди.'
+        return (
+            f'Перед вами {people_ahead} чел., единый шаг {UNIFORM_MINUTES_PER_PATIENT} мин/чел. '
+            f'Итого: {self.estimated_wait_time} мин.'
+        )
 
 
 class DoctorInviteCode(models.Model):
@@ -356,6 +423,27 @@ class CardVerificationCode(models.Model):
 
     def __str__(self):
         return f"{self.user.username} • {self.code}"
+
+
+class DoctorReview(models.Model):
+    """Отзывы пациентов о враче."""
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='reviews')
+    patient_name = models.CharField(max_length=200, verbose_name="Имя пациента")
+    rating = models.PositiveSmallIntegerField(verbose_name="Рейтинг")
+    comment = models.TextField(blank=True, default='', verbose_name="Комментарий")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Отзыв о враче"
+        verbose_name_plural = "Отзывы о врачах"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.doctor.full_name} • {self.rating}/5"
+
+    def save(self, *args, **kwargs):
+        self.rating = min(max(int(self.rating or 0), 1), 5)
+        super().save(*args, **kwargs)
 
 
 class VerificationCode(models.Model):

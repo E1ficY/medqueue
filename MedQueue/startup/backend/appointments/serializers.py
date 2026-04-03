@@ -1,11 +1,28 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Hospital, Appointment, Doctor
+from .models import Hospital, Appointment, Doctor, DoctorReview
 
 
 class DoctorSerializer(serializers.ModelSerializer):
     """Сериализатор для врача (используется в карточке больницы и при выборе)"""
     current_queue = serializers.ReadOnlyField()
+    avg_rating = serializers.ReadOnlyField()
+    reviews_count = serializers.ReadOnlyField()
+    hospital_id = serializers.IntegerField(source='hospital.id', read_only=True)
+    hospital_name = serializers.CharField(source='hospital.name', read_only=True)
+    latest_reviews = serializers.SerializerMethodField()
+
+    def get_latest_reviews(self, obj):
+        reviews = DoctorReview.objects.filter(doctor=obj).order_by('-created_at')[:2]
+        return [
+            {
+                'rating': r.rating,
+                'comment': r.comment,
+                'patient_name': r.patient_name,
+                'created_at': r.created_at.isoformat(),
+            }
+            for r in reviews
+        ]
 
     class Meta:
         model = Doctor
@@ -17,6 +34,11 @@ class DoctorSerializer(serializers.ModelSerializer):
             'work_days',
             'work_hours',
             'current_queue',
+            'avg_rating',
+            'reviews_count',
+            'hospital_id',
+            'hospital_name',
+            'latest_reviews',
             'is_active',
         ]
 
@@ -24,6 +46,27 @@ class DoctorSerializer(serializers.ModelSerializer):
 class HospitalSerializer(serializers.ModelSerializer):
     """Краткий сериализатор для списка больниц"""
     current_queue = serializers.ReadOnlyField()
+    waiting_time = serializers.ReadOnlyField(source='estimated_waiting_time')
+    waiting_time_reason = serializers.ReadOnlyField()
+    avg_rating = serializers.ReadOnlyField()
+    reviews_count = serializers.ReadOnlyField()
+    latest_reviews = serializers.SerializerMethodField()
+
+    def get_latest_reviews(self, obj):
+        reviews = DoctorReview.objects.filter(
+            doctor__hospital=obj,
+            doctor__is_active=True,
+        ).order_by('-created_at')[:2]
+        return [
+            {
+                'doctor_name': r.doctor.full_name,
+                'rating': r.rating,
+                'comment': r.comment,
+                'patient_name': r.patient_name,
+                'created_at': r.created_at.isoformat(),
+            }
+            for r in reviews
+        ]
 
     class Meta:
         model = Hospital
@@ -34,6 +77,10 @@ class HospitalSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'waiting_time',
+            'waiting_time_reason',
+            'avg_rating',
+            'reviews_count',
+            'latest_reviews',
             'current_queue',
             'latitude',
             'longitude',
@@ -44,7 +91,28 @@ class HospitalSerializer(serializers.ModelSerializer):
 class HospitalDetailSerializer(serializers.ModelSerializer):
     """Детальный сериализатор — включает описание и список врачей (для страницы больницы)"""
     current_queue = serializers.ReadOnlyField()
+    waiting_time = serializers.ReadOnlyField(source='estimated_waiting_time')
+    waiting_time_reason = serializers.ReadOnlyField()
+    avg_rating = serializers.ReadOnlyField()
+    reviews_count = serializers.ReadOnlyField()
+    latest_reviews = serializers.SerializerMethodField()
     doctors       = DoctorSerializer(many=True, read_only=True)
+
+    def get_latest_reviews(self, obj):
+        reviews = DoctorReview.objects.filter(
+            doctor__hospital=obj,
+            doctor__is_active=True,
+        ).order_by('-created_at')
+        return [
+            {
+                'doctor_name': r.doctor.full_name,
+                'rating': r.rating,
+                'comment': r.comment,
+                'patient_name': r.patient_name,
+                'created_at': r.created_at.isoformat(),
+            }
+            for r in reviews
+        ]
 
     class Meta:
         model = Hospital
@@ -56,6 +124,10 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
             'phone',
             'description',
             'waiting_time',
+            'waiting_time_reason',
+            'avg_rating',
+            'reviews_count',
+            'latest_reviews',
             'current_queue',
             'latitude',
             'longitude',
@@ -108,6 +180,7 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
     doctor_name      = serializers.CharField(source='doctor.full_name', read_only=True, default=None)
     doctor_cabinet   = serializers.CharField(source='doctor.cabinet',   read_only=True, default=None)
     estimated_wait_time = serializers.ReadOnlyField()
+    estimated_wait_reason = serializers.ReadOnlyField()
     auto_taxi_available = serializers.SerializerMethodField()
 
     def get_auto_taxi_available(self, obj):
@@ -130,9 +203,12 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
             'datetime',
             'queue_position',
             'estimated_wait_time',
+            'estimated_wait_reason',
             'status',
             'comment',
             'doctor_recommendation',
+            'exam_summary',
+            'prescribed_medications',
             'auto_taxi_available',
             'created_at',
         ]

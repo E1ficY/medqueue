@@ -13,11 +13,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import json
 import os
 import random
+import re
 import string
 import urllib.parse
 import urllib.request
 
-from .models import VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode, Doctor
+from .models import (
+    VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode,
+    Doctor, Hospital, SPECIALTIES_CHOICES,
+)
 from .security import (
     get_client_ip,
     is_login_locked,
@@ -556,10 +560,291 @@ SYSTEM_PROMPT_AI = (
     'Ты — МедAi, дружелюбный ИИ-ассистент медицинского портала MedQueue (г. Алматы). '
     'Помогаешь пациентам: разбираться с записью к врачу, подсказываешь к какому '
     'специалисту обратиться, отвечаешь на общие медицинские вопросы. '
-    'Отвечай коротко (2-4 предложения), по-русски, дружелюбно. '
+    'Отвечай максимально коротко и понятно (1-3 коротких абзаца). '
+    'Пиши естественно, без шаблонов "Лучший вариант" и "Альтернатива". '
+    'Если нужно, предложи 1-2 врача в спокойной разговорной форме. '
     'Всегда заканчивай советом обратиться к врачу для точного диагноза. '
     'Не ставь диагнозы и не выписывай рецепты.'
 )
+
+
+SYMPTOM_SPECIALTY_RULES = [
+    (['температура', 'кашель', 'простуда', 'орви', 'грипп', 'горло', 'слабость'], 'Терапевт'),
+    (['операция', 'рана', 'ушиб', 'перелом', 'хирург'], 'Хирург'),
+    (['сердце', 'давление', 'тахикардия', 'аритмия', 'боль в груди'], 'Кардиолог'),
+    (['голова', 'мигрень', 'головокружение', 'онемение', 'судороги'], 'Невролог'),
+    (['кожа', 'сыпь', 'зуд', 'прыщи', 'акне'], 'Дерматолог'),
+    (['глаза', 'зрение', 'покраснение глаз'], 'Офтальмолог'),
+    (['сахар', 'диабет', 'гормоны', 'щитовидка'], 'Эндокринолог'),
+    (['беременность', 'цикл', 'гинеколог'], 'Гинеколог'),
+    (['почки', 'моче', 'уролог'], 'Уролог'),
+    (['дети', 'ребенок', 'ребёнок', 'малыш', 'педиатр'], 'Педиатр'),
+    (['зуб', 'десна', 'стоматолог'], 'Стоматолог'),
+    (['тревога', 'депрессия', 'паника', 'психиатр'], 'Психиатр'),
+]
+
+
+RECOMMENDATION_INTENT_KEYWORDS = [
+    'порекомендуй', 'посоветуй', 'какой врач', 'к какому врачу',
+    'куда обратиться', 'подбери врача', 'нужен врач',
+    'какая больница', 'подбери больницу', 'где лечиться',
+]
+
+
+ALL_DOCTORS_INTENT_KEYWORDS = [
+    'все врачи', 'всех врачей', 'покажи всех врачей', 'покажи врачей',
+    'список врачей', 'врачи из базы', 'все доктора', 'расскажи о всех врачах',
+]
+
+
+DOCTOR_LOOKUP_INTENT_KEYWORDS = [
+    'найди врача', 'найти врача', 'есть врач', 'есть ли врач',
+    'проверь врача', 'информация о враче', 'о враче', 'где работает врач',
+    'врач по имени',
+]
+
+
+def _detect_specialty_from_text(message):
+    """Определяет вероятную специальность по тексту запроса."""
+    text = (message or '').lower()
+
+    # Явное упоминание специальности из справочника.
+    for specialty, _ in SPECIALTIES_CHOICES:
+        if specialty.lower() in text:
+            return specialty
+
+    for keywords, specialty in SYMPTOM_SPECIALTY_RULES:
+        if any(keyword in text for keyword in keywords):
+            return specialty
+    return None
+
+
+def _is_recommendation_intent(message):
+    text = (message or '').lower()
+    if any(keyword in text for keyword in RECOMMENDATION_INTENT_KEYWORDS):
+        return True
+    return _detect_specialty_from_text(text) is not None
+
+
+def _is_all_doctors_intent(message):
+    text = (message or '').lower()
+    if any(keyword in text for keyword in ALL_DOCTORS_INTENT_KEYWORDS):
+        return True
+
+    specialty = _detect_specialty_from_text(text)
+    if specialty and ('все' in text or 'покажи' in text or 'список' in text):
+        return True
+
+    return ('все' in text and ('врачи' in text or 'доктора' in text))
+
+
+def _is_doctor_lookup_intent(message):
+    """Определяет, что пользователь явно ищет конкретного врача по ФИО."""
+    text = (message or '').lower().strip()
+    if any(keyword in text for keyword in DOCTOR_LOOKUP_INTENT_KEYWORDS):
+        return True
+
+    # Эвристика: если есть слово "врач" + минимум 2 похожих на имя токена.
+    if 'врач' not in text and 'доктор' not in text:
+        return False
+
+    tokens = [
+        token for token in re.findall(r"[a-zA-Zа-яА-ЯёЁ]+", text)
+        if len(token) >= 3 and token not in {
+            'врач', 'доктор', 'клиника', 'больница', 'найди', 'найти', 'покажи',
+            'есть', 'ли', 'где', 'какой', 'какая', 'какие', 'работает',
+            'хирург', 'терапевт', 'стоматолог', 'кардиолог', 'невролог',
+        }
+    ]
+    return len(tokens) >= 2
+
+
+def _all_doctors_response(message):
+    """Возвращает список всех активных врачей из БД (опционально по специальности)."""
+    specialty = _detect_specialty_from_text(message)
+    qs = Doctor.objects.filter(is_active=True, hospital__is_active=True).select_related('hospital')
+    if specialty:
+        qs = qs.filter(specialty=specialty)
+
+    doctors = list(qs.order_by('specialty', 'full_name'))
+    if not doctors:
+        return {'reply': 'Сейчас в базе нет подходящих врачей.'}
+
+    if specialty:
+        lines = [f"В базе найдено врачей по специальности {specialty}: {len(doctors)}."]
+    else:
+        lines = [f"В базе найдено врачей: {len(doctors)}."]
+    for doc in doctors:
+        phone = doc.hospital.phone or 'телефон не указан'
+        lines.append(
+            f"- {doc.full_name} ({doc.specialty}) — {doc.hospital.name}, тел: {phone}"
+        )
+    return {'reply': '\n'.join(lines)}
+
+
+def _lookup_doctors_by_name(message):
+    """Ищет врачей по имени/фрагментам ФИО по всей БД (включая неактивных)."""
+    text = (message or '').lower().strip()
+    if not text:
+        return []
+
+    tokens = [
+        token for token in re.findall(r"[a-zA-Zа-яА-ЯёЁ0-9]+", text)
+        if len(token) >= 3 and token not in {
+            'врач', 'доктор', 'клиника', 'больница', 'найди', 'покажи',
+            'есть', 'ли', 'где', 'какой', 'какая', 'какие', 'работает',
+            'все', 'врачи', 'доктора', 'всех', 'расскажи', 'обо', 'всех',
+        }
+    ]
+    if not tokens:
+        return []
+
+    doctors = Doctor.objects.select_related('hospital').all()
+    scored = []
+
+    for doc in doctors:
+        name = (doc.full_name or '').lower()
+        score = 0
+        for token in tokens:
+            if token in name:
+                score += 3
+        if len(tokens) >= 2 and all(token in name for token in tokens[:2]):
+            score += 2
+        if score > 0:
+            scored.append((score, doc))
+
+    scored.sort(key=lambda item: (-item[0], 0 if item[1].is_active else 1, item[1].full_name.lower()))
+    return [doc for _, doc in scored[:5]]
+
+
+def _doctor_lookup_response(message):
+    """Формирует короткий ответ по поиску врача по ФИО."""
+    matches = _lookup_doctors_by_name(message)
+    if not matches:
+        return None
+
+    top = matches[0]
+    status_hint = '' if top.is_active else ' (сейчас неактивен в системе)'
+    phone = top.hospital.phone or 'телефон не указан'
+
+    reply = (
+        f"Нашел врача в базе: {top.full_name} ({top.specialty}){status_hint}. "
+        f"Клиника: {top.hospital.name}, тел: {phone}."
+    )
+
+    if len(matches) > 1:
+        alt = matches[1]
+        alt_phone = alt.hospital.phone or 'телефон не указан'
+        reply += f" Еще вариант: {alt.full_name} ({alt.specialty}), {alt.hospital.name}, тел: {alt_phone}."
+
+    return {'reply': reply}
+
+
+def _get_ai_recommendation_data(message):
+    """Возвращает релевантных врачей/больницы из БД для ИИ-ответа."""
+    specialty = _detect_specialty_from_text(message)
+
+    doctors_base_qs = Doctor.objects.filter(
+        is_active=True,
+        hospital__is_active=True,
+    ).select_related('hospital')
+
+    doctors_qs = doctors_base_qs
+    if specialty:
+        doctors_qs = doctors_qs.filter(specialty=specialty)
+        # Если по специальности никого нет — не теряем врачей, показываем лучшие доступные варианты.
+        if not doctors_qs.exists():
+            doctors_qs = doctors_base_qs
+
+    doctors = list(doctors_qs)
+    doctors.sort(
+        key=lambda doc: (
+            -float(doc.avg_rating or 0),
+            -(doc.reviews_count or 0),
+            doc.hospital.waiting_time,
+            doc.full_name.lower(),
+        )
+    )
+    doctors = doctors[:6]
+
+    hospitals_qs = Hospital.objects.filter(is_active=True)
+    if doctors:
+        hospital_ids = [doc.hospital_id for doc in doctors]
+        hospitals_qs = hospitals_qs.filter(id__in=hospital_ids)
+    hospitals = list(hospitals_qs.order_by('waiting_time', 'name')[:3])
+
+    return {
+        'specialty': specialty,
+        'doctors': doctors,
+        'hospitals': hospitals,
+    }
+
+
+def _build_ai_db_context(message):
+    """Формирует текстовый контекст для внешней LLM на основе БД MedQueue."""
+    data = _get_ai_recommendation_data(message)
+    doctors = data['doctors']
+    hospitals = data['hospitals']
+
+    if not doctors and not hospitals:
+        return 'В базе сейчас нет подходящих активных врачей/больниц. Дай общий совет и предложи уточнить симптомы.'
+
+    context_lines = []
+    if data['specialty']:
+        context_lines.append(f"Определи запрос как направление к специалисту: {data['specialty']}.")
+
+    if doctors:
+        context_lines.append('Доступные врачи из БД:')
+        for doc in doctors:
+            phone = doc.hospital.phone or 'телефон не указан'
+            context_lines.append(
+                f"- {doc.full_name} ({doc.specialty}), рейтинг: {doc.avg_rating}/5 ({doc.reviews_count} отзывов), "
+                f"{doc.hospital.name}, адрес: {doc.hospital.address}, тел: {phone}"
+            )
+
+    if hospitals:
+        context_lines.append('Доступные больницы из БД:')
+        for hospital in hospitals:
+            phone = hospital.phone or 'телефон не указан'
+            context_lines.append(
+                f"- {hospital.name}, адрес: {hospital.address}, среднее ожидание: {hospital.waiting_time} мин, тел: {phone}"
+            )
+
+    context_lines.append('Если пользователь просит рекомендацию, обязательно выдели 1 лучшего врача и добавь 1-2 альтернативы.')
+    return '\n'.join(context_lines)
+
+
+def _fallback_db_recommendation_response(message):
+    """Rule-based ответ с конкретными врачами/больницами из БД."""
+    data = _get_ai_recommendation_data(message)
+    doctors = data['doctors']
+    hospitals = data['hospitals']
+
+    if not doctors and not hospitals:
+        return None
+
+    specialty_hint = data['specialty']
+    top_doctor = doctors[0] if doctors else None
+
+    if top_doctor:
+        lines = []
+        if specialty_hint:
+            lines.append(f"Специальность: {specialty_hint}")
+        for doc in doctors[:3]:
+            phone = doc.hospital.phone or 'телефон не указан'
+            lines.append(
+                f"- {doc.full_name} ({doc.specialty}) | {doc.hospital.name} | рейтинг {doc.avg_rating}/5 | {phone}"
+            )
+        return {'reply': '\n'.join(lines)}
+
+    if hospitals:
+        lines = []
+        for h in hospitals[:3]:
+            phone = h.phone or 'телефон не указан'
+            lines.append(f"- {h.name} | {h.address} | {phone}")
+        return {'reply': '\n'.join(lines)}
+
+    return None
 
 
 @api_view(['POST'])
@@ -585,8 +870,21 @@ def ai_chat(request):
     if not user_message:
         return Response({'error': 'Сообщение пустое'}, status=400)
 
+    # Запросы вида "покажи всех врачей" — возвращаем полный список из БД.
+    if _is_all_doctors_intent(user_message):
+        all_docs = _all_doctors_response(user_message)
+        return Response({**all_docs, 'model': 'medqueue-db-all'})
+
+    # Точный/приближенный поиск врача по ФИО — только при явном намерении пользователя.
+    if _is_doctor_lookup_intent(user_message):
+        doctor_lookup = _doctor_lookup_response(user_message)
+        if doctor_lookup:
+            return Response({**doctor_lookup, 'model': 'medqueue-db-name'})
+
     HF_TOKEN      = os.getenv('HF_TOKEN', '').strip()
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+    db_context = _build_ai_db_context(user_message)
+    runtime_system_prompt = f"{SYSTEM_PROMPT_AI}\n\nКонтекст MedQueue из БД:\n{db_context}"
 
     # ── 1. Kimi-K2 via HuggingFace Router ──
     if HF_TOKEN:
@@ -596,7 +894,7 @@ def ai_chat(request):
                 base_url='https://router.huggingface.co/v1',
                 api_key=HF_TOKEN,
             )
-            messages = [{'role': 'system', 'content': SYSTEM_PROMPT_AI}]
+            messages = [{'role': 'system', 'content': runtime_system_prompt}]
             for item in history[-8:]:
                 role = item.get('role', 'user')
                 if role not in ('user', 'assistant'):
@@ -622,7 +920,7 @@ def ai_chat(request):
     if GEMINI_API_KEY:
         try:
             contents = [
-                {'role': 'user', 'parts': [{'text': SYSTEM_PROMPT_AI}]},
+                {'role': 'user', 'parts': [{'text': runtime_system_prompt}]},
                 {'role': 'model', 'parts': [{'text': 'Понял, готов помочь!'}]},
             ]
             for item in history[-8:]:
@@ -646,99 +944,52 @@ def ai_chat(request):
         except Exception as e:
             print(f'[GEMINI ERROR] {e}')
 
-    # ── 3. Rule-based fallback ──
-    return Response(_fallback_ai_response(user_message))
+    # ── 3. Local fallback ──
+    local_reply = _fallback_ai_response(user_message)
+    return Response({**local_reply, 'model': 'medqueue-local'})
 
 
 def _fallback_ai_response(message):
-    """Rule-based fallback если Gemini API недоступен — покрывает >20 тем"""
-    m = message.lower()
+    """Локальный ответ по смыслу запроса без жестких шаблонов."""
+    text = (message or '').strip()
+    lower = text.lower()
 
-    # --- Запись к врачу ---
-    if any(w in m for w in ['записаться', 'запись', 'записать', 'попасть на приём', 'записаться к врачу']):
-        return {'reply': '📅 Перейдите в раздел «Главная», выберите клинику → «Записаться». Укажите специалиста, дату и время — код записи придёт сразу.'}
+    if _is_all_doctors_intent(text):
+        return _all_doctors_response(text)
 
-    # --- Температура ---
-    if any(w in m for w in ['температура', 'жар', 'лихорадка', 'горю', 'высокая темп']):
-        return {'reply': '🌡️ При температуре выше 38.5°C обратитесь к терапевту или вызовите скорую (103). До снижения — пейте больше воды, при необходимости примите жаропонижающее (парацетамол). Для точного диагноза обратитесь к врачу.'}
+    if _is_doctor_lookup_intent(text):
+        direct = _doctor_lookup_response(text)
+        if direct:
+            return direct
 
-    # --- Головная боль ---
-    if any(w in m for w in ['голова', 'головная боль', 'мигрень', 'голова боли']):
-        return {'reply': '🧠 Головная боль бывает при усталости, стрессе, давлении или неврологических причинах. Если боль сильная/частая — обратитесь к неврологу. Для точного диагноза обратитесь к врачу.'}
+    db_reco = _fallback_db_recommendation_response(text)
+    if db_reco:
+        return db_reco
 
-    # --- Живот / ЖКТ ---
-    if any(w in m for w in ['живот', 'желудок', 'тошнота', 'рвота', 'понос', 'диарея', 'запор', 'изжога']):
-        return {'reply': '🫁 Боли в животе, тошнота или расстройство ЖКТ — повод обратиться к гастроэнтерологу или терапевту. Если боль острая — вызовите скорую (103). Для точного диагноза обратитесь к врачу.'}
+    specialty = _detect_specialty_from_text(text)
+    asks_medicine = any(x in lower for x in ['что выпить', 'что принять', 'что можно выпить', 'что можно принять'])
 
-    # --- Сердце ---
-    if any(w in m for w in ['сердце', 'сердечное', 'давление', 'тахикардия', 'аритмия', 'инфаркт', 'боль в груди']):
-        return {'reply': '❤️ При болях в грудной клетке, учащённом сердцебиении или скачках давления — срочно к кардиологу. При острой боли вызовите 103. Для точного диагноза обратитесь к врачу.'}
+    if specialty and asks_medicine:
+        advice = {
+            'Стоматолог': 'Можно начать с обезболивающего на основе ибупрофена или парацетамола по инструкции, если нет противопоказаний.',
+            'Терапевт': 'Можно начать с базовой симптоматической помощи: питье, отдых и жаропонижающее по инструкции при температуре.',
+            'Кардиолог': 'При боли в груди или выраженной одышке не начинайте самолечение, лучше сразу обратиться за неотложной помощью.',
+        }
+        line = advice.get(specialty, 'На первом этапе используйте только безопасную симптоматическую помощь по инструкции к препарату.')
+        docs = _get_ai_recommendation_data(text).get('doctors', [])[:2]
+        if docs:
+            doctors_line = '; '.join([f"{d.full_name} ({d.hospital.name})" for d in docs])
+            return {'reply': f"{line} Подходящие врачи: {doctors_line}."}
+        return {'reply': line}
 
-    # --- Кашель / ОРВИ ---
-    if any(w in m for w in ['кашель', 'насморк', 'орви', 'простуда', 'грипп', 'чихаю', 'горло', 'ангина']):
-        return {'reply': '🤧 ОРВИ или грипп лечит терапевт. Пейте тёплые жидкости, больше отдыхайте. При высокой температуре и ухудшении — обратитесь к врачу очно. Для точного диагноза обратитесь к врачу.'}
+    if specialty:
+        docs = _get_ai_recommendation_data(text).get('doctors', [])[:2]
+        if docs:
+            doctors_line = '; '.join([f"{d.full_name} ({d.hospital.name})" for d in docs])
+            return {'reply': f"По симптомам логично начать с {specialty.lower()}. Подходящие врачи: {doctors_line}."}
+        return {'reply': f"По описанию лучше начать с {specialty.lower()}."}
 
-    # --- Спина, суставы ---
-    if any(w in m for w in ['спина', 'позвоночник', 'суставы', 'колено', 'поясница', 'шея']):
-        return {'reply': '🦴 Боли в спине и суставах — к ортопеду или неврологу. При травме — к хирургу. Для точного диагноза обратитесь к врачу.'}
+    if any(x in lower for x in ['болит', 'боль', 'температура', 'кашель', 'тошнит', 'голова']):
+        return {'reply': 'Опишите симптомы точнее: что болит, как давно и есть ли температура. Подберу врача и первый шаг.'}
 
-    # --- Кожа ---
-    if any(w in m for w in ['кожа', 'сыпь', 'зуд', 'акне', 'прыщи', 'дерматит', 'аллергия']):
-        return {'reply': '🧴 Кожные проблемы (сыпь, зуд, акне) — к дерматологу. Аллергическую реакцию также оценит аллерголог. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Глаза ---
-    if any(w in m for w in ['глаза', 'зрение', 'близорукость', 'дальнозоркость', 'линзы', 'очки']):
-        return {'reply': '👁️ Проблемы со зрением — к офтальмологу. Плановую проверку зрения рекомендуется проходить раз в год. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Зубы ---
-    if any(w in m for w in ['зубы', 'зуб', 'стоматолог', 'десна', 'боль в зубе']):
-        return {'reply': '🦷 Зубная боль — к стоматологу как можно скорее. Для снятия боли временно помогает ибупрофен. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Дети ---
-    if any(w in m for w in ['ребёнок', 'дети', 'ребенок', 'малыш', 'педиатр']):
-        return {'reply': '👶 Здоровье детей — к педиатру. В Алматы есть детские поликлиники и ДГКБ. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Психическое здоровье ---
-    if any(w in m for w in ['депрессия', 'тревога', 'психолог', 'психиатр', 'стресс', 'паника', 'бессонница']):
-        return {'reply': '🧘 Психологическое состояние важно. Обратитесь к психологу (без рецептов) или психиатру (с медикаментами). В кризисных ситуациях — телефон доверия: 150. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Диабет / эндо ---
-    if any(w in m for w in ['диабет', 'сахар', 'инсулин', 'щитовидка', 'гормоны', 'эндокринолог']):
-        return {'reply': '🩸 При симптомах диабета или гормональных нарушениях — к эндокринологу. Сдайте кровь на сахар натощак. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Женское здоровье ---
-    if any(w in m for w in ['гинеколог', 'женский врач', 'беременность', 'месячные', 'цикл']):
-        return {'reply': '🌸 Женское здоровье — к гинекологу. Плановый осмотр раз в год обязателен. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Скорая ---
-    if any(w in m for w in ['скорая', '103', 'вызвать врача', 'критическое', 'потерял сознание']):
-        return {'reply': '🚑 При критическом состоянии немедленно звоните 103 (скорая помощь). Не ждите и не занимайтесь самолечением!'}
-
-    # --- Больницы Алматы ---
-    if any(w in m for w in ['больница', 'поликлиника', 'клиника', 'алматы', 'где лечиться']):
-        return {'reply': '🏥 В MedQueue представлены более 40 больниц и поликлиник Алматы. Откройте главную страницу, выберите клинику на карте или в списке и запишитесь онлайн.'}
-
-    # --- Анализы ---
-    if any(w in m for w in ['анализы', 'кровь', 'моча', 'узи', 'мрт', 'рентген', 'обследование']):
-        return {'reply': '🔬 Для направления на анализы или инструментальную диагностику (УЗИ, МРТ, рентген) обратитесь к терапевту — он выдаст направление. Для точного диагноза обратитесь к врачу.'}
-
-    # --- Поиск специалиста ---
-    if any(w in m for w in ['какой врач', 'к какому врачу', 'специалист', 'кому записаться']):
-        return {'reply': '🩺 Если не знаете к кому идти — начните с терапевта: он поставит предварительный диагноз и направит к нужному специалисту. Для записи используйте MedQueue.'}
-
-    # --- Приветствие ---
-    if any(w in m for w in ['привет', 'здравствуй', 'хеллоу', 'hi', 'hello', 'даров', 'добрый']):
-        return {'reply': '👋 Привет! Я МедAi — ваш медицинский ассистент MedQueue. Задайте вопрос о симптомах, специалистах или записи к врачу в Алматы. 😊'}
-
-    # --- Спасибо ---
-    if any(w in m for w in ['спасибо', 'благодар', 'thanks', 'thank']):
-        return {'reply': '😊 Пожалуйста! Если появятся ещё вопросы — спрашивайте. Берегите своё здоровье!'}
-
-    # --- По умолчанию ---
-    return {
-        'reply': (
-            '🏥 Я МедAi — ассистент медпортала MedQueue (Алматы). '
-            'Могу помочь с выбором специалиста, записью к врачу или ответить на вопрос о симптомах. '
-            'Уточните свой вопрос, и я постараюсь помочь!'
-        )
-    }
+    return {'reply': 'Уточните запрос: врач, специальность, больница или запись на прием.'}

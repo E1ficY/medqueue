@@ -267,6 +267,18 @@
       font-size: 12px;
       color: var(--text-muted);
     }
+    .doctor-rating {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: rgba(20,184,166,0.08);
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      padding: 5px 10px;
+    }
     .doctor-book-btn {
       margin-top: 12px;
       width: 100%;
@@ -423,6 +435,7 @@
       </a>
       <nav class="main-nav" id="mainNav">
         <a href="main.html" class="nav-link">🏠 Главная</a>
+        <a href="doctors.html" class="nav-link">👨‍⚕️ Врачи</a>
         <a href="recording.html" class="nav-link active">📅 Запись</a>
         <a href="status.html" class="nav-link">📋 Статус</a>
         <a href="contacts and about.html" class="nav-link">📞 Контакты</a>
@@ -487,6 +500,11 @@
         <section class="content-section" id="descSection">
           <h2 class="section-title">📋 О клинике</h2>
           <p class="description-text" id="descText">Загрузка описания…</p>
+        </section>
+
+        <section class="content-section" id="hospitalReviewsSection">
+          <h2 class="section-title">🗨️ Отзывы о клинике</h2>
+          <div id="hospitalReviews" class="description-text">Загрузка отзывов…</div>
         </section>
 
         <!-- Врачи -->
@@ -662,6 +680,10 @@
           <span class="icon">📍</span>
           <span>${h.address || 'Адрес не указан'}</span>
         </div>
+        <div class="hospital-meta-item">
+          <span class="icon">⭐</span>
+          <span>${Number(h.avg_rating || 0).toFixed(1)} (${h.reviews_count || 0} отзывов)</span>
+        </div>
         ${h.phone ? `<div class="hospital-meta-item">
           <span class="icon">📞</span>
           <a href="tel:${h.phone}">${h.phone}</a>
@@ -675,6 +697,7 @@
       // Статистика
       document.getElementById('statQueue').textContent = h.current_queue ?? '—';
       document.getElementById('statWait').textContent  = h.waiting_time  ?? '—';
+      document.getElementById('statWait').title = h.waiting_time_reason || '';
     }
 
     // ──────────────────────────────────────────
@@ -686,6 +709,50 @@
         `${h.name} — современное медицинское учреждение Алматы, оказывающее широкий спектр медицинских услуг населению. ` +
         `Опытный персонал и современное оборудование обеспечивают высокое качество медицинской помощи.`;
       document.getElementById('descText').textContent = desc;
+    }
+
+    function renderHospitalReviews(h) {
+      const wrap = document.getElementById('hospitalReviews');
+      const reviews = Array.isArray(h.latest_reviews) ? h.latest_reviews : [];
+      if (!reviews.length) {
+        wrap.innerHTML = '<p style="margin:0;color:var(--text-muted)">Пока нет отзывов по этой клинике.</p>';
+        return;
+      }
+      const visibleCount = 3;
+      const hiddenCount = Math.max(reviews.length - visibleCount, 0);
+      wrap.innerHTML = reviews.map((r, idx) => `
+        <div class="hospital-review-item" style="padding:12px 14px;border:1px solid var(--border-soft);border-radius:12px;margin-bottom:10px;background:var(--card-bg)">
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary)">⭐ ${Number(r.rating || 0).toFixed(1)} · ${r.doctor_name || 'Врач'}</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin:5px 0">${r.comment || 'Без комментария'}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${r.patient_name || 'Пациент'}</div>
+        </div>
+      `).join('');
+
+      const cards = wrap.querySelectorAll('.hospital-review-item');
+      cards.forEach((card, idx) => {
+        if (idx >= visibleCount) card.style.display = 'none';
+      });
+
+      if (hiddenCount > 0) {
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.dataset.expanded = 'false';
+        toggle.textContent = `Показать все отзывы (${reviews.length})`;
+        toggle.style.cssText = 'margin-top:4px;padding:10px 14px;border:1px solid var(--border-soft);background:var(--card-bg);color:var(--text-primary);border-radius:10px;font-weight:600;cursor:pointer;';
+
+        toggle.addEventListener('click', () => {
+          const expanded = toggle.dataset.expanded === 'true';
+          cards.forEach((card, idx) => {
+            card.style.display = (!expanded || idx < visibleCount) ? 'block' : 'none';
+          });
+          toggle.dataset.expanded = expanded ? 'false' : 'true';
+          toggle.textContent = expanded
+            ? `Показать все отзывы (${reviews.length})`
+            : 'Свернуть отзывы';
+        });
+
+        wrap.appendChild(toggle);
+      }
     }
 
     // ──────────────────────────────────────────
@@ -824,6 +891,9 @@
         const cabinet  = d.cabinet ? ` · каб. ${d.cabinet}` : '';
         const hours    = d.work_hours ? `⏰ ${d.work_hours}` : '';
         const days     = d.work_days  ? `🗓 ${d.work_days}` : '';
+        const review = Array.isArray(d.latest_reviews) && d.latest_reviews.length
+          ? d.latest_reviews[0]
+          : null;
         return `
           <div class="doctor-card" tabindex="0"
                onclick="bookDoctor(${d.id})"
@@ -833,6 +903,8 @@
             <div class="doctor-specialty">${d.specialty}${cabinet}</div>
             ${hours ? `<div class="doctor-exp">${hours}</div>` : ''}
             ${days  ? `<div class="doctor-exp">${days}</div>` : ''}
+            <div class="doctor-rating">⭐ ${(Number(d.avg_rating || 0)).toFixed(1)} · 🗨️ ${d.reviews_count || 0}</div>
+            ${review ? `<div class="doctor-exp" style="margin-top:8px">«${review.comment || 'Без комментария'}»</div>` : ''}
             <button class="doctor-book-btn"
                     onclick="event.stopPropagation();bookDoctor(${d.id})">
               📅 Записаться
@@ -926,6 +998,7 @@
       // Заполняем все секции
       renderHero(hospital);
       renderDescription(hospital);
+      renderHospitalReviews(hospital);
       renderSidebar(hospital);
       initHeroMap(hospital);   // Мини-карта в hero-баннере
       initSidebarMap(hospital); // Мини-карта в боковой панели

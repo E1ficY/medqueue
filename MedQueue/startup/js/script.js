@@ -71,10 +71,13 @@ async function authFetch(url, options = {}) {
 let hospitals = [];
 let myAppointments = [];
 let selectedType = 'all'; // Фильтр по типу клиник
+let currentHospitalPage = 1;
+let currentHospitalFilter = '';
+const HOSPITALS_PER_PAGE = 6;
 
 // === ЗАЩИТА СТРАНИЦ ПО РОЛИ ===
 // Страницы для пациентов (врачи и админы сюда не должны попадать)
-const PATIENT_PAGES = ['main.html', 'index.html', 'profile.html', 'recording.html', 'status.html', 'hospital.html', 'subscription.html'];
+const PATIENT_PAGES = ['main.html', 'index.html', 'profile.html', 'recording.html', 'status.html', 'hospital.html', 'subscription.html', 'doctors.html'];
 // Страницы только для врача
 const DOCTOR_PAGES = ['doctor.html'];
 // Страницы только для админа
@@ -145,11 +148,93 @@ document.addEventListener('DOMContentLoaded', async function() {
   initHospitalSelects();
   renderHospitalCards();
   initSearch();
+  initDoctorsCatalogPage();
   initForms();
   initStatusPage();
   highlightActiveNav();
   initPhoneDropdowns();
 });
+
+// === КАТАЛОГ ВРАЧЕЙ ===
+let doctorsCatalog = [];
+
+async function loadDoctorsCatalog({ query = '', specialty = '' } = {}) {
+  const params = new URLSearchParams();
+  if (query) params.set('q', query);
+  if (specialty && specialty !== 'all') params.set('specialty', specialty);
+
+  const url = `${API_URL}/doctors/${params.toString() ? `?${params.toString()}` : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Не удалось загрузить врачей');
+  const data = await response.json();
+  doctorsCatalog = Array.isArray(data) ? data : (data.results || []);
+  return doctorsCatalog;
+}
+
+function renderDoctorsCatalogCards(items) {
+  const container = document.getElementById('doctorsCatalogList');
+  if (!container) return;
+
+  if (!items.length) {
+    container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Врачи не найдены</p>';
+    return;
+  }
+
+  container.innerHTML = items.map(d => {
+    const reviews = Array.isArray(d.latest_reviews) ? d.latest_reviews.slice(0, 2) : [];
+    const reviewsHtml = reviews.length
+      ? reviews.map(r => {
+          const patient = r.patient_name || 'Пациент';
+          const rating = Number(r.rating || 0).toFixed(1);
+          const text = (r.comment || 'Без комментария').trim();
+          return `<div style="font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:8px 10px;border-radius:8px">⭐ ${rating} · ${patient}<br>«${text}»</div>`;
+        }).join('')
+      : '<div style="font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:8px 10px;border-radius:8px">Пока нет отзывов</div>';
+    return `
+    <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--accent)">
+      <div style="font-size:16px;font-weight:800;color:var(--text)">${d.full_name}</div>
+      <div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase">${d.specialty || 'Специалист'}</div>
+      <div style="font-size:13px;color:var(--text-soft)">🏥 ${d.hospital_name || 'Больница не указана'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text-soft)">
+        <span>⭐ <strong>${Number(d.avg_rating || 0).toFixed(1)}</strong></span>
+        <span>🗨️ ${d.reviews_count || 0} отзывов</span>
+      </div>
+      ${reviewsHtml}
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+        <span>Очередь: ${d.current_queue || 0} чел.</span>
+        <span>${d.work_hours || ''}</span>
+      </div>
+      <a class="btn btn-outline" style="font-size:13px;padding:9px 12px" href="recording.html?hospital=${d.hospital_id || ''}&doctor=${d.id}">Записаться</a>
+    </div>
+  `;
+  }).join('');
+}
+
+function initDoctorsCatalogPage() {
+  const listEl = document.getElementById('doctorsCatalogList');
+  if (!listEl) return;
+
+  const searchEl = document.getElementById('doctorSearch');
+  const specialtyEl = document.getElementById('doctorSpecialtyFilter');
+
+  const apply = async () => {
+    listEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">⏳ Загружаем врачей...</p>';
+    try {
+      const items = await loadDoctorsCatalog({
+        query: searchEl?.value?.trim() || '',
+        specialty: specialtyEl?.value || 'all',
+      });
+      renderDoctorsCatalogCards(items);
+    } catch (e) {
+      listEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#dc2626;padding:24px">Ошибка загрузки врачей</p>';
+    }
+  };
+
+  if (searchEl) searchEl.addEventListener('input', debounce(apply, 250));
+  if (specialtyEl) specialtyEl.addEventListener('change', apply);
+
+  apply();
+}
 
 function getCurrentUser() {
   try {
@@ -282,7 +367,7 @@ function showAuthPrompt() {
 }
 
 // === ЗАГРУЗКА БОЛЬНИЦ ИЗ API (с кэшем) ===
-const HOSPITALS_CACHE_KEY = 'medqueue_hospitals_cache_v5'; // v5 — restored 20 hospitals, 46 doctors
+const HOSPITALS_CACHE_KEY = 'medqueue_hospitals_cache_v6'; // v6 — include ratings data
 const HOSPITALS_CACHE_TTL = 2 * 60 * 1000; // 2 минуты
 
 async function loadHospitals() {
@@ -308,7 +393,10 @@ async function loadHospitals() {
       address:     h.address,
       phone:       h.phone || '',
       waiting:     h.waiting_time,
+      waitingReason: h.waiting_time_reason || '',
       queue:       h.current_queue,
+      avgRating:   Number(h.avg_rating || 0),
+      reviewsCount: Number(h.reviews_count || 0),
       latitude:    h.latitude,
       longitude:   h.longitude,
     }));
@@ -357,6 +445,18 @@ function renderHospitalCards(filter = '') {
   const container = document.getElementById('hospList');
   if (!container) return;
 
+  currentHospitalFilter = filter;
+
+  const paginationContainer = (() => {
+    let el = container.parentElement?.querySelector('.hosp-pagination');
+    if (!el && container.parentElement) {
+      el = document.createElement('div');
+      el.className = 'hosp-pagination';
+      container.insertAdjacentElement('afterend', el);
+    }
+    return el;
+  })();
+
   let filtered = hospitals.filter(h =>
     h.name.toLowerCase().includes(filter.toLowerCase()) ||
     (h.address && h.address.toLowerCase().includes(filter.toLowerCase())) ||
@@ -370,8 +470,16 @@ function renderHospitalCards(filter = '') {
 
   if (filtered.length === 0) {
     container.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:var(--muted)">Ничего не найдено</p>';
+    if (paginationContainer) paginationContainer.innerHTML = '';
     return;
   }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / HOSPITALS_PER_PAGE));
+  if (currentHospitalPage > totalPages) currentHospitalPage = totalPages;
+  if (currentHospitalPage < 1) currentHospitalPage = 1;
+
+  const startIndex = (currentHospitalPage - 1) * HOSPITALS_PER_PAGE;
+  const pageItems = filtered.slice(startIndex, startIndex + HOSPITALS_PER_PAGE);
 
   // Буферизация через DocumentFragment — один рефлоу вместо многих
   const TYPE_COLORS = {
@@ -383,7 +491,7 @@ function renderHospitalCards(filter = '') {
     'Детская': '👶',     'Спец. клиника': '🔬',
   };
 
-  const html = filtered.map(h => {
+  const html = pageItems.map(h => {
     const color  = TYPE_COLORS[h.type] || '#14b8a6';
     const icon   = TYPE_ICONS[h.type]  || '🏥';
     const queueW = Math.min((h.queue || 0) / 20 * 100, 100); // макс. 20 = 100%
@@ -408,7 +516,11 @@ function renderHospitalCards(filter = '') {
         <div style="height:4px;background:var(--border-soft);border-radius:4px;margin-bottom:10px;overflow:hidden">
           <div style="height:100%;width:${queueW}%;background:${color};border-radius:4px;transition:width .4s"></div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted)">⏱ Ожидание ~${h.waiting} мин</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">⏱ Ожидание ~${h.waiting} мин</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-muted)">
+          <span>⭐ Рейтинг: <strong style="color:${color}">${(h.avgRating || 0).toFixed(1)}</strong></span>
+          <span>🗨️ ${h.reviewsCount || 0} отзывов</span>
+        </div>
       </div>
 
       <!-- Кнопки -->
@@ -426,11 +538,53 @@ function renderHospitalCards(filter = '') {
 
   // Одно обновление DOM
   container.innerHTML = html;
+
+  if (paginationContainer) {
+    const from = startIndex + 1;
+    const to = Math.min(startIndex + HOSPITALS_PER_PAGE, filtered.length);
+    const pageButtons = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+      const nearCurrent = Math.abs(i - currentHospitalPage) <= 1;
+      const edge = i === 1 || i === totalPages;
+      if (!nearCurrent && !edge) {
+        if (pageButtons[pageButtons.length - 1] !== 'dots') pageButtons.push('dots');
+      } else {
+        pageButtons.push(i);
+      }
+    }
+
+    const pagesHtml = pageButtons.map(p => {
+      if (p === 'dots') return '<span class="hosp-page-dots">...</span>';
+      const active = p === currentHospitalPage ? 'active' : '';
+      return `<button class="hosp-page-btn ${active}" onclick="changeHospitalPage(${p})">${p}</button>`;
+    }).join('');
+
+    paginationContainer.innerHTML = `
+      <div class="hosp-pagination-meta">Показано ${from}-${to} из ${filtered.length} клиник</div>
+      <div class="hosp-pagination-controls">
+        <button class="hosp-page-btn" ${currentHospitalPage === 1 ? 'disabled' : ''} onclick="changeHospitalPage(${currentHospitalPage - 1})">Назад</button>
+        ${pagesHtml}
+        <button class="hosp-page-btn" ${currentHospitalPage === totalPages ? 'disabled' : ''} onclick="changeHospitalPage(${currentHospitalPage + 1})">Вперед</button>
+      </div>
+    `;
+  }
+}
+
+function changeHospitalPage(page) {
+  currentHospitalPage = page;
+  renderHospitalCards(currentHospitalFilter);
+
+  const list = document.getElementById('hospList');
+  if (list) {
+    list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // === ФИЛЬТР ПО ТИПУ КЛИНИК ===
 function filterByType(type, evt) {
   selectedType = type;
+  currentHospitalPage = 1;
   
   // Обновляем активную кнопку
   document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -470,6 +624,7 @@ function initSearch() {
   if (!searchInput) return;
 
   searchInput.addEventListener('input', debounce((e) => {
+    currentHospitalPage = 1;
     renderHospitalCards(e.target.value);
   }, 220));
 }

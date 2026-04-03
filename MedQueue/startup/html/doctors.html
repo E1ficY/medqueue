@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedQueue - Врачи и рейтинг</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/theme.js"></script>
+  <script src="../js/script.js?v=1.0.3"></script>
+  <style>
+    .doctors-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .doctors-filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .doctors-filters input,
+    .doctors-filters select {
+      min-height: 42px;
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: var(--card);
+      color: var(--text);
+    }
+    .doctors-filters input { flex: 1; min-width: 220px; }
+    .doctors-filters select { min-width: 200px; }
+    .doctors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="main.html">MedQueue</a>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <nav id="mainNav">
+        <a href="main.html" class="nav-link">Главная</a>
+        <a href="doctors.html" class="nav-link active">Врачи</a>
+        <a href="recording.html" class="nav-link">Записаться</a>
+        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="profile.html" class="nav-link">Личный кабинет</a>
+        <a href="subscription.html" class="nav-link">Подписка</a>
+      </nav>
+    </div>
+    <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+  </header>
+
+  <main class="wrap" style="padding-top:28px; padding-bottom:40px;">
+    <section class="card" style="padding:22px;">
+      <div class="doctors-head">
+        <div>
+          <h1 style="margin:0 0 6px; font-size:28px;">Врачи и рейтинг</h1>
+          <p style="margin:0; color:var(--muted);">Выберите врача по специальности, рейтингу и больнице.</p>
+        </div>
+      </div>
+
+      <div class="doctors-filters">
+        <input id="doctorSearch" type="text" placeholder="Поиск по ФИО или больнице..." />
+        <select id="doctorSpecialtyFilter">
+          <option value="all">Все специальности</option>
+          <option value="Терапевт">Терапевт</option>
+          <option value="Хирург">Хирург</option>
+          <option value="Стоматолог">Стоматолог</option>
+          <option value="Педиатр">Педиатр</option>
+          <option value="Кардиолог">Кардиолог</option>
+          <option value="Невролог">Невролог</option>
+          <option value="Офтальмолог">Офтальмолог</option>
+          <option value="Дерматолог">Дерматолог</option>
+          <option value="Эндокринолог">Эндокринолог</option>
+          <option value="Гинеколог">Гинеколог</option>
+          <option value="Уролог">Уролог</option>
+          <option value="Психиатр">Психиатр</option>
+        </select>
+      </div>
+
+      <div id="doctorsCatalogList" class="doctors-grid" style="margin-top:16px;"></div>
+    </section>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const nav = document.getElementById('mainNav');
+      nav.classList.toggle('mobile-open');
+    }
+  </script>
+</body>
+</html>

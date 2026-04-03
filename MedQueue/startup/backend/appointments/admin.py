@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Hospital, Appointment, VerificationCode, PasswordResetCode, Doctor, DoctorInviteCode, UserProfile,
-    PaymentCard, CardVerificationCode,
+    PaymentCard, CardVerificationCode, DoctorReview,
 )
 
 
@@ -91,6 +91,9 @@ class AppointmentAdmin(admin.ModelAdmin):
         ('Комментарий пациента', {
             'fields': ('comment',)
         }),
+        ('Заключение врача', {
+            'fields': ('doctor_recommendation', 'exam_summary', 'prescribed_medications')
+        }),
         ('Системная информация', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
@@ -137,7 +140,11 @@ class PasswordResetCodeAdmin(admin.ModelAdmin):
 @admin.register(Doctor)
 class DoctorAdmin(admin.ModelAdmin):
     """Админка для врачей"""
-    list_display = ['full_name', 'specialty', 'hospital', 'cabinet', 'work_days', 'work_hours', 'current_queue', 'is_active']
+    list_display = [
+        'full_name', 'specialty', 'hospital', 'cabinet',
+        'avg_rating', 'reviews_count', 'work_days', 'work_hours',
+        'current_queue', 'is_active',
+    ]
     list_filter = ['specialty', 'hospital', 'is_active']
     search_fields = ['full_name', 'hospital__name']
     list_editable = ['is_active', 'cabinet']
@@ -149,6 +156,15 @@ class DoctorAdmin(admin.ModelAdmin):
             'fields': ('work_days', 'work_hours', 'is_active')
         }),
     )
+
+
+@admin.register(DoctorReview)
+class DoctorReviewAdmin(admin.ModelAdmin):
+    """Отзывы и рейтинг врачей."""
+    list_display = ['doctor', 'rating', 'patient_name', 'created_at']
+    list_filter = ['rating', 'doctor__specialty', 'doctor__hospital']
+    search_fields = ['doctor__full_name', 'doctor__hospital__name', 'patient_name', 'comment']
+    readonly_fields = ['created_at']
 
 
 @admin.register(PaymentCard)

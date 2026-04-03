@@ -9,8 +9,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .models import (
-    Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile,
+    Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile, DoctorReview,
     UserSubscription, PaymentCard, PaymentTransaction, CardVerificationCode,
     SPECIALTIES_CHOICES,
 )
@@ -68,6 +69,41 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
             for spec, docs in sorted(grouped.items())
         ]
         return Response(result)
+
+
+class DoctorCatalogViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Публичный каталог врачей.
+
+    GET /api/doctors/              — список активных врачей
+    GET /api/doctors/{id}/         — карточка врача
+    Query params:
+      - specialty=Терапевт
+      - hospital=<hospital_id>
+      - q=<поиск по ФИО/больнице>
+    """
+    permission_classes = [AllowAny]
+    serializer_class = DoctorSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = Doctor.objects.filter(
+            is_active=True,
+            hospital__is_active=True,
+        ).select_related('hospital').order_by('-id')
+
+        specialty = (self.request.query_params.get('specialty') or '').strip()
+        hospital_id = (self.request.query_params.get('hospital') or '').strip()
+        query = (self.request.query_params.get('q') or '').strip()
+
+        if specialty:
+            qs = qs.filter(specialty=specialty)
+        if hospital_id.isdigit():
+            qs = qs.filter(hospital_id=int(hospital_id))
+        if query:
+            qs = qs.filter(Q(full_name__icontains=query) | Q(hospital__name__icontains=query))
+
+        return qs
 
 
 class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -539,6 +575,65 @@ def subscription_activate(request):
     })
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_doctor_review(request, doctor_id):
+    """
+    POST /api/reviews/doctors/<doctor_id>/
+    Body: {"rating": 1..5, "comment": "..."}
+    Только пациент может оставить отзыв.
+    """
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True, hospital__is_active=True)
+
+    try:
+        rating = int(request.data.get('rating'))
+    except Exception:
+        return Response({'error': 'rating должен быть числом от 1 до 5'}, status=400)
+
+    if rating < 1 or rating > 5:
+        return Response({'error': 'rating должен быть в диапазоне 1..5'}, status=400)
+
+    comment = (request.data.get('comment') or '').strip()
+    if len(comment) > 1000:
+        return Response({'error': 'Комментарий слишком длинный (максимум 1000 символов)'}, status=400)
+
+    patient_name = user.get_full_name() or user.first_name or user.username
+    review = DoctorReview.objects.create(
+        doctor=doctor,
+        patient_name=patient_name,
+        rating=rating,
+        comment=comment,
+    )
+
+    return Response({
+        'ok': True,
+        'review': {
+            'id': review.id,
+            'doctor_id': doctor.id,
+            'patient_name': review.patient_name,
+            'rating': review.rating,
+            'comment': review.comment,
+            'created_at': review.created_at.isoformat(),
+        },
+        'doctor': {
+            'id': doctor.id,
+            'full_name': doctor.full_name,
+            'avg_rating': doctor.avg_rating,
+            'reviews_count': doctor.reviews_count,
+        },
+        'hospital': {
+            'id': doctor.hospital.id,
+            'name': doctor.hospital.name,
+            'avg_rating': doctor.hospital.avg_rating,
+            'reviews_count': doctor.hospital.reviews_count,
+        },
+    }, status=201)
+
+
 # ─────────────────────────────────────────────
 #  DOCTOR PORTAL  —  /api/doctor/...
 # ─────────────────────────────────────────────
@@ -657,6 +752,8 @@ def doctor_appointments(request):
             'user_email': appt.user.email if appt.user else None,
             'comment': appt.comment or '',
             'doctor_recommendation': appt.doctor_recommendation or '',
+            'exam_summary': appt.exam_summary or '',
+            'prescribed_medications': appt.prescribed_medications or '',
         })
 
     return Response(data)
@@ -692,7 +789,11 @@ def doctor_update_appointment(request, appointment_id):
 def doctor_update_recommendation(request, appointment_id):
     """
     PATCH /api/doctor/appointments/<id>/recommendation/
-    Body: {"doctor_recommendation": "Что взять, как лечиться дальше"}
+        Body: {
+            "doctor_recommendation": "Общие рекомендации",
+            "exam_summary": "Итоги обследования",
+            "prescribed_medications": "Назначенные препараты"
+        }
     """
     hospital, doctor_entry, err = _require_doctor(request)
     if err:
@@ -704,9 +805,20 @@ def doctor_update_recommendation(request, appointment_id):
         appt = get_object_or_404(Appointment, id=appointment_id, hospital=hospital)
 
     recommendation = (request.data.get('doctor_recommendation') or '').strip()
+    exam_summary = (request.data.get('exam_summary') or '').strip()
+    prescribed_medications = (request.data.get('prescribed_medications') or '').strip()
+
     appt.doctor_recommendation = recommendation
-    appt.save(update_fields=['doctor_recommendation', 'updated_at'])
-    return Response({'ok': True, 'id': appt.id, 'doctor_recommendation': appt.doctor_recommendation})
+    appt.exam_summary = exam_summary
+    appt.prescribed_medications = prescribed_medications
+    appt.save(update_fields=['doctor_recommendation', 'exam_summary', 'prescribed_medications', 'updated_at'])
+    return Response({
+        'ok': True,
+        'id': appt.id,
+        'doctor_recommendation': appt.doctor_recommendation,
+        'exam_summary': appt.exam_summary,
+        'prescribed_medications': appt.prescribed_medications,
+    })
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -784,6 +896,8 @@ def admin_doctors(request):
             'work_days':  d.work_days,
             'work_hours': d.work_hours,
             'is_active':  d.is_active,
+            'avg_rating': d.avg_rating,
+            'reviews_count': d.reviews_count,
             'hospital':   {'id': d.hospital.id, 'name': d.hospital.name},
             'user_id':    d.user_id,
             'username':   d.user.username if d.user else None,

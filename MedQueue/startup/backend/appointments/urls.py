@@ -2,8 +2,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    HospitalViewSet, AppointmentViewSet,
+    HospitalViewSet, DoctorCatalogViewSet, AppointmentViewSet,
     doctor_me, doctor_appointments, doctor_update_appointment, doctor_update_recommendation,
+    create_doctor_review,
     subscription_plans, subscription_me, subscription_save_card, subscription_verify_card, subscription_activate,
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
@@ -12,6 +13,7 @@ from . import auth_views
 
 router = DefaultRouter()
 router.register(r'hospitals', HospitalViewSet, basename='hospital')
+router.register(r'doctors', DoctorCatalogViewSet, basename='doctor-catalog')
 router.register(r'appointments', AppointmentViewSet, basename='appointment')
 
 urlpatterns = [
@@ -30,6 +32,7 @@ urlpatterns = [
     path('doctor/appointments/', doctor_appointments),
     path('doctor/appointments/<int:appointment_id>/', doctor_update_appointment),
     path('doctor/appointments/<int:appointment_id>/recommendation/', doctor_update_recommendation),
+    path('reviews/doctors/<int:doctor_id>/', create_doctor_review),
     # Subscriptions (patients only for private actions)
     path('subscription/plans/', subscription_plans),
     path('subscription/me/', subscription_me),
