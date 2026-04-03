@@ -589,6 +589,17 @@ def create_doctor_review(request, doctor_id):
 
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True, hospital__is_active=True)
 
+    has_completed_appointment = Appointment.objects.filter(
+        user=user,
+        doctor=doctor,
+        status='completed',
+    ).exists()
+    if not has_completed_appointment:
+        return Response(
+            {'error': 'Отзыв можно оставить только после завершенного приема у этого врача'},
+            status=400,
+        )
+
     try:
         rating = int(request.data.get('rating'))
     except Exception:

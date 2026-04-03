@@ -177,6 +177,7 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
     hospital_name    = serializers.CharField(source='hospital.name',    read_only=True)
     hospital_address = serializers.CharField(source='hospital.address', read_only=True)
     hospital_type    = serializers.CharField(source='hospital.type',    read_only=True)
+    doctor_id        = serializers.IntegerField(source='doctor.id', read_only=True, default=None)
     doctor_name      = serializers.CharField(source='doctor.full_name', read_only=True, default=None)
     doctor_cabinet   = serializers.CharField(source='doctor.cabinet',   read_only=True, default=None)
     estimated_wait_time = serializers.ReadOnlyField()
@@ -197,6 +198,7 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
             'hospital_name',
             'hospital_address',
             'hospital_type',
+            'doctor_id',
             'doctor_name',
             'doctor_cabinet',
             'specialty',

@@ -240,6 +240,15 @@ class DoctorReviewEndpointTests(APITestCase):
 			specialty='Терапевт',
 			is_active=True,
 		)
+		Appointment.objects.create(
+			patient_name='Пациент Отзыв',
+			hospital=hospital,
+			doctor=doctor,
+			specialty='Терапевт',
+			datetime=timezone.now() - timedelta(days=1),
+			status='completed',
+			user=patient,
+		)
 
 		self.client.force_authenticate(user=patient)
 		response = self.client.post(
@@ -254,6 +263,37 @@ class DoctorReviewEndpointTests(APITestCase):
 		self.assertEqual(response.data['doctor']['reviews_count'], 1)
 		self.assertEqual(response.data['hospital']['avg_rating'], 5.0)
 		self.assertEqual(response.data['hospital']['reviews_count'], 1)
+
+	def test_patient_cannot_review_doctor_without_completed_appointment(self):
+		patient = User.objects.create_user(
+			username='patient_case_2',
+			email='patient_case_2@example.com',
+			password='StrongPass123!'
+		)
+		UserProfile.objects.create(user=patient, role='patient')
+
+		hospital = Hospital.objects.create(
+			name='Больница без завершения',
+			type='Больница',
+			address='г. Алматы, ул. БезОтзыва 8',
+			is_active=True,
+		)
+		doctor = Doctor.objects.create(
+			hospital=hospital,
+			full_name='Нет Завершения',
+			specialty='Терапевт',
+			is_active=True,
+		)
+
+		self.client.force_authenticate(user=patient)
+		response = self.client.post(
+			f'/api/reviews/doctors/{doctor.id}/',
+			data={'rating': 5, 'comment': 'Попытка без завершения'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('завершенного приема', response.data.get('error', '').lower())
 
 
 class DoctorsCatalogApiTests(APITestCase):

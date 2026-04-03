@@ -675,6 +675,7 @@
 
     let allAppointments = [];
     let currentTab = 'active';
+    let reviewContext = null;
 
     document.addEventListener('DOMContentLoaded', async function() {
       const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
@@ -899,6 +900,7 @@
               <button onclick="viewCode('${app.code}')" class="btn btn-outline">
                  Код: <strong>${app.code}</strong>
               </button>
+              ${app.status === 'completed' && app.doctor_id ? `<button onclick="openReviewModal(${app.doctor_id}, '${app.code}')" class="btn btn-primary" style="flex:0 0 auto;">⭐ Оставить отзыв</button>` : ''}
               ${app.status === 'confirmed' ? `<button onclick="cancelFromProfile('${app.code}')" class="btn btn-outline" style="color:#dc2626;border-color:rgba(220,38,38,0.22);flex:0 0 auto;"> Отменить</button>` : ''}
             </div>
           </div>`;
@@ -1068,7 +1070,103 @@
         cancelCommentEdit(code);
       }
     }
+
+    function openReviewModal(doctorId, appointmentCode) {
+      const appt = allAppointments.find(a => a.code === appointmentCode);
+      if (!appt || !doctorId) return;
+
+      reviewContext = {
+        doctorId,
+        appointmentCode,
+        doctorName: appt.doctor_name || 'врач',
+      };
+
+      document.getElementById('reviewDoctorName').textContent = reviewContext.doctorName;
+      document.getElementById('reviewAppointmentCode').textContent = appointmentCode;
+      document.getElementById('reviewRating').value = '5';
+      document.getElementById('reviewComment').value = '';
+      document.getElementById('reviewModal').style.display = 'flex';
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').style.display = 'none';
+      reviewContext = null;
+    }
+
+    async function submitDoctorReview(e) {
+      e.preventDefault();
+      if (!reviewContext) return;
+
+      const rating = Number(document.getElementById('reviewRating').value || 0);
+      const comment = document.getElementById('reviewComment').value.trim();
+
+      if (rating < 1 || rating > 5) {
+        alert('Выберите рейтинг от 1 до 5.');
+        return;
+      }
+
+      const user = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+      const token = user?.access || localStorage.getItem('medqueue_access_token');
+      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      try {
+        const r = await fetch(`${PROF_API_URL}/reviews/doctors/${reviewContext.doctorId}/`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ rating, comment })
+        });
+        const data = await r.json().catch(() => ({}));
+
+        if (!r.ok) {
+          alert(data.error || 'Не удалось отправить отзыв.');
+          return;
+        }
+
+        const appt = allAppointments.find(a => a.code === reviewContext.appointmentCode);
+        if (appt) {
+          appt.review_submitted = true;
+        }
+
+        closeReviewModal();
+        renderAppointments(currentTab);
+        alert('Спасибо! Ваш отзыв сохранен.');
+      } catch (err) {
+        alert('Ошибка сети при отправке отзыва.');
+      }
+    }
   </script>
+
+  <div id="reviewModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);z-index:999998;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:white;padding:28px 22px 22px;border-radius:16px;max-width:460px;width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;">
+      <button onclick="closeReviewModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;line-height:1;">&times;</button>
+      <h3 style="margin:0 0 10px 0;font-size:20px;color:#0369a1;font-weight:800;">⭐ Оставить отзыв о враче</h3>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+        Врач: <strong id="reviewDoctorName"></strong><br>
+        Код записи: <strong id="reviewAppointmentCode"></strong>
+      </div>
+      <form onsubmit="submitDoctorReview(event)">
+        <div style="margin-bottom:12px;">
+          <label for="reviewRating" style="display:block;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Оценка</label>
+          <select id="reviewRating" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;">
+            <option value="5">5 - Отлично</option>
+            <option value="4">4 - Хорошо</option>
+            <option value="3">3 - Нормально</option>
+            <option value="2">2 - Плохо</option>
+            <option value="1">1 - Очень плохо</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label for="reviewComment" style="display:block;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Комментарий</label>
+          <textarea id="reviewComment" rows="4" placeholder="Напишите, как прошел прием..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1.5px solid #d1fae5;font-size:15px;outline:none;font-family:inherit;resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline" onclick="closeReviewModal()">Отмена</button>
+          <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <!-- Profile editor modal (прямой потомок body для правильного z-index) -->
   <div id="profileEditorModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
     <div style="background:white;padding:36px 28px 28px 28px;border-radius:18px;max-width:420px;width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;animation:slideUpModal 0.25s ease;">
@@ -1112,6 +1210,27 @@
   </style>
 
   <style>
+    [data-theme="dark"] #reviewModal > div {
+      background: #111827 !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+      border: 1px solid rgba(56,189,248,0.15) !important;
+    }
+    [data-theme="dark"] #reviewModal h3 {
+      color: var(--accent-2) !important;
+    }
+    [data-theme="dark"] #reviewModal label {
+      color: var(--muted) !important;
+    }
+    [data-theme="dark"] #reviewModal input,
+    [data-theme="dark"] #reviewModal select,
+    [data-theme="dark"] #reviewModal textarea {
+      background: #0d1117 !important;
+      border-color: rgba(56,189,248,0.20) !important;
+      color: var(--text) !important;
+    }
+    [data-theme="dark"] #reviewModal button[onclick="closeReviewModal()"] {
+      color: #93c5fd !important;
+    }
     [data-theme="dark"] #profileEditorModal > div {
       background: #111827 !important;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
