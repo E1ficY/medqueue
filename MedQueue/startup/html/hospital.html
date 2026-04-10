@@ -6,7 +6,7 @@
   <title>MedQueue — Карточка больницы</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
-  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css?v=4.1" />
   <script src="https://mapgl.2gis.com/api/js/v1"></script>
   <style>
     /* ===== Hospital Detail Page Styles ===== */
@@ -31,7 +31,7 @@
 
     /* ===== Hero banner split layout (text + mini-map) ===== */
     .hospital-hero-banner {
-      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
       padding: 40px 40px 36px;
       position: relative;
       overflow: hidden;
@@ -56,7 +56,7 @@
       flex-shrink: 0;
       position: relative;
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
-      border: 2px solid rgba(20,184,166,0.40);
+      border: 2px solid rgba(111,156,146,0.40);
     }
     .hero-map-preview #heroMapCanvas { width: 100%; height: 290px; display: block; }
     .hero-map-noloc {
@@ -65,7 +65,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg,#1e293b,#134e4a);
+      background: linear-gradient(135deg,#1e293b,#3f5f58);
       color: rgba(255,255,255,.5);
       font-size: 48px;
       gap: 8px;
@@ -79,8 +79,8 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(20,184,166,0.25);
-      border: 1px solid rgba(20,184,166,0.45);
+      background: rgba(111,156,146,0.25);
+      border: 1px solid rgba(111,156,146,0.45);
       color: #5eead4;
       font-size: 12px;
       font-weight: 700;
@@ -134,7 +134,7 @@
       transition: background .2s;
     }
     .stat-cell:last-child { border-right: none; }
-    .stat-cell:hover { background: rgba(20,184,166,0.05); }
+    .stat-cell:hover { background: rgba(111,156,146,0.05); }
     .stat-cell .stat-val {
       font-size: 26px;
       font-weight: 900;
@@ -233,14 +233,14 @@
     }
     .doctor-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(20,184,166,0.12);
+      box-shadow: 0 8px 32px rgba(111,156,146,0.12);
       border-color: var(--accent);
     }
     .doctor-avatar {
       width: 52px;
       height: 52px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      background: linear-gradient(135deg, #0f172a, #6f9c92);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -274,7 +274,7 @@
       gap: 8px;
       font-size: 12px;
       color: var(--text-secondary);
-      background: rgba(20,184,166,0.08);
+      background: rgba(111,156,146,0.08);
       border: 1px solid var(--border-soft);
       border-radius: 999px;
       padding: 5px 10px;
@@ -348,7 +348,7 @@
       width: 100%;
       padding: 11px 0;
       text-align: center;
-      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      background: linear-gradient(135deg, #0f172a, #6f9c92);
       color: #fff;
       font-size: 14px;
       font-weight: 700;
@@ -361,7 +361,7 @@
 
     /* CTA-записаться */
     .cta-book {
-      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
       border-radius: 20px;
       padding: 28px 24px;
       text-align: center;
@@ -427,7 +427,7 @@
           <path d="M14 7v14M7 14h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
           <defs>
             <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#0f172a"/><stop offset="1" stop-color="#14b8a6"/>
+              <stop stop-color="#0f172a"/><stop offset="1" stop-color="#6f9c92"/>
             </linearGradient>
           </defs>
         </svg>
@@ -805,7 +805,7 @@
           coordinates: [lng, lat],
           html: `<div style="
             width:36px;height:36px;
-            background:linear-gradient(135deg,#0f172a,#14b8a6);
+            background:linear-gradient(135deg,#0f172a,#6f9c92);
             border-radius:50% 50% 50% 0;
             transform:rotate(-45deg);
             border:3px solid white;
@@ -837,7 +837,7 @@
           coordinates: [lng, lat],
           html: `<div style="
             width:32px;height:32px;
-            background:linear-gradient(135deg,#0f172a,#14b8a6);
+            background:linear-gradient(135deg,#0f172a,#6f9c92);
             border-radius:50% 50% 50% 0;
             transform:rotate(-45deg);
             border:2px solid white;
@@ -1016,7 +1016,7 @@
           `<div class="doctors-empty">
             <p style="font-size:32px;margin-bottom:8px">👨‍⚕️</p>
             <p>Нет данных о врачах этой клиники</p>
-            <a href="auth.html?tab=register" style="margin-top:12px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#0f172a,#14b8a6);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px">👨‍⚕️ Регистрация врача</a>
+            <a href="auth.html?tab=register" style="margin-top:12px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#0f172a,#6f9c92);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px">👨‍⚕️ Регистрация врача</a>
           </div>`;
         document.getElementById('statDoctors').textContent = '0';
       }
@@ -1026,3 +1026,4 @@
   </script>
 </body>
 </html>
+

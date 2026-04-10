@@ -108,7 +108,7 @@
 
   // ── GTA notification bar ──────────────────
   function showGTABar(label, color, glow, cb) {
-    color = color || '#22c55e';
+    color = color || '#7aa79d';
     glow  = glow  || 'rgba(34,197,94,0.4)';
 
     var bar = document.createElement('div');
@@ -159,7 +159,7 @@
   }
 
   function showTerminal(cfg) {
-    var color = cfg.color || '#22c55e';
+    var color = cfg.color || '#7aa79d';
     var glow  = cfg.glow  || 'rgba(34,197,94,0.7)';
 
     var overlay = document.createElement('div');
@@ -231,3 +231,4 @@
     setTimeout(close, 18000);
   }
 })();
+

@@ -9,7 +9,6 @@ urlpatterns = [
     path('main.html', TemplateView.as_view(template_name='main.html')),
     path('doctors.html', TemplateView.as_view(template_name='doctors.html')),
     path('recording.html', TemplateView.as_view(template_name='recording.html')),
-    path('status.html', TemplateView.as_view(template_name='status.html')),
     path('profile.html', TemplateView.as_view(template_name='profile.html')),
     path('contacts and about.html', TemplateView.as_view(template_name='contacts and about.html')),
     path('auth.html', TemplateView.as_view(template_name='auth.html')),

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -10,7 +10,7 @@
   <style>
 
     body {
-      background: linear-gradient(120deg, #0f172a 0%, #134e4a 60%, #14b8a6 100%);
+      background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
       min-height: 100vh;
       display: flex;
       align-items: flex-start;
@@ -33,7 +33,7 @@
     }
     .auth-card::-webkit-scrollbar { width: 5px; }
     .auth-card::-webkit-scrollbar-track { background: transparent; }
-    .auth-card::-webkit-scrollbar-thumb { background: #14b8a6; border-radius: 10px; }
+    .auth-card::-webkit-scrollbar-thumb { background: #6f9c92; border-radius: 10px; }
 
     .logo {
       text-align: center;
@@ -75,7 +75,7 @@
 
     .tab.active {
       background: white;
-      color: #0d9488;
+      color: #5c887f;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
@@ -101,13 +101,58 @@
 
     .form-input:focus {
       outline: none;
-      border-color: #14b8a6;
+      border-color: #6f9c92;
+    }
+
+    .pass-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .pass-toggle {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .strength {
+      margin-top: 6px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .strength > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: #ef4444;
+      transition: width .2s ease, background .2s ease;
+    }
+
+    .strength-label {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      min-height: 16px;
     }
 
     .submit-btn {
       width: 100%;
       padding: 14px;
-      background: linear-gradient(135deg, #0f172a, #14b8a6);
+      background: linear-gradient(135deg, #0f172a, #6f9c92);
       color: white;
       border: none;
       border-radius: 10px;
@@ -134,8 +179,8 @@
     }
 
     .success {
-      background: #f0fdfa;
-      color: #0f766e;
+      background: #f2f6f4;
+      color: #4f776f;
       border: 1px solid #5eead4;
     }
 
@@ -160,9 +205,9 @@
     }
     .role-btn .role-icon { font-size: 22px; display: block; margin-bottom: 4px; }
     .role-btn.active {
-      border-color: #14b8a6;
-      background: linear-gradient(135deg, rgba(20,184,166,0.1), rgba(15,23,42,0.04));
-      color: #0d9488;
+      border-color: #6f9c92;
+      background: linear-gradient(135deg, rgba(111,156,146,0.1), rgba(15,23,42,0.04));
+      color: #5c887f;
     }
 
     /* Doctor code field */
@@ -179,7 +224,7 @@
       min-height: 16px;
       font-weight: 600;
     }
-    .code-status.ok    { color: #0d9488; }
+    .code-status.ok    { color: #5c887f; }
     .code-status.error { color: #dc2626; }
     .code-status.checking { color: #6b7280; }
 
@@ -195,7 +240,7 @@
     }
     .forgot-link a {
       font-size: 13px;
-      color: #0d9488;
+      color: #5c887f;
       font-weight: 600;
       text-decoration: none;
     }
@@ -209,7 +254,7 @@
     }
 
     .back-link a {
-      color: #16a34a;
+      color: #6f9c92;
       text-decoration: none;
       font-weight: 600;
     }
@@ -233,7 +278,7 @@
     [data-theme="dark"] .auth-card {
       background: #111827;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-      border: 1px solid rgba(56,189,248,0.15);
+      border: 1px solid rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .tabs {
       background: #0d1117;
@@ -251,11 +296,19 @@
     }
     [data-theme="dark"] .form-input {
       background: #0d1117;
-      border-color: rgba(56,189,248,0.20);
+      border-color: rgba(136,176,169,0.20);
       color: var(--text);
     }
     [data-theme="dark"] .form-input:focus {
       border-color: var(--accent);
+    }
+    [data-theme="dark"] .pass-toggle {
+      background: #1f2937;
+      border-color: rgba(136,176,169,0.2);
+      color: #cbd5e1;
+    }
+    [data-theme="dark"] .strength {
+      background: #1f2937;
     }
     [data-theme="dark"] .error {
       background: rgba(220,38,38,0.12);
@@ -263,20 +316,20 @@
       border-color: rgba(220,38,38,0.3);
     }
     [data-theme="dark"] .success {
-      background: rgba(22,163,74,0.12);
+      background: rgba(111,156,146,0.12);
       color: #6ee7b7;
-      border-color: rgba(22,163,74,0.3);
+      border-color: rgba(111,156,146,0.3);
     }
     [data-theme="dark"] .back-link a {
       color: #2dd4bf;
     }
     [data-theme="dark"] .role-btn {
-      border-color: rgba(20,184,166,0.2);
+      border-color: rgba(111,156,146,0.2);
       color: #9ca3af;
     }
     [data-theme="dark"] .role-btn.active {
-      border-color: #14b8a6;
-      background: rgba(20,184,166,0.12);
+      border-color: #6f9c92;
+      background: rgba(111,156,146,0.12);
       color: #2dd4bf;
     }
 
@@ -302,7 +355,7 @@
   </style>
   <script src="../js/theme.js"></script>
 </head>
-<body>
+<body class="page-auth-avant">
   <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
   <div class="auth-card">
     <div class="logo">
@@ -371,12 +424,25 @@
           <input type="email" class="form-input" id="registerEmail" required>
         </div>
         <div class="form-group">
+          <label class="form-label">Номер телефона</label>
+          <input type="tel" class="form-input" id="registerPhone" placeholder="+7 777 123 45 67" required>
+        </div>
+        <div class="form-group">
           <label class="form-label">Пароль</label>
           <input type="password" class="form-input" id="registerPassword" minlength="6" required>
+          <div class="strength"><span id="registerStrengthBar"></span></div>
+          <div class="strength-label" id="registerStrengthLabel">Надежность пароля: —</div>
+          <div class="pass-tools">
+            <span id="capsLockHint" style="display:none;color:#dc2626;">CapsLock включен</span>
+            <button type="button" class="pass-toggle" onclick="togglePass('registerPassword', this)">Показать</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Подтвердите пароль</label>
           <input type="password" class="form-input" id="registerPasswordConfirm" required>
+          <div class="pass-tools" style="justify-content:flex-end;">
+            <button type="button" class="pass-toggle" onclick="togglePass('registerPasswordConfirm', this)">Показать</button>
+          </div>
         </div>
 
         <!-- Поле кода врача (только для роли "doctor") -->
@@ -402,7 +468,7 @@
         <button type="submit" class="submit-btn" id="registerSubmitBtn">Зарегистрироваться</button>
       </form>
         <div style="margin-top:16px;text-align:center;">
-          <button type="button" onclick="openVideoModal()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(22,163,74,0.08);color: #0369a1;border:1.5px solid rgba(22,163,74,0.25);border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;width:100%;" onmouseover="this.style.background='rgba(22,163,74,0.15)'" onmouseout="this.style.background='rgba(22,163,74,0.08)'">
+          <button type="button" onclick="openVideoModal()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(111,156,146,0.08);color: #0369a1;border:1.5px solid rgba(111,156,146,0.25);border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;width:100%;" onmouseover="this.style.background='rgba(111,156,146,0.15)'" onmouseout="this.style.background='rgba(111,156,146,0.08)'">
             <span style="font-size:18px;">▶️</span> Смотреть видео о проекте
           </button>
         </div>
@@ -418,7 +484,7 @@
       </div>
       <button class="submit-btn" onclick="handleForgotSend()">Отправить код</button>
       <p style="margin-top:14px;text-align:center;font-size:14px;">
-        <a href="#" onclick="showLogin(); return false;" style="color:#0d9488;font-weight:600;">← Вернуться ко входу</a>
+        <a href="#" onclick="showLogin(); return false;" style="color:#5c887f;font-weight:600;">← Вернуться ко входу</a>
       </p>
     </div>
 
@@ -432,7 +498,7 @@
       </div>
       <button class="submit-btn" onclick="handleForgotVerify()">Подтвердить</button>
       <p style="margin-top:14px;font-size:14px;text-align:center;">
-        <a href="#" onclick="handleForgotSend(true); return false;" style="color:#0d9488;">Отправить снова</a>
+        <a href="#" onclick="handleForgotSend(true); return false;" style="color:#5c887f;">Отправить снова</a>
       </p>
     </div>
 
@@ -469,7 +535,7 @@
       </div>
       <button onclick="handleVerify()" class="submit-btn">Подтвердить</button>
       <p style="margin-top: 15px; font-size: 14px;">
-        <a href="#" onclick="resendCode(); return false;" style="color: #16a34a;">Отправить код снова</a>
+        <a href="#" onclick="resendCode(); return false;" style="color: #6f9c92;">Отправить код снова</a>
       </p>
     </div>
     <div class="back-link">
@@ -529,6 +595,7 @@
 
       }
       initRecaptchaWidgets();
+      initPasswordUX();
       setTimeout(() => {
         if (IS_FILE_PROTOCOL) {
           showMessage('reCAPTCHA не работает при открытии файла напрямую (file://). Откройте страницу через http://localhost или http://127.0.0.1.', 'error');
@@ -587,6 +654,49 @@
 
     }
     window.initRecaptchaWidgets = initRecaptchaWidgets;
+
+    function togglePass(inputId, btn) {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      const next = el.type === 'password' ? 'text' : 'password';
+      el.type = next;
+      if (btn) btn.textContent = next === 'password' ? 'Показать' : 'Скрыть';
+    }
+
+    function evaluatePasswordStrength(value) {
+      let score = 0;
+      if (value.length >= 8) score += 1;
+      if (/[A-ZА-Я]/.test(value)) score += 1;
+      if (/[a-zа-я]/.test(value)) score += 1;
+      if (/\d/.test(value)) score += 1;
+      if (/[^A-Za-zА-Яа-я0-9]/.test(value)) score += 1;
+
+      const pct = Math.min(100, (score / 5) * 100);
+      const labels = ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Сильный'];
+      const colors = ['#ef4444', '#f97316', '#eab308', '#7aa79d', '#6f9c92'];
+      const idx = Math.max(0, Math.min(4, score - 1));
+      return { pct, label: labels[idx] || 'Очень слабый', color: colors[idx] || '#ef4444' };
+    }
+
+    function initPasswordUX() {
+      const pass = document.getElementById('registerPassword');
+      const bar = document.getElementById('registerStrengthBar');
+      const label = document.getElementById('registerStrengthLabel');
+      const caps = document.getElementById('capsLockHint');
+      if (!pass || !bar || !label) return;
+
+      pass.addEventListener('input', () => {
+        const r = evaluatePasswordStrength(pass.value || '');
+        bar.style.width = `${r.pct}%`;
+        bar.style.background = r.color;
+        label.textContent = `Надежность пароля: ${r.label}`;
+      });
+
+      pass.addEventListener('keyup', (e) => {
+        if (!caps) return;
+        caps.style.display = e.getModifierState && e.getModifierState('CapsLock') ? 'inline' : 'none';
+      });
+    }
 
     function getCaptchaToken(type) {
       const widgetId = recaptchaWidgets[type];
@@ -852,11 +962,18 @@
       const username = document.getElementById('registerUsername').value.trim();
       const name    = document.getElementById('registerName').value;
       const email   = document.getElementById('registerEmail').value;
+      const phone   = document.getElementById('registerPhone').value.trim();
       const password = document.getElementById('registerPassword').value;
       const confirm  = document.getElementById('registerPasswordConfirm').value;
       const doctorCode = selectedRole === 'doctor'
         ? document.getElementById('doctorCodeInput').value.trim().toUpperCase()
         : '';
+
+      if (!phone) {
+        showMessage('Номер телефона обязателен', 'error');
+        resetCaptcha('register');
+        return;
+      }
 
       if (password !== confirm) {
         showMessage('Пароли не совпадают', 'error');
@@ -877,7 +994,7 @@
         const response = await fetch(`${API_URL}/auth/register/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-          body: JSON.stringify({ name, username, email, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
+          body: JSON.stringify({ name, username, email, phone, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
 
         });
         const data = await response.json();
@@ -998,3 +1115,4 @@
   </script>
 </body>
 </html>
+

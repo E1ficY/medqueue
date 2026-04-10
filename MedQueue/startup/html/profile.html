@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -6,11 +6,11 @@
   <title>Личный кабинет  MedQueue</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/script.js?v=1.0.2"></script>
+  <script src="../js/script.js?v=1.0.7"></script>
   <style>
     /* ---- Profile header ---- */
     .profile-header {
-      background: linear-gradient(135deg, #16a34a 0%, #0284c7 60%, #0891b2 100%);
+      background: linear-gradient(135deg, #6f9c92 0%, #6a8f87 60%, #0891b2 100%);
       color: white;
       padding: 28px 32px;
       border-radius: 20px;
@@ -43,8 +43,13 @@
       display: flex;
       align-items: center;
       gap: 22px;
+      flex-wrap: wrap;
       position: relative;
       z-index: 1;
+    }
+    .profile-info {
+      flex: 1 1 320px;
+      min-width: 0;
     }
     .profile-avatar {
       width: 76px;
@@ -93,6 +98,33 @@
       font-size: 12px;
       font-weight: 600;
     }
+    .profile-header-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+      max-width: 100%;
+    }
+    .profile-action-btn {
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1.5px solid rgba(255,255,255,0.35);
+      color: #ffffff;
+      background: rgba(255,255,255,0.12);
+      white-space: nowrap;
+    }
+    .profile-action-btn:hover {
+      background: rgba(255,255,255,0.22);
+    }
+    .profile-action-btn.secondary {
+      border-color: rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.18);
+    }
 
     /* ---- Stats ---- */
     .stats-grid {
@@ -107,7 +139,7 @@
       border-radius: 16px;
       box-shadow: 0 6px 20px rgba(21,128,61,0.09);
       text-align: center;
-      border: 1px solid rgba(22,163,74,0.12);
+      border: 1px solid rgba(111,156,146,0.12);
       transition: all 0.2s ease;
     }
     .stat-card:hover {
@@ -134,7 +166,7 @@
       border-radius: 18px;
       box-shadow: 0 6px 22px rgba(21,128,61,0.09);
       margin-bottom: 20px;
-      border: 1px solid rgba(22,163,74,0.11);
+      border: 1px solid rgba(111,156,146,0.11);
     }
     .section-title {
       margin: 0 0 18px;
@@ -153,7 +185,7 @@
       font-weight: 800;
     }
     .section-count {
-      background: rgba(22,163,74,0.10);
+      background: rgba(111,156,146,0.10);
       color: var(--accent);
       border-radius: 20px;
       padding: 3px 11px;
@@ -165,7 +197,7 @@
     .tabs {
       display: flex;
       gap: 6px;
-      background: rgba(22,163,74,0.06);
+      background: rgba(111,156,146,0.06);
       padding: 5px;
       border-radius: 12px;
       border: 1px solid var(--border-soft);
@@ -190,69 +222,69 @@
       box-shadow: 0 2px 8px rgba(8,145,178,0.12);
     }
     .tab-btn:hover:not(.active) {
-      background: rgba(22,163,74,0.07);
+      background: rgba(111,156,146,0.07);
       color: #0369a1;
     }
 
     /* ---- Appointment item ---- */
     .appointment-item {
-      padding: 18px;
+      padding: 12px 13px;
       border: 1.5px solid rgba(8,145,178,0.11);
       border-radius: 14px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       transition: all 0.2s ease;
       background: #fafff9;
     }
     .appointment-item:hover {
       box-shadow: 0 8px 22px rgba(8,145,178,0.11);
-      border-color: rgba(22,163,74,0.28);
+      border-color: rgba(111,156,146,0.28);
     }
     .appt-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
     .appt-hospital-name {
       font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
       color: #0c4a6e;
-      margin: 0 0 4px;
+      margin: 0 0 2px;
     }
     .appt-address {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--muted);
       display: flex;
       align-items: center;
       gap: 4px;
     }
     .appt-queue-badge {
-      background: linear-gradient(135deg, #86efac, #10b981);
+      background: linear-gradient(135deg, #b8cbc6, #6f9c92);
       color: #0c4a6e;
-      padding: 6px 14px;
+      padding: 5px 10px;
       border-radius: 10px;
       font-weight: 900;
-      font-size: 15px;
+      font-size: 13px;
       white-space: nowrap;
       flex-shrink: 0;
     }
     .appt-meta-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 14px;
+      gap: 7px;
+      margin-bottom: 8px;
     }
     .appt-meta-item .meta-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--muted);
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .appt-meta-item .meta-value {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
     }
@@ -262,8 +294,23 @@
     }
     .appt-actions .btn {
       flex: 1;
-      font-size: 13px;
-      padding: 10px 14px;
+      font-size: 12.5px;
+      padding: 8px 10px;
+    }
+
+    /* Keep the appointments section compact with inner scroll */
+    #appointmentsList {
+      max-height: 52vh;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-gutter: stable;
+    }
+    #appointmentsList::-webkit-scrollbar {
+      width: 8px;
+    }
+    #appointmentsList::-webkit-scrollbar-thumb {
+      background: rgba(111,156,146,0.35);
+      border-radius: 999px;
     }
 
     /* ---- Hospital chip ---- */
@@ -272,7 +319,7 @@
       align-items: center;
       gap: 10px;
       padding: 10px 14px;
-      background: rgba(22,163,74,0.07);
+      background: rgba(111,156,146,0.07);
       border-radius: 12px;
       margin-right: 8px;
       margin-bottom: 8px;
@@ -284,7 +331,7 @@
     .hospital-chip:hover {
       background: rgba(8,145,178,0.12);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(22,163,74,0.15);
+      box-shadow: 0 4px 12px rgba(111,156,146,0.15);
     }
     .chip-icon {
       width: 34px;
@@ -296,13 +343,13 @@
       justify-content: center;
       font-size: 18px;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(22,163,74,0.10);
+      box-shadow: 0 2px 6px rgba(111,156,146,0.10);
     }
 
     /* ---- Quick book ---- */
     .quick-book {
       background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-      border-color: rgba(22,163,74,0.20);
+      border-color: rgba(111,156,146,0.20);
     }
     .quick-book-inner {
       display: flex;
@@ -334,7 +381,7 @@
     }
     .user-data-field {
       background: #f8fffe;
-      border: 1.5px solid rgba(22,163,74,0.12);
+      border: 1.5px solid rgba(111,156,146,0.12);
       border-radius: 12px;
       padding: 13px 16px;
     }
@@ -369,7 +416,7 @@
     /* ===== DARK THEME OVERRIDES ===== */
     [data-theme="dark"] .stat-card {
       background: #131f2e;
-      border-color: rgba(56,189,248,0.15);
+      border-color: rgba(136,176,169,0.15);
       box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }
     [data-theme="dark"] .section-card {
@@ -383,7 +430,7 @@
     [data-theme="dark"] .appointment-item,
     [data-theme="dark"] .appt-item {
       background: #131f2e;
-      border-color: rgba(56,189,248,0.15);
+      border-color: rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .appt-clinic,
     [data-theme="dark"] .appt-doctor,
@@ -404,7 +451,7 @@
 
     [data-theme="dark"] .user-data-field {
       background: #131f2e;
-      border-color: rgba(56,189,248,0.15);
+      border-color: rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .user-data-field .udf-label {
       color: var(--muted);
@@ -425,12 +472,12 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     [data-theme="dark"] .tab-btn:hover:not(.active) {
-      background: rgba(56,189,248,0.08);
+      background: rgba(136,176,169,0.08);
       color: var(--text-soft);
     }
     [data-theme="dark"] .appointment-item {
       background: #131f2e;
-      border-color: rgba(56,189,248,0.15);
+      border-color: rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .appt-hospital-name {
       color: var(--text);
@@ -439,11 +486,11 @@
       color: var(--accent-2);
     }
     [data-theme="dark"] .hospital-chip {
-      background: rgba(56,189,248,0.08);
-      border-color: rgba(56,189,248,0.15);
+      background: rgba(136,176,169,0.08);
+      border-color: rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .hospital-chip:hover {
-      background: rgba(56,189,248,0.12);
+      background: rgba(136,176,169,0.12);
     }
     [data-theme="dark"] .chip-icon {
       background: #111827;
@@ -454,7 +501,7 @@
     }
     [data-theme="dark"] .quick-book {
       background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
-      border-color: rgba(56,189,248,0.15);
+      border-color: rgba(136,176,169,0.15);
     }
     [data-theme="dark"] .section-count {
       background: rgba(34,197,94,0.12);
@@ -465,7 +512,10 @@
     /* Общий overflow-guard */
     .profile-header { overflow: hidden; }
     .profile-info h1, .profile-info .profile-email, .profile-info .profile-username {
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .appt-hospital-name { overflow-wrap: break-word; word-break: break-word; }
     .appt-meta-item .meta-value { overflow-wrap: break-word; word-break: break-word; }
@@ -474,7 +524,9 @@
       .profile-header-inner { flex-direction: column; text-align: center; gap: 10px; }
       .profile-avatar { align-self: center; }
       /* Кнопка выйти — на всю ширину снизу */
-      .profile-header-inner > button { margin-left: 0 !important; width: 100% !important; }
+      .profile-header-actions { margin-left: 0; width: 100%; }
+      .profile-header-actions { flex-direction: column; }
+      .profile-action-btn { width: 100%; }
       /* Бейджи — переносятся */
       .profile-badges { justify-content: center; }
       .profile-info h1 { font-size: 20px; white-space: normal; }
@@ -499,6 +551,7 @@
       /* Чипы больниц — компактнее */
       .hospital-chip { font-size: 12px; padding: 8px 10px; }
       .chip-icon { width: 28px; height: 28px; font-size: 15px; }
+      #appointmentsList { max-height: 58vh; }
     }
     @media (max-width: 400px) {
       /* Очень узкие: 1 колонка в статах */
@@ -507,7 +560,7 @@
   </style>
   <script src="../js/theme.js"></script>
 </head>
-<body>
+<body class="page-profile-avant">
   <header class="site-header">
     <div class="wrap">
       <a class="logo" href="main.html">MedQueue</a>
@@ -515,7 +568,7 @@
             <nav id="mainNav">
         <a href="main.html" class="nav-link">Главная</a>
         <a href="recording.html" class="nav-link">Записаться</a>
-        <a href="status.html" class="nav-link">Статус очереди</a>
+        <a href="recording.html#status-check" class="nav-link">Статус очереди</a>
         <a href="profile.html" class="nav-link active">Личный кабинет</a>
         <a href="subscription.html" class="nav-link">Подписка</a>
 
@@ -523,13 +576,6 @@
     </div>
       <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
   </header>
-
-  <script>
-  function toggleMobileMenu() {
-    const nav = document.getElementById('mainNav');
-    nav.classList.toggle('mobile-open');
-  }
-  </script>
 
   <main class="wrap" style="padding-top:28px;padding-bottom:60px;max-width:980px;">
 
@@ -546,13 +592,16 @@
             <span class="profile-badge" id="memberSince"> Участник MedQueue</span>
           </div>
         </div>
-        <button onclick="logout()" style="margin-left:auto;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.35);color:white;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&#x2192; Выйти</button>
+        <div class="profile-header-actions">
+          <button type="button" class="profile-action-btn secondary" onclick="openProfileEditor()">Мои данные</button>
+          <button type="button" class="profile-action-btn" onclick="logout()">&#x2192; Выйти</button>
+        </div>
       </div>
       <!-- Doctor portal banner — visible only for role=doctor -->
       <div id="doctorBanner" style="display:none;margin-top:14px;padding:14px 20px;background:rgba(255,255,255,0.12);border-radius:12px;border:1.5px solid rgba(255,255,255,0.25);align-items:center;gap:14px;flex-wrap:wrap;">
         <span style="font-size:22px;">👨‍⚕️</span>
         <span style="color:white;font-weight:700;font-size:15px;flex:1;">Вы вошли как <b>врач</b> — откройте портал для управления записями пациентов</span>
-        <a href="doctor.html" style="background:white;color:#0d9488;padding:9px 20px;border-radius:10px;font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap;">🏥 Портал врача →</a>
+        <a href="doctor.html" style="background:white;color:#5c887f;padding:9px 20px;border-radius:10px;font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap;">🏥 Портал врача →</a>
       </div>
     </div>
 
@@ -596,7 +645,7 @@
     </div>
 
     <!-- User data card -->
-    <div class="section-card animate-in">
+    <div class="section-card animate-in" id="profileDataSection" style="display:none;">
       <div class="section-title">
         <h2> Мои данные</h2>
         <button class="btn btn-outline" style="font-size:13px;padding:8px 14px;" onclick="openProfileEditor()">Изменить</button>
@@ -653,7 +702,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
-      <div class="muted">Версия 3.0</div>
+      <div class="muted">Версия 4.0</div>
     </div>
   </footer>
 
@@ -847,7 +896,7 @@
         const statusMap = {
           confirmed: '<span class="status-pill confirmed"> Подтверждено</span>',
           pending:   '<span class="status-pill pending"> Ожидает</span>',
-          completed: '<span class="status-pill" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3);"> Завершено</span>',
+          completed: '<span class="status-pill" style="background:rgba(122,167,157,0.15);color:#059669;border:1px solid rgba(122,167,157,0.3);"> Завершено</span>',
           cancelled: '<span class="status-pill cancelled"> Отменено</span>',
         };
         const statusBadge = statusMap[app.status] || statusMap['pending'];
@@ -882,15 +931,15 @@
               </div>` : ''}
             </div>
             <div id="comment-display-${app.code}" style="margin-top:10px;">
-              ${app.comment ? `<div style="padding:10px 14px;background:rgba(13,148,136,0.07);border-left:3px solid #14b8a6;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                <div><span style="font-weight:700;color:#0d9488;">💬 Ваш комментарий:</span> ${app.comment}</div>
-                <button onclick="editComment('${app.code}')" style="background:none;border:none;color:#14b8a6;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;padding:0;">✏️ изм.</button></div>` : `<button onclick="editComment('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:5px 12px;">💬 Добавить комментарий</button>`
+              ${app.comment ? `<div style="padding:10px 14px;background:rgba(111,156,146,0.07);border-left:3px solid #6f9c92;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                <div><span style="font-weight:700;color:#5c887f;">💬 Ваш комментарий:</span> ${app.comment}</div>
+                <button onclick="editComment('${app.code}')" style="background:none;border:none;color:#6f9c92;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;padding:0;">✏️ изм.</button></div>` : `<button onclick="editComment('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:5px 12px;">💬 Добавить комментарий</button>`
               }
             </div>
-            ${app.doctor_recommendation ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(59,130,246,0.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);"><span style="font-weight:700;color:#1d4ed8;">📋 Рекомендации врача:</span> ${app.doctor_recommendation}</div>` : ''}
-            ${app.auto_taxi_available ? `<div style="margin-top:8px;font-size:12.5px;color:#0f766e;background:rgba(20,184,166,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(20,184,166,0.22);">🚕 Care Plus: после завершения приёма доступен авто-заказ такси.</div>` : ''}
+            ${app.doctor_recommendation ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(122,167,157,0.08);border-left:3px solid #7aa79d;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);"><span style="font-weight:700;color:#5c887f;">📋 Рекомендации врача:</span> ${app.doctor_recommendation}</div>` : ''}
+            ${app.auto_taxi_available ? `<div style="margin-top:8px;font-size:12.5px;color:#4f776f;background:rgba(111,156,146,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(111,156,146,0.22);">🚕 Care Plus: после завершения приёма доступен авто-заказ такси.</div>` : ''}
             <div id="comment-editor-${app.code}" style="display:none;margin-top:8px;">
-              <textarea id="comment-input-${app.code}" style="width:100%;box-sizing:border-box;border:1.5px solid #14b8a6;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Опишите жалобы или пожелания к приёму..." rows="3"></textarea>
+              <textarea id="comment-input-${app.code}" style="width:100%;box-sizing:border-box;border:1.5px solid #6f9c92;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Опишите жалобы или пожелания к приёму..." rows="3"></textarea>
               <div style="display:flex;gap:8px;margin-top:6px;">
                 <button onclick="saveCommentEdit('${app.code}')" class="btn btn-primary" style="font-size:12px;padding:6px 16px;">✅ Сохранить</button>
                 <button onclick="cancelCommentEdit('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:6px 14px;">Отмена</button>
@@ -986,7 +1035,7 @@
     }
 
     function viewCode(code) {
-      window.location.href = `status.html?code=${code}`;
+      window.location.href = `recording.html?code=${code}#status-check`;
     }
 
     function logout() {
@@ -1213,7 +1262,7 @@
     [data-theme="dark"] #reviewModal > div {
       background: #111827 !important;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
-      border: 1px solid rgba(56,189,248,0.15) !important;
+      border: 1px solid rgba(136,176,169,0.15) !important;
     }
     [data-theme="dark"] #reviewModal h3 {
       color: var(--accent-2) !important;
@@ -1225,16 +1274,16 @@
     [data-theme="dark"] #reviewModal select,
     [data-theme="dark"] #reviewModal textarea {
       background: #0d1117 !important;
-      border-color: rgba(56,189,248,0.20) !important;
+      border-color: rgba(136,176,169,0.20) !important;
       color: var(--text) !important;
     }
     [data-theme="dark"] #reviewModal button[onclick="closeReviewModal()"] {
-      color: #93c5fd !important;
+      color: #b8cbc6 !important;
     }
     [data-theme="dark"] #profileEditorModal > div {
       background: #111827 !important;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
-      border: 1px solid rgba(56,189,248,0.15) !important;
+      border: 1px solid rgba(136,176,169,0.15) !important;
     }
     [data-theme="dark"] #profileEditorModal h3 {
       color: var(--accent-2) !important;
@@ -1244,37 +1293,16 @@
     }
     [data-theme="dark"] #profileEditorModal input {
       background: #0d1117 !important;
-      border-color: rgba(56,189,248,0.20) !important;
+      border-color: rgba(136,176,169,0.20) !important;
       color: var(--text) !important;
     }
   </style>
 
-  <!-- ===== AI CHAT WIDGET ===== -->
-  <style>
-    #aiChatBubble{position:fixed;bottom:24px;right:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#0f172a,#14b8a6);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(20,184,166,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
-    #aiChatBubble:hover{transform:scale(1.1);}
-    #aiChatPanel{position:fixed;bottom:90px;right:24px;width:340px;max-height:480px;background:white;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.25);display:none;flex-direction:column;z-index:9998;overflow:hidden;font-family:'Inter',sans-serif;}
-    #aiChatPanel.open{display:flex;}
-    .ai-chat-header{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;padding:14px 16px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;}
-    .ai-chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb;}
-    .ai-msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;}
-    .ai-msg.bot{background:white;border:1px solid #e5e7eb;align-self:flex-start;border-bottom-left-radius:4px;}
-    .ai-msg.user{background:linear-gradient(135deg,#0f172a,#0d9488);color:white;align-self:flex-end;border-bottom-right-radius:4px;}
-    .ai-chat-input-row{display:flex;gap:8px;padding:10px;background:white;border-top:1px solid #e5e7eb;}
-    .ai-chat-input-row input{flex:1;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;}
-    .ai-chat-input-row input:focus{border-color:#14b8a6;}
-    .ai-chat-input-row button{background:#0d9488;color:white;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:16px;}
-    [data-theme="dark"] #aiChatPanel{background:#111827;}
-    [data-theme="dark"] .ai-chat-msgs{background:#0d1117;}
-    [data-theme="dark"] .ai-msg.bot{background:#1f2937;border-color:rgba(56,189,248,0.15);color:#e5e7eb;}
-    [data-theme="dark"] .ai-chat-input-row{background:#111827;border-color:rgba(56,189,248,0.15);}
-    [data-theme="dark"] .ai-chat-input-row input{background:#0d1117;border-color:rgba(56,189,248,0.2);color:#e5e7eb;}
-  </style>
   <button id="aiChatBubble" onclick="toggleAiChat()" title="МедAI">🤖</button>
   <div id="aiChatPanel">
     <div class="ai-chat-header">
       <span>🤖 МедAI — помощник</span>
-      <button onclick="toggleAiChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+      <button class="ai-chat-close" onclick="toggleAiChat()">✕</button>
     </div>
     <div class="ai-chat-msgs" id="aiChatMsgs">
       <div class="ai-msg bot">Привет! Я МедAI — ваш медицинский помощник. Задайте вопрос о здоровье, симптомах или записи к врачу. 😊</div>
@@ -1303,4 +1331,5 @@
   </script>
 </body>
 </html>
+
 
