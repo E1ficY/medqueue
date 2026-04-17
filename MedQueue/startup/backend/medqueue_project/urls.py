@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/main.html', permanent=False)),
+    path('favicon.ico', RedirectView.as_view(url='/images/favicon.svg', permanent=False)),
     path('main.html', TemplateView.as_view(template_name='main.html')),
     path('doctors.html', TemplateView.as_view(template_name='doctors.html')),
     path('recording.html', TemplateView.as_view(template_name='recording.html')),

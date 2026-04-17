@@ -76,6 +76,11 @@ let currentHospitalFilter = '';
 const HOSPITALS_PER_PAGE = 6;
 const STATUS_HISTORY_KEY = 'medqueue_status_history';
 const DOCTOR_FAVORITES_KEY = 'medqueue_doctor_favorites';
+const DOCTOR_COMPARE_KEY = 'medqueue_doctor_compare';
+const RECORDING_SCENARIO_KEY = 'medqueue_recording_scenario_v1';
+const DEMO_APPOINTMENTS_KEY = 'medqueue_demo_appointments_v1';
+const DEMO_REMINDERS_KEY = 'medqueue_demo_reminders_v1';
+const DEMO_FLOW_KEY = 'medqueue_demo_flow_v1';
 let doctorsFavoritesOnly = false;
 
 // === ЗАЩИТА СТРАНИЦ ПО РОЛИ ===
@@ -167,6 +172,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   initStatusFlowEnhancements();
   initProfileFlowEnhancements();
   initContactsFlowEnhancements();
+  initRecordingDemoShowcase();
+  processDueReminders();
 });
 
 function initGlobalExperienceLayer() {
@@ -182,7 +189,6 @@ function toggleMobileMenu() {
 }
 
 function initCornerThemeToggle() {
-  if (window.innerWidth <= 980) return;
   if (document.getElementById('mqCornerTheme')) return;
 
   const btn = document.createElement('button');
@@ -419,50 +425,105 @@ async function loadDoctorsCatalog({ query = '', specialty = '' } = {}) {
   return doctorsCatalog;
 }
 
+function renderDoctorsWowPanel(items) {
+  const panel = document.getElementById('doctorsWowPanel');
+  if (!panel) return;
+
+  if (!items.length) {
+    panel.innerHTML = `
+      <div class="doctors-wow-head">Аналитика очереди в реальном времени</div>
+      <div class="doctors-wow-grid">
+        <article class="doctors-wow-item"><strong>0</strong><span>Нет совпадений по фильтру</span></article>
+        <article class="doctors-wow-item"><strong>--</strong><span>Измените поиск или специальность</span></article>
+        <article class="doctors-wow-item"><strong>--</strong><span>Прогноз появится автоматически</span></article>
+      </div>
+    `;
+    return;
+  }
+
+  const sortedByEta = [...items].sort((a, b) => (a.wait_forecast_minutes || 0) - (b.wait_forecast_minutes || 0));
+  const fastest = sortedByEta[0];
+  const avgEta = Math.round(items.reduce((sum, d) => sum + Number(d.wait_forecast_minutes || 0), 0) / items.length);
+  const avgConfidence = Math.round(items.reduce((sum, d) => sum + Number(d.wait_forecast_confidence || 0), 0) / items.length);
+
+  panel.innerHTML = `
+    <div class="doctors-wow-head">Аналитика очереди в реальном времени</div>
+    <div class="doctors-wow-grid">
+      <article class="doctors-wow-item">
+        <strong>${fastest.wait_forecast_minutes || 0} мин</strong>
+        <span>Быстрее всего: ${fastest.full_name}</span>
+      </article>
+      <article class="doctors-wow-item">
+        <strong>${avgEta} мин</strong>
+        <span>Среднее ожидание по текущему фильтру</span>
+      </article>
+      <article class="doctors-wow-item">
+        <strong>${avgConfidence}%</strong>
+        <span>Средняя точность прогноза</span>
+      </article>
+    </div>
+  `;
+}
+
 function renderDoctorsCatalogCards(items) {
   const container = document.getElementById('doctorsCatalogList');
   if (!container) return;
 
   const favorites = getDoctorFavorites();
+  const compareIds = getDoctorCompareIds();
 
   if (!items.length) {
     container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Врачи не найдены</p>';
+    renderDoctorsComparePanel([]);
     return;
   }
 
   container.innerHTML = items.map(d => {
-    const reviews = Array.isArray(d.latest_reviews) ? d.latest_reviews.slice(0, 2) : [];
+    const reviews = Array.isArray(d.latest_reviews) ? d.latest_reviews.slice(0, 1) : [];
+    const eta = Number.isFinite(Number(d.wait_forecast_minutes)) ? Number(d.wait_forecast_minutes) : 0;
+    const confidence = Number.isFinite(Number(d.wait_forecast_confidence)) ? Number(d.wait_forecast_confidence) : 0;
+    const etaText = eta <= 0 ? 'Сейчас без ожидания' : `До приема ~${eta} мин`;
+    const confText = confidence > 0 ? `Точность ${confidence}%` : 'Точность уточняется';
+    const forecastHint = d.wait_forecast_reason || 'Прогноз формируется по текущей нагрузке и истории приемов.';
     const reviewsHtml = reviews.length
       ? reviews.map(r => {
           const patient = r.patient_name || 'Пациент';
           const rating = Number(r.rating || 0).toFixed(1);
-          const text = (r.comment || 'Без комментария').trim();
-          return `<div style="font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:8px 10px;border-radius:8px">⭐ ${rating} · ${patient}<br>«${text}»</div>`;
+          const text = (r.comment || 'Без комментария').trim().slice(0, 86);
+          return `<div style="font-size:11px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:6px 8px;border-radius:8px;line-height:1.35">${rating} · ${patient}: ${text}${text.length >= 86 ? '...' : ''}</div>`;
         }).join('')
-      : '<div style="font-size:12px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:8px 10px;border-radius:8px">Пока нет отзывов</div>';
+      : '<div style="font-size:11px;color:var(--muted);background:var(--glass);border:1px solid var(--border-soft);padding:6px 8px;border-radius:8px;line-height:1.35">Пока нет отзывов</div>';
     return `
-    <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--accent)">
+    <div class="card" style="padding:14px;display:flex;flex-direction:column;gap:7px;border-top:2px solid var(--accent);min-height:320px;height:100%">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        <div style="font-size:16px;font-weight:800;color:var(--text)">${d.full_name}</div>
-        <button type="button" class="mq-doctor-fav" data-doctor-id="${d.id}" style="border:1px solid var(--border-soft);background:${favorites.includes(String(d.id)) ? 'var(--accent-light)' : 'transparent'};color:var(--text-soft);font-size:12px;padding:4px 8px;border-radius:8px;cursor:pointer;">${favorites.includes(String(d.id)) ? '★ В избранном' : '☆ В избранное'}</button>
+        <div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.25">${d.full_name}</div>
+        <button type="button" class="mq-doctor-fav" data-doctor-id="${d.id}" style="border:1px solid var(--border-soft);background:${favorites.includes(String(d.id)) ? 'var(--accent-light)' : 'transparent'};color:var(--text-soft);font-size:11px;padding:3px 7px;border-radius:8px;cursor:pointer;white-space:nowrap;">${favorites.includes(String(d.id)) ? '★ В избранном' : '☆ В избранное'}</button>
       </div>
-      <div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase">${d.specialty || 'Специалист'}</div>
-      <div style="font-size:13px;color:var(--text-soft)">🏥 ${d.hospital_name || 'Больница не указана'}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text-soft)">
-        <span>⭐ <strong>${Number(d.avg_rating || 0).toFixed(1)}</strong></span>
-        <span>🗨️ ${d.reviews_count || 0} отзывов</span>
+      <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase">${d.specialty || 'Специалист'}</div>
+      <div style="font-size:12px;color:var(--text-soft)">${d.hospital_name || 'Больница не указана'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-soft)">
+        <span>Рейтинг: <strong>${Number(d.avg_rating || 0).toFixed(1)}</strong></span>
+        <span>Отзывы: ${d.reviews_count || 0}</span>
+      </div>
+      <div title="${forecastHint.replace(/"/g, '&quot;')}" style="font-size:11px;color:var(--text);background:rgba(111,156,146,0.12);border:1px solid var(--border-soft);padding:6px 8px;border-radius:8px;line-height:1.35">
+        <strong>${etaText}</strong> · ${confText}
       </div>
       ${reviewsHtml}
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
-        <span>Очередь: ${d.current_queue || 0} чел.</span>
-        <span>${d.work_hours || ''}</span>
+      <div style="margin-top:auto;display:grid;gap:7px;">
+        <button type="button" class="mq-doctor-compare" data-doctor-id="${d.id}" style="font-size:11px;padding:6px 8px;border-radius:8px;border:1px solid var(--border-soft);background:${compareIds.includes(String(d.id)) ? 'rgba(111,156,146,0.18)' : 'transparent'};color:var(--text);cursor:pointer;">${compareIds.includes(String(d.id)) ? 'В сравнении' : 'Добавить в сравнение'}</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)">
+          <span>Очередь: ${d.current_queue || 0} чел.</span>
+          <span>${d.work_hours || ''}</span>
+        </div>
+        <a class="btn btn-outline" style="font-size:12px;padding:7px 10px" href="recording.html?hospital=${d.hospital_id || ''}&doctor=${d.id}">Записаться</a>
       </div>
-      <a class="btn btn-outline" style="font-size:13px;padding:9px 12px" href="recording.html?hospital=${d.hospital_id || ''}&doctor=${d.id}">Записаться</a>
     </div>
   `;
   }).join('');
 
   bindDoctorFavoriteButtons();
+  bindDoctorCompareButtons(items);
+  renderDoctorsComparePanel(items);
 }
 
 function initDoctorsCatalogPage() {
@@ -483,9 +544,11 @@ function initDoctorsCatalogPage() {
       const filtered = doctorsFavoritesOnly
         ? items.filter((d) => getDoctorFavorites().includes(String(d.id)))
         : items;
+      renderDoctorsWowPanel(filtered);
       renderDoctorsCatalogCards(filtered);
       updateDoctorsFlowCounters(items.length, filtered.length);
     } catch (e) {
+      renderDoctorsWowPanel([]);
       listEl.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#dc2626;padding:24px">Ошибка загрузки врачей</p>';
     }
   };
@@ -509,6 +572,20 @@ function setDoctorFavorites(ids) {
   localStorage.setItem(DOCTOR_FAVORITES_KEY, JSON.stringify(ids));
 }
 
+function getDoctorCompareIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DOCTOR_COMPARE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.map(String).slice(0, 3) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setDoctorCompareIds(ids) {
+  const safe = Array.isArray(ids) ? ids.map(String).slice(0, 3) : [];
+  localStorage.setItem(DOCTOR_COMPARE_KEY, JSON.stringify(safe));
+}
+
 function bindDoctorFavoriteButtons() {
   document.querySelectorAll('.mq-doctor-fav').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -523,6 +600,78 @@ function bindDoctorFavoriteButtons() {
       updateDoctorsFlowCounters();
     });
   });
+}
+
+function bindDoctorCompareButtons(items) {
+  document.querySelectorAll('.mq-doctor-compare').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = String(btn.getAttribute('data-doctor-id') || '');
+      if (!id) return;
+
+      const existing = getDoctorCompareIds();
+      const has = existing.includes(id);
+      let next = existing;
+
+      if (has) {
+        next = existing.filter((x) => x !== id);
+      } else {
+        if (existing.length >= 3) {
+          showToast('Можно сравнить максимум 3 врача', 'warning');
+          return;
+        }
+        next = [...existing, id];
+      }
+
+      setDoctorCompareIds(next);
+      renderDoctorsCatalogCards(items);
+    });
+  });
+}
+
+function renderDoctorsComparePanel(items) {
+  const panel = document.getElementById('mqDoctorsComparePanel');
+  if (!panel) return;
+
+  const ids = getDoctorCompareIds();
+  if (!ids.length) {
+    panel.innerHTML = '<div style="font-size:13px;color:var(--muted);">Добавьте до 3 врачей в сравнение, чтобы увидеть ключевые различия.</div>';
+    return;
+  }
+
+  const lookup = new Map((items || []).map((d) => [String(d.id), d]));
+  const selected = ids.map((id) => lookup.get(id)).filter(Boolean);
+
+  if (!selected.length) {
+    panel.innerHTML = '<div style="font-size:13px;color:var(--muted);">Выбранные врачи не попали в текущий фильтр. Измените фильтры или пересоберите сравнение.</div>';
+    return;
+  }
+
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);">Сравнение врачей</div>
+      <button type="button" id="mqDoctorsCompareClear" class="btn btn-outline" style="font-size:11px;padding:6px 10px;">Очистить</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;">
+      ${selected.map((d) => `
+        <article style="border:1px solid var(--border-soft);border-radius:10px;padding:10px;background:var(--card);display:grid;gap:4px;">
+          <div style="font-weight:700;color:var(--text);line-height:1.25;">${d.full_name}</div>
+          <div style="font-size:12px;color:var(--muted);">${d.specialty}</div>
+          <div style="font-size:12px;color:var(--text-soft);">${d.hospital_name}</div>
+          <div style="font-size:12px;color:var(--text);">Рейтинг: ${Number(d.avg_rating || 0).toFixed(1)} • Отзывов: ${d.reviews_count || 0}</div>
+          <div style="font-size:12px;color:var(--text);">Прогноз ожидания: ${d.wait_forecast_minutes || 0} мин</div>
+          <a class="btn btn-outline" style="font-size:11px;padding:6px 10px;margin-top:4px;" href="recording.html?hospital=${d.hospital_id || ''}&doctor=${d.id}">Выбрать</a>
+        </article>
+      `).join('')}
+    </div>
+  `;
+
+  const clearBtn = document.getElementById('mqDoctorsCompareClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      setDoctorCompareIds([]);
+      renderDoctorsCatalogCards(items);
+    });
+  }
 }
 
 function initDoctorsFlowEnhancements(listEl) {
@@ -541,6 +690,12 @@ function initDoctorsFlowEnhancements(listEl) {
   `;
 
   wrap.insertBefore(tools, listEl);
+
+  const comparePanel = document.createElement('div');
+  comparePanel.id = 'mqDoctorsComparePanel';
+  comparePanel.style.cssText = 'margin-top:10px;padding:10px 12px;border:1px solid var(--border-soft);border-radius:10px;background:var(--glass);';
+  comparePanel.innerHTML = '<div style="font-size:13px;color:var(--muted);">Панель сравнения врачей загружается...</div>';
+  wrap.insertBefore(comparePanel, listEl);
 
   const toggle = document.getElementById('mqDoctorsFavToggle');
   if (toggle) {
@@ -999,7 +1154,39 @@ function initForms() {
         }
       }
     }
+
+    applyScenarioFromStorageAndQuery();
   }
+}
+
+function applyScenarioFromStorageAndQuery() {
+  const form = document.getElementById('appointmentForm');
+  if (!form) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const fromStorage = (() => {
+    try { return JSON.parse(localStorage.getItem(RECORDING_SCENARIO_KEY) || 'null'); }
+    catch { return null; }
+  })();
+
+  const scenario = {
+    mode: params.get('mode') || fromStorage?.mode || 'balanced',
+    dayPart: params.get('day_part') || fromStorage?.dayPart || 'day',
+    priority: Number(params.get('priority') || fromStorage?.priority || 5),
+    specialty: params.get('specialty') || fromStorage?.specialty || 'Терапевт',
+  };
+
+  const shouldAutoApply = params.get('autoscenario') === '1' || !!fromStorage?.fromMainLab;
+  if (!shouldAutoApply) return;
+
+  setTimeout(() => {
+    applyRecordingScenario(scenario.mode, scenario);
+    try {
+      if (fromStorage?.fromMainLab) {
+        localStorage.setItem(RECORDING_SCENARIO_KEY, JSON.stringify({ ...fromStorage, fromMainLab: false }));
+      }
+    } catch {}
+  }, 350);
 }
 
 // === МИНИ-ФОРМА НА ГЛАВНОЙ ===
@@ -1120,18 +1307,20 @@ async function handleAppointmentSubmit(e) {
     return el && el.value ? parseInt(el.value) : undefined;
   })();
 
+  const bookingDraft = {
+    patient_name: name,
+    phone: phone || undefined,
+    hospital: parseInt(hospitalId),
+    specialty,
+    doctor: doctorId,
+    datetime,
+    comment: comment || undefined,
+  };
+
   try {
     const response = await authFetch(`${API_URL}/appointments/`, {
       method: 'POST',
-      body: JSON.stringify({
-        patient_name: name,
-        phone: phone || undefined,
-        hospital: parseInt(hospitalId),
-        specialty: specialty,
-        doctor: doctorId,
-        datetime: datetime,
-        comment: comment || undefined
-      })
+      body: JSON.stringify(bookingDraft)
     });
     
     if (!response.ok) {
@@ -1206,13 +1395,52 @@ async function handleAppointmentSubmit(e) {
     e.target.reset();
     localStorage.removeItem(HOSPITALS_CACHE_KEY); // сбрасываем кэш чтобы очередь обновилась
     loadHospitals(); // Обновляем очереди
+
+    scheduleAppointmentReminders(appointment, hospital, { demo: false });
+    seedDemoFlowFromAppointment({
+      ...appointment,
+      hospital_name: hospital?.name || appointment?.hospital_name || 'Клиника',
+      specialty,
+      patient_name: name,
+    });
     
     // Прокрутка к сообщению
     msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     
   } catch (error) {
     console.error('Ошибка:', error);
-    showMessage(msgEl, `❌ ${error.message}`, 'error');
+    const networkLike = /failed to fetch|network|load failed|TypeError/i.test(String(error?.message || ''));
+    if (!networkLike) {
+      showMessage(msgEl, `❌ ${error.message}`, 'error');
+      return;
+    }
+
+    const demo = createDemoAppointmentFromForm(bookingDraft);
+    const hospital = hospitals.find(h => h.id === parseInt(hospitalId)) || { name: 'Демо-клиника' };
+    saveDemoAppointment(demo);
+    rememberStatusLookup(demo.code, demo);
+    renderStatusHistoryPanel();
+    scheduleAppointmentReminders(demo, hospital, { demo: true });
+
+    msgEl.innerHTML = `
+      <div style="margin-top:16px; padding:20px; background:linear-gradient(135deg,#fff7ed 0%,#fef3c7 100%); border-radius:12px; border:2px solid #f59e0b;">
+        <div style="text-align:center; margin-bottom:12px;">
+          <div style="font-size:22px; margin-bottom:8px;">🧪 Демо-запись создана</div>
+          <div style="font-size:13px;color:#92400e;">Сервер недоступен, поэтому включен офлайн-режим для презентации.</div>
+        </div>
+        <div style="background:white; padding:14px; border-radius:10px; margin-bottom:12px; text-align:center;">
+          <div style="font-size:12px;color:#6b7280; margin-bottom:5px;">КОД ДЕМО-ЗАПИСИ</div>
+          <div style="font-size:34px; font-weight:900; color:#b45309; letter-spacing:4px; font-family:monospace;">${demo.code}</div>
+        </div>
+        <div style="font-size:13px;color:#78350f;background:rgba(255,255,255,.56);padding:10px;border-radius:8px;">
+          ${hospital.name} • ${specialty} • очередь ${demo.queue_position} • ожидание ~${demo.estimated_wait_time} мин
+        </div>
+        <div style="margin-top:12px; text-align:center;">
+          <a href="recording.html?code=${demo.code}#status-check" class="btn btn-primary">Проверить статус и показать игру</a>
+        </div>
+      </div>
+    `;
+    showToast('Сработал офлайн-демо режим записи', 'warning');
   }
 }
 
@@ -1248,6 +1476,10 @@ function initStatusPage() {
       const appointment = await response.json();
       rememberStatusLookup(code, appointment);
       renderStatusHistoryPanel();
+      seedDemoFlowFromAppointment({
+        ...appointment,
+        created_at: Date.now(),
+      });
       const datetime = new Date(appointment.datetime);
       const waitTime = appointment.estimated_wait_time;
       
@@ -1296,8 +1528,14 @@ function initStatusPage() {
               </div>` : ''}
               ${appointment.doctor_recommendation ? `
               <div style="border-top:1px solid #e5e7eb; padding-top:12px;">
-                <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">РЕКОМЕНДАЦИИ ВРАЧА</div>
+                <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">ЗАКЛЮЧЕНИЕ ПРИЕМА</div>
                 <div style="font-size:14px; color:#1f2937; background:#f2f6f4; padding:10px 12px; border-radius:8px; border-left:3px solid #7aa79d;">${appointment.doctor_recommendation}</div>
+              </div>` : ''}
+              ${appointment.prescribed_medications ? `
+              <div style="border-top:1px solid #e5e7eb; padding-top:12px;">
+                <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">РЕЦЕПТ</div>
+                <div style="font-size:14px; color:#1f2937; background:#eef9f6; padding:10px 12px; border-radius:8px; border-left:3px solid #5c887f; white-space:pre-wrap;">${appointment.prescribed_medications}</div>
+                ${appointment.prescription_confirmed ? `<div style="font-size:12px;color:#4f776f;margin-top:6px;">Подтверждено врачом: ${appointment.prescription_confirmed_by || 'врач'}${appointment.prescription_confirmed_at ? ' • ' + new Date(appointment.prescription_confirmed_at).toLocaleString('ru-RU') : ''}</div>` : ''}
               </div>` : ''}
             </div>
           </div>
@@ -1318,10 +1556,10 @@ function initStatusPage() {
             </div>
           </div>
 
-          ${appointment.auto_taxi_available ? `
+          ${(appointment.care_plus_support_available || appointment.auto_taxi_available) ? `
           <div style="background:#f2f6f4; padding:12px; border-radius:8px; border:1px solid #a5f3fc; margin-bottom:12px;">
             <div style="font-size:13px; color:#155e75;">
-              🚕 <strong>Care Plus:</strong> после завершения приёма система может автоматически оформить заказ такси.
+              ✨ <strong>Care Plus:</strong> доступен персональный план после приёма и гибкое приоритетное перепланирование.
             </div>
           </div>` : ''}
           
@@ -1330,9 +1568,42 @@ function initStatusPage() {
           </button>
         </div>
       `;
+
+      renderQueueCompanion(appointment);
       
     } catch (error) {
       console.error('Ошибка:', error);
+
+      const demo = getDemoAppointmentByCode(code);
+      if (demo) {
+        const live = computeLiveDemoQueue(demo);
+        rememberStatusLookup(code, live);
+        renderStatusHistoryPanel();
+        seedDemoFlowFromAppointment({ ...live, created_at: live.created_at || Date.now() });
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+          <div style="padding:18px; background:linear-gradient(135deg,#ecfccb 0%,#d9f99d 100%); border-radius:12px; border:2px solid #65a30d;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div>
+                <div style="font-weight:900;color:#365314;font-size:18px;">✅ Демо-статус найден</div>
+                <div style="font-size:13px;color:#4d7c0f;">Код: ${live.code} • офлайн-поток для показа функционала</div>
+              </div>
+              <span style="padding:5px 10px;border-radius:999px;background:#365314;color:#fff;font-size:12px;font-weight:700;">DEMO MODE</span>
+            </div>
+            <div style="margin-top:12px;background:#fff;padding:12px;border-radius:10px;display:grid;gap:8px;">
+              <div><strong>Пациент:</strong> ${live.patient_name}</div>
+              <div><strong>Клиника:</strong> ${live.hospital_name}</div>
+              <div><strong>Специалист:</strong> ${live.specialty}</div>
+              <div><strong>Место в очереди:</strong> ${live.queue_position}</div>
+              <div><strong>Примерное ожидание:</strong> ~${live.estimated_wait_time} мин</div>
+              <div style="font-size:12px;color:#4b5563;">Обновляйте проверку кнопкой «Обновить последний код» чтобы видеть изменение ожидания.</div>
+            </div>
+          </div>
+        `;
+        renderQueueCompanion(live);
+        return;
+      }
+
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = `
         <div style="padding:16px; background:#fef3c7; border-radius:10px; border:1px solid #fde68a; color:#92400e;">
@@ -1425,31 +1696,68 @@ function initRecordingFlowEnhancements() {
   panel.className = 'card';
   panel.style.cssText = 'margin-bottom:14px;padding:14px;border:1px solid var(--border-soft);background:var(--glass);';
   panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
       <div>
         <div style="font-weight:800;color:var(--text);">Умный сценарий записи</div>
-        <div id="mqRecHint" style="font-size:13px;color:var(--muted);">Выберите сценарий, и форма заполнится автоматически.</div>
+        <div id="mqRecHint" style="font-size:13px;color:var(--muted);">Настройте сценарий, примените, проверьте и подтвердите запись.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;flex:1;min-width:240px;">
+        <select id="mqRecMode" style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);color:var(--text);">
+          <option value="fast">Самый быстрый</option>
+          <option value="balanced" selected>Сбалансированный</option>
+          <option value="next">Ближайшее окно</option>
+        </select>
+        <select id="mqRecDayPart" style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);color:var(--text);">
+          <option value="morning">Утро</option>
+          <option value="day" selected>День</option>
+          <option value="evening">Вечер</option>
+        </select>
+        <select id="mqRecSpecialty" style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);color:var(--text);">
+          <option value="Терапевт">Терапевт</option>
+          <option value="Кардиолог">Кардиолог</option>
+          <option value="Невролог">Невролог</option>
+          <option value="Педиатр">Педиатр</option>
+          <option value="Стоматолог">Стоматолог</option>
+          <option value="Хирург">Хирург</option>
+        </select>
+        <input id="mqRecPriority" type="range" min="1" max="10" value="6" />
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-outline mq-rec-action" data-mode="fast" style="font-size:12px;padding:8px 12px;">Самый быстрый</button>
-        <button type="button" class="btn btn-outline mq-rec-action" data-mode="balanced" style="font-size:12px;padding:8px 12px;">Сбалансированный</button>
-        <button type="button" class="btn btn-outline mq-rec-action" data-mode="next" style="font-size:12px;padding:8px 12px;">Ближайшее окно</button>
+        <button type="button" id="mqRecApply" class="btn btn-outline" style="font-size:12px;padding:8px 12px;">Применить сценарий</button>
+        <button type="button" id="mqRecReview" class="btn btn-primary" style="font-size:12px;padding:8px 12px;">К подтверждению</button>
       </div>
     </div>
   `;
 
   form.parentElement.insertBefore(panel, form);
 
-  panel.querySelectorAll('.mq-rec-action').forEach((btn) => {
-    btn.addEventListener('click', () => applyRecordingScenario(btn.getAttribute('data-mode') || 'balanced'));
-  });
+  const applyBtn = panel.querySelector('#mqRecApply');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      const mode = panel.querySelector('#mqRecMode')?.value || 'balanced';
+      const dayPart = panel.querySelector('#mqRecDayPart')?.value || 'day';
+      const specialty = panel.querySelector('#mqRecSpecialty')?.value || 'Терапевт';
+      const priority = Number(panel.querySelector('#mqRecPriority')?.value || 6);
+      applyRecordingScenario(mode, { dayPart, specialty, priority });
+    });
+  }
+
+  const reviewBtn = panel.querySelector('#mqRecReview');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', () => {
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
 }
 
-function applyRecordingScenario(mode) {
+function applyRecordingScenario(mode, options = {}) {
   const select = document.getElementById('hospitalSelectApp');
   const dtInput = document.getElementById('appDatetime');
   const dtLabel = document.getElementById('dtSelectedLabel');
   const hint = document.getElementById('mqRecHint');
+  const specInput = document.getElementById('appSpecialty');
+  const noteInput = document.getElementById('appComment');
   if (!select || !dtInput) return;
 
   if (!Array.isArray(hospitals) || !hospitals.length) {
@@ -1457,8 +1765,21 @@ function applyRecordingScenario(mode) {
     return;
   }
 
-  const sorted = [...hospitals].sort((a, b) => (a.queue || 0) - (b.queue || 0));
-  const pick = mode === 'fast' ? sorted[0] : (mode === 'balanced' ? sorted[Math.min(1, sorted.length - 1)] : hospitals[0]);
+  const dayPart = options.dayPart || 'day';
+  const specialty = options.specialty || 'Терапевт';
+  const priority = Math.max(1, Math.min(10, Number(options.priority || 5)));
+
+  const sorted = [...hospitals].sort((a, b) => {
+    const queueA = Number(a.queue || 0);
+    const queueB = Number(b.queue || 0);
+    const ratingA = Number(a.avgRating || 0);
+    const ratingB = Number(b.avgRating || 0);
+    if (mode === 'fast') return queueA - queueB;
+    if (mode === 'next') return (queueA * 2 - ratingA) - (queueB * 2 - ratingB);
+    return (queueA - ratingA * 0.9) - (queueB - ratingB * 0.9);
+  });
+
+  const pick = sorted[0];
   if (!pick) return;
 
   select.value = String(pick.id);
@@ -1466,11 +1787,13 @@ function applyRecordingScenario(mode) {
 
   const now = new Date();
   const target = new Date(now);
-  if (mode === 'next') {
-    target.setHours(now.getHours() + 2);
+  if (mode === 'next' || priority >= 8) {
+    target.setHours(now.getHours() + 2 + (priority >= 9 ? 0 : 1));
+    target.setMinutes(0, 0, 0);
   } else {
     target.setDate(target.getDate() + 1);
-    target.setHours(mode === 'fast' ? 9 : 12, 0, 0, 0);
+    const byPart = { morning: 9, day: 13, evening: 18 };
+    target.setHours(byPart[dayPart] || 13, 0, 0, 0);
   }
 
   const pad = (n) => String(n).padStart(2, '0');
@@ -1480,12 +1803,22 @@ function applyRecordingScenario(mode) {
     dtLabel.textContent = `Выбрано: ${target.toLocaleDateString('ru-RU')} ${target.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
+  if (specInput) {
+    specInput.value = specialty;
+    const chip = document.querySelector(`#specGrid .spec-chip[data-value="${specialty}"]`);
+    if (chip) chip.click();
+  }
+
+  if (noteInput && !noteInput.value) {
+    noteInput.value = `Сценарий: ${mode}, приоритет ${priority}/10, окно: ${dayPart === 'morning' ? 'утро' : dayPart === 'evening' ? 'вечер' : 'день'}.`;
+  }
+
   if (typeof window.loadHospitalDoctors === 'function') {
     window.loadHospitalDoctors(String(pick.id));
   }
 
   if (hint) {
-    hint.textContent = `Сценарий применен: ${pick.name} • очередь ${pick.queue || 0} чел.`;
+    hint.textContent = `Сценарий применен: ${pick.name} • ${specialty} • очередь ${pick.queue || 0} чел.`;
   }
 }
 
@@ -1879,21 +2212,624 @@ function requestNotificationPermission() {
   }
 }
 
+function getDemoAppointments() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DEMO_APPOINTMENTS_KEY) || '{}');
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDemoAppointments(map) {
+  localStorage.setItem(DEMO_APPOINTMENTS_KEY, JSON.stringify(map || {}));
+}
+
+function generateCode(prefix = 'MQD') {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = prefix;
+  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function createDemoAppointmentFromForm(payload) {
+  const hospital = hospitals.find((h) => h.id === Number(payload.hospital));
+  const q = Math.max(1, Math.min(18, Math.floor((hospital?.queue || 4) + Math.random() * 4)));
+  const wait = Math.max(6, Math.min(120, q * 6));
+  const datetime = payload.datetime || new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+  return {
+    code: generateCode('MQD'),
+    patient_name: payload.patient_name || 'Демо Пациент',
+    hospital_name: hospital?.name || 'Демо клиника MedQueue',
+    hospital_address: hospital?.address || 'Алматы, демонстрационный адрес',
+    specialty: payload.specialty || 'Терапевт',
+    queue_position: q,
+    estimated_wait_time: wait,
+    datetime,
+    comment: payload.comment || '',
+    created_at: Date.now(),
+    demo: true,
+  };
+}
+
+function saveDemoAppointment(appointment) {
+  const map = getDemoAppointments();
+  map[appointment.code] = appointment;
+  saveDemoAppointments(map);
+}
+
+function getDemoAppointmentByCode(code) {
+  const map = getDemoAppointments();
+  return map[code] || null;
+}
+
+function computeLiveDemoQueue(appt) {
+  const minutesPassed = Math.max(0, Math.floor((Date.now() - Number(appt.created_at || Date.now())) / 60000));
+  const advanced = Math.floor(minutesPassed / 3);
+  const q = Math.max(1, Number(appt.queue_position || 1) - advanced);
+  const w = Math.max(3, q * 5);
+  return {
+    ...appt,
+    queue_position: q,
+    estimated_wait_time: w,
+  };
+}
+
+function getDemoReminders() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DEMO_REMINDERS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDemoReminders(items) {
+  localStorage.setItem(DEMO_REMINDERS_KEY, JSON.stringify(items));
+}
+
+function enqueueReminder(rem) {
+  const all = getDemoReminders();
+  all.push(rem);
+  saveDemoReminders(all.slice(-30));
+}
+
+function processDueReminders() {
+  const all = getDemoReminders();
+  if (!all.length) return;
+  const now = Date.now();
+  let changed = false;
+  all.forEach((r) => {
+    if (r.fired) return;
+    if (now >= Number(r.when || 0)) {
+      showToast(r.text || 'Напоминание MedQueue', 'info');
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('MedQueue - Напоминание', { body: r.text || 'Проверьте запись' });
+      }
+      const flow = getDemoFlowState();
+      if (flow && Number(flow.step || 0) < 2) {
+        flow.step = 2;
+        flow.updated_at = Date.now();
+        saveDemoFlowState(flow);
+        renderDemoJourneyPanel();
+      }
+      r.fired = true;
+      changed = true;
+    }
+  });
+  if (changed) saveDemoReminders(all);
+}
+
+function scheduleReminderTimer(rem) {
+  const delay = Number(rem.when || 0) - Date.now();
+  if (delay <= 0 || delay > 24 * 3600 * 1000) return;
+  setTimeout(() => processDueReminders(), delay + 150);
+}
+
+function scheduleAppointmentReminders(appointment, hospital, { demo = false } = {}) {
+  const dt = new Date(appointment?.datetime || Date.now() + 3600000).getTime();
+  const code = appointment?.code || 'N/A';
+  const clinic = hospital?.name || appointment?.hospital_name || 'Клиника';
+
+  const reminders = [
+    {
+      id: `${code}-t10s-${Date.now()}`,
+      when: Date.now() + 10000,
+      text: `Демо-напоминание: запись ${code} создана. Проверка готова к показу.`,
+      fired: false,
+    },
+    {
+      id: `${code}-t30m-${Date.now()}`,
+      when: dt - 30 * 60 * 1000,
+      text: `Через 30 минут прием в ${clinic}. Код записи: ${code}.`,
+      fired: false,
+    },
+  ];
+
+  reminders.forEach((r) => {
+    if (r.when > Date.now() - 1000) {
+      enqueueReminder(r);
+      scheduleReminderTimer(r);
+    }
+  });
+
+  showToast(demo ? 'Демо-напоминания поставлены (включая тест через 10с)' : 'Напоминания по записи активированы', 'success');
+}
+
+function renderQueueCompanion(appointment) {
+  const host = document.getElementById('mqDemoShowcase');
+  if (!host) return;
+
+  const q = Number(appointment?.queue_position || 1);
+  const wait = Number(appointment?.estimated_wait_time || Math.max(5, q * 6));
+  const progress = Math.max(5, Math.min(100, 100 - q * 6));
+
+  const queuePanel = host.querySelector('#mqQueueCompanion');
+  if (queuePanel) {
+    queuePanel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <strong>Ожидание в очереди</strong>
+        <span style="font-size:12px;color:var(--muted);">Обновляется после проверки статуса</span>
+      </div>
+      <div style="margin-top:10px;font-size:14px;">Перед вами: <strong>${q}</strong> чел. • ожидание <strong>~${wait} мин</strong></div>
+      <div style="height:8px;border-radius:999px;background:var(--border-soft);margin-top:8px;overflow:hidden;">
+        <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#7aa79d,#6f9c92);"></div>
+      </div>
+    `;
+  }
+}
+
+function getDemoFlowState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DEMO_FLOW_KEY) || 'null');
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDemoFlowState(state) {
+  localStorage.setItem(DEMO_FLOW_KEY, JSON.stringify(state || null));
+}
+
+function seedDemoFlowFromAppointment(appointment) {
+  const flow = {
+    code: appointment?.code || generateCode('MQD'),
+    patient_name: appointment?.patient_name || 'Пациент',
+    hospital_name: appointment?.hospital_name || 'Клиника',
+    specialty: appointment?.specialty || 'Терапевт',
+    datetime: appointment?.datetime || new Date(Date.now() + 7200000).toISOString(),
+    queue_position: Number(appointment?.queue_position || 6),
+    estimated_wait_time: Number(appointment?.estimated_wait_time || 36),
+    created_at: Number(appointment?.created_at || Date.now()),
+    step: 1,
+    updated_at: Date.now(),
+  };
+  saveDemoFlowState(flow);
+  renderDemoJourneyPanel();
+}
+
+function formatStepTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderDemoJourneyPanel() {
+  const host = document.getElementById('mqJourneyPanel');
+  if (!host) return;
+
+  const flow = getDemoFlowState();
+  if (!flow) {
+    host.innerHTML = '<div style="font-size:13px;color:var(--muted);">Создайте запись, чтобы увидеть реалистичный путь пациента от регистрации до завершения приема.</div>';
+    return;
+  }
+
+  const steps = [
+    'Запись подтверждена',
+    'Ожидание в очереди',
+    'Напоминание отправлено',
+    'Пациент на приеме',
+    'Прием завершен',
+  ];
+
+  const activeStep = Math.max(0, Math.min(4, Number(flow.step || 0)));
+  const progress = Math.round((activeStep / 4) * 100);
+  const queueNow = Math.max(0, Number(flow.queue_position || 0) - activeStep);
+  const waitNow = Math.max(0, Number(flow.estimated_wait_time || 0) - activeStep * 8);
+
+  host.innerHTML = `
+    <div style="display:grid;gap:10px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <strong>Путь пациента (реалистичный сценарий)</strong>
+        <span style="padding:4px 9px;border-radius:999px;background:rgba(111,156,146,.16);font-size:12px;font-weight:700;">Код: ${flow.code}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
+        <div style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);font-size:12px;"><strong>Пациент:</strong> ${flow.patient_name}</div>
+        <div style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);font-size:12px;"><strong>Клиника:</strong> ${flow.hospital_name}</div>
+        <div style="padding:8px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--card);font-size:12px;"><strong>Спец.:</strong> ${flow.specialty}</div>
+      </div>
+      <div style="height:8px;border-radius:999px;background:var(--border-soft);overflow:hidden;"><div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#6f9c92,#7aa79d);"></div></div>
+      <div style="display:grid;gap:6px;">
+        ${steps.map((label, idx) => {
+          const done = idx <= activeStep;
+          const mark = done ? '✔' : '○';
+          return `<div style="font-size:13px;padding:7px 9px;border-radius:8px;border:1px solid ${done ? 'rgba(111,156,146,.45)' : 'var(--border-soft)'};background:${done ? 'rgba(111,156,146,.11)' : 'var(--card)'};">${mark} ${label}</div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text-soft);">
+        <span>Текущее ожидание: <strong>${waitNow} мин</strong></span>
+        <span>Перед пациентом: <strong>${queueNow} чел</strong></span>
+        <span>Обновлено: <strong>${formatStepTime(flow.updated_at)}</strong></span>
+      </div>
+    </div>
+  `;
+}
+
+function initRecordingDemoShowcase() {
+  if (!document.body.classList.contains('page-recording-avant')) return;
+  const host = document.getElementById('mqDemoShowcase');
+  if (!host || host.dataset.ready === '1') return;
+  host.dataset.ready = '1';
+
+  host.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+      <article id="mqQueueCompanion" class="card" style="padding:12px;"></article>
+      <article class="card" style="padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <strong>Напоминания</strong>
+          <button type="button" id="mqReminderTest" class="btn btn-outline" style="font-size:12px;padding:6px 10px;">Тест через 10с</button>
+        </div>
+        <div id="mqReminderInfo" style="margin-top:10px;font-size:13px;color:var(--muted);">Создайте запись или нажмите тест, чтобы показать напоминание преподавателю.</div>
+      </article>
+      <article class="card" style="padding:12px;grid-column:1/-1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <strong>Реалистичный путь пациента</strong>
+          <div>
+            <button type="button" id="mqFlowNext" class="btn btn-outline" style="font-size:12px;padding:6px 10px;">Следующий этап</button>
+            <button type="button" id="mqFlowReset" class="btn btn-outline" style="font-size:12px;padding:6px 10px;">Сброс</button>
+          </div>
+        </div>
+        <div id="mqJourneyPanel" style="margin-top:10px;"></div>
+      </article>
+      <article class="card" style="padding:12px;grid-column:1/-1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <strong>Мини-игра «Очередь Runner» (офлайн)</strong>
+          <div>
+            <button type="button" id="mqGameStart" class="btn btn-primary" style="font-size:12px;padding:6px 10px;">Старт</button>
+            <button type="button" id="mqGameRestart" class="btn btn-outline" style="font-size:12px;padding:6px 10px;">Рестарт</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:6px 0 10px;">Пробел/клик/тап = прыжок. Цель: переждать очередь и не врезаться в препятствия.</div>
+        <canvas id="mqDinoCanvas" width="760" height="190" style="width:100%;max-width:100%;background:linear-gradient(180deg,#f8fffe,#eef6f4);border:1px solid var(--border-soft);border-radius:12px;"></canvas>
+      </article>
+    </div>
+  `;
+
+  renderQueueCompanion({ queue_position: 8, estimated_wait_time: 42 });
+  renderDemoJourneyPanel();
+
+  const testBtn = document.getElementById('mqReminderTest');
+  const info = document.getElementById('mqReminderInfo');
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      const reminder = {
+        id: `manual-${Date.now()}`,
+        when: Date.now() + 10000,
+        text: 'Тест-напоминание MedQueue: проверьте очередь и подготовьте документы.',
+        fired: false,
+      };
+      enqueueReminder(reminder);
+      scheduleReminderTimer(reminder);
+      if (info) info.textContent = 'Тест поставлен: через 10 секунд появится уведомление/toast.';
+      showToast('Тест-напоминание запланировано на 10 секунд', 'info');
+    });
+  }
+
+  initQueueRunnerGame();
+
+  const flowNext = document.getElementById('mqFlowNext');
+  const flowReset = document.getElementById('mqFlowReset');
+  if (flowNext) {
+    flowNext.addEventListener('click', () => {
+      const flow = getDemoFlowState();
+      if (!flow) {
+        showToast('Сначала создайте запись, чтобы двигать этапы', 'info');
+        return;
+      }
+      flow.step = Math.min(4, Number(flow.step || 0) + 1);
+      flow.updated_at = Date.now();
+      saveDemoFlowState(flow);
+      renderDemoJourneyPanel();
+      renderQueueCompanion(flow);
+    });
+  }
+  if (flowReset) {
+    flowReset.addEventListener('click', () => {
+      localStorage.removeItem(DEMO_FLOW_KEY);
+      renderDemoJourneyPanel();
+      renderQueueCompanion({ queue_position: 8, estimated_wait_time: 42 });
+      showToast('Демо-поток сброшен', 'success');
+    });
+  }
+
+  const demoBtn = document.getElementById('demoBookingBtn');
+  if (demoBtn) {
+    demoBtn.addEventListener('click', () => {
+      const hospitalId = Number(document.getElementById('hospitalSelectApp')?.value || 0);
+      const specialty = document.getElementById('appSpecialty')?.value || 'Терапевт';
+      const name = (document.getElementById('appName')?.value || '').trim() || 'Демо Пациент';
+      const datetime = document.getElementById('appDatetime')?.value || new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 16);
+      const comment = (document.getElementById('appComment')?.value || '').trim();
+      const payload = {
+        patient_name: name,
+        hospital: hospitalId || (hospitals[0]?.id || 1),
+        specialty,
+        datetime,
+        comment,
+      };
+      const demo = createDemoAppointmentFromForm(payload);
+      saveDemoAppointment(demo);
+      rememberStatusLookup(demo.code, demo);
+      renderStatusHistoryPanel();
+      scheduleAppointmentReminders(demo, { name: demo.hospital_name }, { demo: true });
+      seedDemoFlowFromAppointment(demo);
+      const msgEl = document.getElementById('appMsg');
+      if (msgEl) {
+        msgEl.innerHTML = `
+          <div style="margin-top:10px;padding:14px;border-radius:10px;border:1px solid #a3e635;background:linear-gradient(135deg,#f7fee7,#ecfccb);">
+            <strong>Демо-запись создана:</strong> код <span style="font-family:monospace;font-size:18px;letter-spacing:2px;">${demo.code}</span>
+            <div style="margin-top:8px;">Откройте «Проверка статуса очереди» и вставьте код, чтобы показать живое ожидание + игру.</div>
+          </div>
+        `;
+      }
+      const codeInput = document.getElementById('code');
+      if (codeInput) codeInput.value = demo.code;
+      renderQueueCompanion(demo);
+      showToast('Офлайн демо-запись успешно создана', 'success');
+    });
+  }
+}
+
+function initQueueRunnerGame() {
+  const canvas = document.getElementById('mqDinoCanvas');
+  if (!canvas || canvas.dataset.ready === '1') return;
+  canvas.dataset.ready = '1';
+
+  const ctx = canvas.getContext('2d');
+  const startBtn = document.getElementById('mqGameStart');
+  const restartBtn = document.getElementById('mqGameRestart');
+
+  const state = {
+    running: false,
+    gameOver: false,
+    score: 0,
+    speed: 4.4,
+    gravity: 0.72,
+    obstacles: [],
+    t: 0,
+    player: { x: 58, y: 0, w: 28, h: 42, vy: 0, jumpPower: 12.5 },
+  };
+
+  const SPRITES = {
+    doctorA: [
+      '..ssss..',
+      '.skkkks.',
+      '.swdwds.',
+      '.swwwws.',
+      '.swwwws.',
+      '.sbbbbs.',
+      '.sb..bs.',
+      '.db..bd.',
+    ],
+    doctorB: [
+      '..ssss..',
+      '.skkkks.',
+      '.swdwds.',
+      '.swwwws.',
+      '.swwwws.',
+      '.sbbbbs.',
+      '.s.bb.s.',
+      '.db..bd.',
+    ],
+    queueEnemy: [
+      '.rrrrr.',
+      '.rkkkr.',
+      '.rddddr.',
+      '.rddddr.',
+      '.ryyyyr.',
+      '.ry..yr.',
+      '.d....d.',
+    ],
+    queueEnemy2: [
+      '.rrrrr.',
+      '.rkkkr.',
+      '.rddddr.',
+      '.rddddr.',
+      '.ryyyyr.',
+      '.r.yy.r.',
+      '.d....d.',
+    ],
+  };
+
+  const PALETTE = {
+    s: '#111827',
+    k: '#f1c7a8',
+    w: '#ffffff',
+    b: '#3b82f6',
+    d: '#0f172a',
+    r: '#7f1d1d',
+    y: '#f59e0b',
+  };
+
+  const PX = 4;
+
+  function spriteSize(sprite) {
+    return { w: (sprite[0] || '').length * PX, h: sprite.length * PX };
+  }
+
+  function drawSprite(sprite, x, y) {
+    for (let row = 0; row < sprite.length; row++) {
+      const line = sprite[row];
+      for (let col = 0; col < line.length; col++) {
+        const ch = line[col];
+        if (ch === '.' || !PALETTE[ch]) continue;
+        ctx.fillStyle = PALETTE[ch];
+        ctx.fillRect(Math.round(x + col * PX), Math.round(y + row * PX), PX, PX);
+      }
+    }
+  }
+
+  const heroSize = spriteSize(SPRITES.doctorA);
+  state.player.w = heroSize.w;
+  state.player.h = heroSize.h;
+
+  const groundY = () => canvas.height - 34;
+
+  function resetGame() {
+    state.running = false;
+    state.gameOver = false;
+    state.score = 0;
+    state.speed = 4.4;
+    state.obstacles = [];
+    state.t = 0;
+    state.player.y = groundY() - state.player.h;
+    state.player.vy = 0;
+    draw();
+  }
+
+  function jump() {
+    if (state.gameOver) return;
+    const onGround = state.player.y >= groundY() - state.player.h - 0.5;
+    if (onGround) {
+      state.player.vy = -state.player.jumpPower;
+      state.running = true;
+    }
+  }
+
+  function spawnObstacle() {
+    const sprite = Math.random() > 0.5 ? SPRITES.queueEnemy : SPRITES.queueEnemy2;
+    const size = spriteSize(sprite);
+    state.obstacles.push({
+      x: canvas.width + 10,
+      y: groundY() - size.h,
+      w: size.w,
+      h: size.h,
+      sprite,
+      bob: Math.random() * 0.5,
+    });
+  }
+
+  function intersects(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function update() {
+    if (!state.running || state.gameOver) return;
+    state.t += 1;
+    state.score += 1;
+    if (state.score % 280 === 0) state.speed += 0.3;
+
+    if (state.t % Math.max(36, 92 - Math.floor(state.speed * 8)) === 0) spawnObstacle();
+
+    state.player.vy += state.gravity;
+    state.player.y += state.player.vy;
+    const floor = groundY() - state.player.h;
+    if (state.player.y > floor) {
+      state.player.y = floor;
+      state.player.vy = 0;
+    }
+
+    state.obstacles.forEach((o) => { o.x -= state.speed; });
+    state.obstacles = state.obstacles.filter((o) => o.x + o.w > -6);
+
+    const playerBox = { x: state.player.x + 3, y: state.player.y + 2, w: state.player.w - 6, h: state.player.h - 3 };
+    if (state.obstacles.some((o) => intersects(playerBox, o))) {
+      state.gameOver = true;
+      state.running = false;
+      showToast(`Игра окончена. Счет: ${Math.floor(state.score / 8)}`, 'warning');
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#dbeafe';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#6f9c92';
+    ctx.fillRect(0, groundY(), canvas.width, 2);
+
+    const p = state.player;
+    const heroSprite = state.running && !state.gameOver && Math.floor(state.t / 8) % 2 === 0
+      ? SPRITES.doctorA
+      : SPRITES.doctorB;
+    drawSprite(heroSprite, p.x, p.y);
+
+    state.obstacles.forEach((o) => {
+      const bobY = Math.sin((state.t + o.bob) * 0.08) * 1.5;
+      drawSprite(o.sprite, o.x, o.y + bobY);
+    });
+
+    ctx.fillStyle = '#111827';
+    ctx.font = '700 14px Inter, sans-serif';
+    ctx.fillText(`Score: ${Math.floor(state.score / 8)}`, canvas.width - 120, 24);
+    ctx.fillText('ГГ: доктор | Враги: очередь', 14, 24);
+
+    if (!state.running && !state.gameOver) {
+      ctx.fillStyle = '#1f2937';
+      ctx.font = '700 16px Inter, sans-serif';
+      ctx.fillText('Нажмите Старт и Прыжок (пробел/клик)', 16, 46);
+    }
+    if (state.gameOver) {
+      ctx.fillStyle = '#7f1d1d';
+      ctx.font = '800 20px Inter, sans-serif';
+      ctx.fillText('GAME OVER', canvas.width / 2 - 62, 54);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  if (startBtn) startBtn.addEventListener('click', () => { state.running = true; state.gameOver = false; });
+  if (restartBtn) restartBtn.addEventListener('click', resetGame);
+
+  canvas.addEventListener('click', jump);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      if (document.body.classList.contains('page-recording-avant')) {
+        e.preventDefault();
+        jump();
+      }
+    }
+  });
+
+  resetGame();
+  loop();
+}
+
 function initInnovationLab() {
   const visitType = document.getElementById('labVisitType');
+  const specialty = document.getElementById('labSpecialty');
   const dayPart = document.getElementById('labDayPart');
   const urgency = document.getElementById('labUrgency');
   const urgencyValue = document.getElementById('labUrgencyValue');
   const runBtn = document.getElementById('labRunBtn');
+  const applyBtn = document.getElementById('labApplyBtn');
+  const metaEl = document.getElementById('labScenarioMeta');
 
   if (!visitType || !dayPart || !urgency || !runBtn) return;
 
   const waitEl = document.getElementById('labWaitTime');
   const loadEl = document.getElementById('labLoadIndex');
   const slotEl = document.getElementById('labBestSlot');
+  const hospitalEl = document.getElementById('labBestHospital');
   const onTimeEl = document.getElementById('labOnTime');
   const adviceEl = document.getElementById('labAdvice');
   const card = document.getElementById('labResultCard');
+  let latestScenario = null;
 
   const recompute = () => {
     const baseByType = { plan: 20, soon: 15, urgent: 11 };
@@ -1918,6 +2854,16 @@ function initInnovationLab() {
     const pick = slotsByDay[dayPart.value] || slotsByDay.day;
     const slot = pick[u >= 8 ? 0 : (u >= 5 ? 1 : 2)];
 
+    let hospitalPick = null;
+    if (Array.isArray(hospitals) && hospitals.length) {
+      const ranked = [...hospitals].sort((a, b) => {
+        const scoreA = Number(a.queue || 0) * 2 - Number(a.avgRating || 0) - u * 0.2;
+        const scoreB = Number(b.queue || 0) * 2 - Number(b.avgRating || 0) - u * 0.2;
+        return scoreA - scoreB;
+      });
+      hospitalPick = ranked[0] || null;
+    }
+
     const adviceMap = {
       plan: u >= 7
         ? 'Плановый + высокий приоритет: система предложит более ранние окна с меньшей нагрузкой.'
@@ -1931,8 +2877,20 @@ function initInnovationLab() {
     waitEl.textContent = `~ ${wait} мин`;
     loadEl.textContent = `Load ${load}`;
     slotEl.textContent = slot;
+    if (hospitalEl) hospitalEl.textContent = hospitalPick ? hospitalPick.name : 'Выберите клинику вручную';
     onTimeEl.textContent = `${onTime}%`;
     adviceEl.textContent = adviceMap[visitType.value] || adviceMap.plan;
+    if (metaEl) {
+      metaEl.textContent = `Сценарий: ${visitType.value} • ${dayPart.value} • приоритет ${u}/10 • специалист: ${specialty?.value || 'Терапевт'}`;
+    }
+
+    latestScenario = {
+      hospitalId: hospitalPick ? String(hospitalPick.id) : '',
+      mode: visitType.value === 'urgent' ? 'next' : (visitType.value === 'soon' ? 'fast' : 'balanced'),
+      dayPart: dayPart.value,
+      priority: u,
+      specialty: specialty?.value || 'Терапевт',
+    };
 
     if (card) {
       card.style.transform = 'scale(0.985)';
@@ -1943,7 +2901,33 @@ function initInnovationLab() {
   urgency.addEventListener('input', recompute);
   visitType.addEventListener('change', recompute);
   dayPart.addEventListener('change', recompute);
+  if (specialty) specialty.addEventListener('change', recompute);
   runBtn.addEventListener('click', recompute);
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      if (!latestScenario) {
+        recompute();
+      }
+      const s = latestScenario || {
+        hospitalId: '', mode: 'balanced', dayPart: 'day', priority: 5, specialty: 'Терапевт'
+      };
+
+      try {
+        localStorage.setItem(RECORDING_SCENARIO_KEY, JSON.stringify({ ...s, fromMainLab: true, ts: Date.now() }));
+      } catch {}
+
+      const q = new URLSearchParams({
+        autoscenario: '1',
+        mode: s.mode,
+        day_part: s.dayPart,
+        priority: String(s.priority),
+        specialty: s.specialty,
+      });
+      if (s.hospitalId) q.set('hospital', s.hospitalId);
+      window.location.href = `recording.html?${q.toString()}`;
+    });
+  }
 
   recompute();
 }
@@ -1951,8 +2935,21 @@ function initInnovationLab() {
 function initMainQuickHospitalPicker() {
   const select = document.getElementById('heroHospitalSelect');
   const button = document.getElementById('heroHospitalBook');
+  const detailsBtn = document.getElementById('heroHospitalDetails');
   const top = document.getElementById('heroTopHospitals');
   if (!select || !button || !top) return;
+
+  const syncDetailsButton = () => {
+    if (!detailsBtn) return;
+    const hospitalId = select.value;
+    if (!hospitalId) {
+      detailsBtn.style.display = 'none';
+      detailsBtn.setAttribute('href', '#');
+      return;
+    }
+    detailsBtn.style.display = '';
+    detailsBtn.setAttribute('href', `hospital.html?id=${hospitalId}`);
+  };
 
   select.innerHTML = '<option value="">Выберите клинику</option>';
   hospitals.forEach((h) => {
@@ -1972,7 +2969,10 @@ function initMainQuickHospitalPicker() {
         <strong>${h.name}</strong>
         <small>Очередь: ${h.queue || 0} чел. • Рейтинг: ${(h.avgRating || 0).toFixed(1)}</small>
       </div>
-      <button type="button" class="quick-hospital-pick">Выбрать</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+        <button type="button" class="quick-hospital-pick">Выбрать</button>
+        <a class="btn btn-outline" style="font-size:12px;padding:6px 10px;" href="hospital.html?id=${h.id}">Детали</a>
+      </div>
     </article>
   `).join('');
 
@@ -1981,9 +2981,13 @@ function initMainQuickHospitalPicker() {
       const card = btn.closest('.quick-hospital-card');
       const hid = card?.getAttribute('data-hid') || '';
       select.value = hid;
-      button.click();
+      syncDetailsButton();
+      select.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
+
+  select.addEventListener('change', syncDetailsButton);
+  syncDetailsButton();
 
   button.addEventListener('click', () => {
     const hospitalId = select.value;
@@ -2167,9 +3171,6 @@ function initSmartFormDrafts() {
             el.value = saved[key];
           }
         });
-        if (typeof showToast === 'function') {
-          showToast('Черновик формы восстановлен', 'success');
-        }
       }
     } catch {
       // ignore malformed storage payload

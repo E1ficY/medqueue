@@ -1,0 +1,91 @@
+MEDQUEUE TEST REPORT
+====================================================================
+Start: 2026-04-17 14:31:13
+End:   2026-04-17 14:31:30
+Duration: 17.52s
+Command: C:\Users\Acer\Desktop\Code\MedQueue\startup\backend\.venv\Scripts\python.exe manage.py test appointments.tests -v 2
+STATUS: PASSED
+Tests run: 24
+Failures: 0
+Errors: 0
+====================================================================
+
+RAW OUTPUT:
+--------------------------------------------------------------------
+Found 24 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, messages, rest_framework, rest_framework_simplejwt, staticfiles
+  Apply all migrations: admin, appointments, auth, contenttypes, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying appointments.0001_initial... OK
+  Applying appointments.0002_verificationcode_appointment_user... OK
+  Applying appointments.0003_alter_appointment_specialty_doctor_and_more... OK
+  Applying appointments.0004_hospital_description_latitude_longitude_phone... OK
+  Applying appointments.0005_doctordinvitecode_userprofile_verificationcode_role... OK
+  Applying appointments.0006_passwordresetcode... OK
+  Applying appointments.0007_add_username_to_verificationcode... OK
+  Applying appointments.0008_add_user_to_doctor... OK
+  Applying appointments.0009_add_comment_to_appointment... OK
+  Applying appointments.0010_subscription_and_recommendation... OK
+  Applying appointments.0011_card_verification_flow... OK
+  Applying appointments.0012_doctorreview... OK
+  Applying appointments.0013_appointment_exam_summary_and_more... OK
+  Applying appointments.0014_usersubscription_social_reason... OK
+  Applying appointments.0015_appointment_prescription_confirmation... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+test_ai_chat_fallbacks_to_all_doctors_if_specialty_not_found (appointments.tests.AIChatRecommendationTests.test_ai_chat_fallbacks_to_all_doctors_if_specialty_not_found) ... ok
+test_ai_chat_requires_message (appointments.tests.AIChatRecommendationTests.test_ai_chat_requires_message) ... ok
+test_ai_chat_uses_database_for_recommendation (appointments.tests.AIChatRecommendationTests.test_ai_chat_uses_database_for_recommendation) ... ok
+test_ai_chat_can_list_all_doctors (appointments.tests.AINameLookupTests.test_ai_chat_can_list_all_doctors) ... ok
+test_ai_chat_can_list_doctors_by_specialty (appointments.tests.AINameLookupTests.test_ai_chat_can_list_doctors_by_specialty) ... ok
+test_ai_chat_finds_doctor_by_name_lookup (appointments.tests.AINameLookupTests.test_ai_chat_finds_doctor_by_name_lookup) ... ok
+test_generic_medical_question_does_not_force_name_lookup (appointments.tests.AINameLookupTests.test_generic_medical_question_does_not_force_name_lookup) ... ok
+test_register_doctor_requires_valid_invite_code (appointments.tests.AuthFlowTests.test_register_doctor_requires_valid_invite_code) ... ok
+test_register_verify_and_login_patient_flow (appointments.tests.AuthFlowTests.test_register_verify_and_login_patient_flow) ... ok
+test_validate_doctor_code_success (appointments.tests.DoctorCodeValidationTests.test_validate_doctor_code_success) ... ok
+test_doctor_can_save_exam_summary_and_medications (appointments.tests.DoctorPortalMedicalNotesTests.test_doctor_can_save_exam_summary_and_medications) ... ok
+test_doctor_avg_rating_and_reviews_count (appointments.tests.DoctorRatingTests.test_doctor_avg_rating_and_reviews_count) ... ok
+test_patient_can_create_doctor_review (appointments.tests.DoctorReviewEndpointTests.test_patient_can_create_doctor_review) ... ok
+test_patient_cannot_review_doctor_without_completed_appointment (appointments.tests.DoctorReviewEndpointTests.test_patient_cannot_review_doctor_without_completed_appointment) ... ok
+test_doctors_catalog_can_filter_by_specialty (appointments.tests.DoctorsCatalogApiTests.test_doctors_catalog_can_filter_by_specialty) ... ok
+test_public_doctors_catalog_returns_rating_and_hospital (appointments.tests.DoctorsCatalogApiTests.test_public_doctors_catalog_returns_rating_and_hospital) ... ok
+test_password_reset_request_and_confirm (appointments.tests.PasswordResetFlowTests.test_password_reset_request_and_confirm) ... ok
+test_card_save_verify_and_plus_activation_success (appointments.tests.SubscriptionFlowTests.test_card_save_verify_and_plus_activation_success) ... ok
+test_plus_activation_requires_card (appointments.tests.SubscriptionFlowTests.test_plus_activation_requires_card) ... ok
+test_subscription_me_returns_default_plan (appointments.tests.SubscriptionFlowTests.test_subscription_me_returns_default_plan) ... ok
+test_subscription_reset_demo_clears_payment_data (appointments.tests.SubscriptionFlowTests.test_subscription_reset_demo_clears_payment_data) ... ok
+test_appointment_wait_time_is_zero_for_first_and_scaled_for_next (appointments.tests.WaitingTimeLogicTests.test_appointment_wait_time_is_zero_for_first_and_scaled_for_next) ... ok
+test_hospital_waiting_time_depends_on_queue_count (appointments.tests.WaitingTimeLogicTests.test_hospital_waiting_time_depends_on_queue_count) ... ok
+test_hospital_waiting_time_is_zero_when_queue_empty (appointments.tests.WaitingTimeLogicTests.test_hospital_waiting_time_is_zero_when_queue_empty) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 16.319s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+

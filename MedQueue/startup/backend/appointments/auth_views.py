@@ -15,8 +15,10 @@ import os
 import random
 import re
 import string
+import time
 import urllib.parse
 import urllib.request
+import urllib.error
 
 from .models import (
     VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode,
@@ -567,6 +569,20 @@ SYSTEM_PROMPT_AI = (
     'Не ставь диагнозы и не выписывай рецепты.'
 )
 
+# Simple in-process circuit breaker to avoid hammering failed providers.
+_AI_PROVIDER_BLOCK_UNTIL = {
+    'kimi': 0.0,
+    'gemini': 0.0,
+}
+
+
+def _provider_available(name: str) -> bool:
+    return time.time() >= _AI_PROVIDER_BLOCK_UNTIL.get(name, 0.0)
+
+
+def _block_provider(name: str, seconds: int):
+    _AI_PROVIDER_BLOCK_UNTIL[name] = time.time() + max(30, int(seconds))
+
 
 SYMPTOM_SPECIALTY_RULES = [
     (['температура', 'кашель', 'простуда', 'орви', 'грипп', 'горло', 'слабость'], 'Терапевт'),
@@ -887,7 +903,7 @@ def ai_chat(request):
     runtime_system_prompt = f"{SYSTEM_PROMPT_AI}\n\nКонтекст MedQueue из БД:\n{db_context}"
 
     # ── 1. Kimi-K2 via HuggingFace Router ──
-    if HF_TOKEN:
+    if HF_TOKEN and _provider_available('kimi'):
         try:
             from openai import OpenAI as _OpenAI
             client = _OpenAI(
@@ -913,11 +929,19 @@ def ai_chat(request):
             reply = completion.choices[0].message.content
             return Response({'reply': reply, 'model': 'kimi-k2'})
         except Exception as e:
-            print(f'[KIMI-K2 ERROR] {e}')
+            err = str(e)
+            # 402 / credits exhausted -> block for 1 hour.
+            if '402' in err or 'depleted your monthly included credits' in err.lower():
+                _block_provider('kimi', 3600)
+                print('[KIMI-K2 ERROR] credits exhausted, provider blocked for 60m')
+            else:
+                # Transient unknown error -> block shortly.
+                _block_provider('kimi', 300)
+                print(f'[KIMI-K2 ERROR] temporary failure, blocked for 5m: {err}')
             # fall through to Gemini
 
     # ── 2. Gemini 1.5 Flash fallback ──
-    if GEMINI_API_KEY:
+    if GEMINI_API_KEY and _provider_available('gemini'):
         try:
             contents = [
                 {'role': 'user', 'parts': [{'text': runtime_system_prompt}]},
@@ -941,8 +965,22 @@ def ai_chat(request):
                 result = _json.loads(resp.read().decode())
             text = result['candidates'][0]['content']['parts'][0]['text']
             return Response({'reply': text, 'model': 'gemini'})
+        except urllib.error.HTTPError as e:
+            body = ''
+            try:
+                body = e.read().decode('utf-8', errors='ignore')
+            except Exception:
+                pass
+            # 400 usually key/config/request problem -> longer block.
+            if e.code == 400:
+                _block_provider('gemini', 1800)
+                print(f'[GEMINI ERROR] bad request, provider blocked for 30m: {body[:180]}')
+            else:
+                _block_provider('gemini', 300)
+                print(f'[GEMINI ERROR] HTTP {e.code}, blocked for 5m')
         except Exception as e:
-            print(f'[GEMINI ERROR] {e}')
+            _block_provider('gemini', 300)
+            print(f'[GEMINI ERROR] temporary failure, blocked for 5m: {e}')
 
     # ── 3. Local fallback ──
     local_reply = _fallback_ai_response(user_message)

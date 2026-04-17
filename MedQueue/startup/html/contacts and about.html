@@ -6,8 +6,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Контакты – MedQueue</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
   <script src="../js/theme.js"></script>
-  <script src="../js/script.js?v=1.0.7"></script>
+  <script src="../js/script.js?v=1.0.8"></script>
   <style>
     .content-wrap {
       max-width: 900px;
@@ -333,7 +335,10 @@
 <body class="page-contacts-avant">
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="main.html" id="medqueueLogo">MedQueue</a>
+      <a class="logo" href="main.html" id="medqueueLogo" aria-label="MedQueue — главная">
+        <img src="../images/logo-medqueue-mark.svg" alt="MedQueue" width="34" height="34" style="display:block;border-radius:8px;" />
+        <span>MedQueue</span>
+      </a>
       
       <!-- Mobile menu button -->
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
@@ -494,7 +499,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
-      <div class="muted">Версия 4.0</div>
+      <div class="muted">Версия 5.0</div>
     </div>
   </footer>
 

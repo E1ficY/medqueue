@@ -6,8 +6,11 @@
   <title>MedQueue — Карточка больницы</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
-  <link rel="stylesheet" href="../css/styles.css?v=4.1" />
-  <script src="https://mapgl.2gis.com/api/js/v1"></script>
+  <link rel="stylesheet" href="../css/styles.css?v=4.2" />
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1" />
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     /* ===== Hospital Detail Page Styles ===== */
 
@@ -228,8 +231,13 @@
       border: 1px solid var(--border-soft);
       border-radius: 16px;
       padding: 20px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
       transition: transform .2s, box-shadow .2s, border-color .2s;
       cursor: pointer;
+      min-height: 290px;
+      overflow: hidden;
     }
     .doctor-card:hover {
       transform: translateY(-2px);
@@ -254,6 +262,7 @@
       color: var(--text-primary);
       margin-bottom: 4px;
       line-height: 1.3;
+      overflow-wrap: anywhere;
     }
     .doctor-specialty {
       font-size: 12px;
@@ -262,22 +271,27 @@
       text-transform: uppercase;
       letter-spacing: .5px;
       margin-bottom: 8px;
+      overflow-wrap: anywhere;
     }
     .doctor-exp {
       font-size: 12px;
       color: var(--text-muted);
+      overflow-wrap: anywhere;
     }
     .doctor-rating {
       margin-top: 8px;
-      display: inline-flex;
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
       font-size: 12px;
       color: var(--text-secondary);
       background: rgba(111,156,146,0.08);
       border: 1px solid var(--border-soft);
-      border-radius: 999px;
+      border-radius: 12px;
       padding: 5px 10px;
+      width: fit-content;
+      max-width: 100%;
     }
     .doctor-book-btn {
       margin-top: 12px;
@@ -327,9 +341,27 @@
       width: 100%;
       background: #e5e7eb;
     }
-    /* 2GIS sidebar-map z-index fix — карта под шапкой */
-    .sidebar-map canvas,
-    .sidebar-map [class*="mapgl"] { z-index: 1 !important; }
+    /* Leaflet map z-index fix — карта под шапкой */
+    .sidebar-map .leaflet-container,
+    .hero-map-preview .leaflet-container,
+    .sidebar-map .leaflet-pane,
+    .hero-map-preview .leaflet-pane {
+      z-index: 1 !important;
+    }
+
+    .mq-map-tooltip {
+      background: #0f172a;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.35);
+      font-family: Inter, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+    }
+
+    .mq-map-tooltip:before { display: none; }
 
     .sidebar-body {
       padding: 20px;
@@ -416,23 +448,12 @@
     @keyframes shimmer { to { background-position: -200% 0; } }
   </style>
 </head>
-<body>
+<body data-no-brand-badge="1">
 
   <!-- ===== HEADER (из shared template) ===== -->
   <header class="site-header" id="siteHeader">
     <div class="container header-inner">
-      <a href="main.html" class="logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="8" fill="url(#logoGrad)"/>
-          <path d="M14 7v14M7 14h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-          <defs>
-            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#0f172a"/><stop offset="1" stop-color="#6f9c92"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <span>MedQueue</span>
-      </a>
+      <span style="font-weight:800;color:var(--text-primary);font-size:16px;">Карточка больницы</span>
       <nav class="main-nav" id="mainNav">
         <a href="main.html" class="nav-link">🏠 Главная</a>
         <a href="doctors.html" class="nav-link">👨‍⚕️ Врачи</a>
@@ -772,10 +793,10 @@
         phoneLink.textContent = h.phone;
       }
 
-      // Ссылка на 2ГИС / OSM маршрут
+      // Ссылка на OpenStreetMap
       const routeBtn = document.getElementById('routeBtn');
       if (h.latitude && h.longitude) {
-        routeBtn.href = `https://2gis.kz/almaty/geo/${h.longitude},${h.latitude}`;
+        routeBtn.href = `https://www.openstreetmap.org/?mlat=${h.latitude}&mlon=${h.longitude}#map=16/${h.latitude}/${h.longitude}`;
       } else {
         routeBtn.href = `https://www.openstreetmap.org/search?query=${encodeURIComponent(h.address || h.name)}`;
       }
@@ -794,27 +815,38 @@
         canvas.innerHTML = `<div class="hero-map-noloc">${typeIcon(h.type)}<span>Координаты<br>не указаны</span></div>`;
         return;
       }
-      const heroMap = new mapgl.Map('heroMapCanvas', {
-        center: [lng, lat],
-        zoom: 15,
-        key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
+
+      const heroMap = L.map('heroMapCanvas', {
         zoomControl: false,
-      });
-      setTimeout(() => {
-        new mapgl.HtmlMarker(heroMap, {
-          coordinates: [lng, lat],
-          html: `<div style="
-            width:36px;height:36px;
-            background:linear-gradient(135deg,#0f172a,#6f9c92);
-            border-radius:50% 50% 50% 0;
-            transform:rotate(-45deg);
-            border:3px solid white;
-            box-shadow:0 3px 10px rgba(15,23,42,.45);
-            display:flex;align-items:center;justify-content:center;
-          "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${typeIcon(h.type)}</span></div>`,
-          anchor: [18, 36],
-        });
-      }, 400);
+        attributionControl: false,
+        scrollWheelZoom: false,
+      }).setView([lat, lng], 15);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(heroMap);
+
+      const markerHtml = `<div style="
+        width:36px;height:36px;
+        background:linear-gradient(135deg,#0f172a,#6f9c92);
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        border:3px solid white;
+        box-shadow:0 3px 10px rgba(15,23,42,.45);
+        display:flex;align-items:center;justify-content:center;
+      "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${typeIcon(h.type)}</span></div>`;
+
+      L.marker([lat, lng], {
+        icon: L.divIcon({
+          html: markerHtml,
+          className: '',
+          iconSize: [36, 36],
+          iconAnchor: [18, 36],
+        }),
+      }).addTo(heroMap);
+
+      setTimeout(() => heroMap.invalidateSize(), 50);
     }
 
     // Мини-карта в боковой панели
@@ -825,41 +857,44 @@
       const lng = h.longitude || 76.900;
       const icon = typeIcon(h.type);
 
-      const map = new mapgl.Map('sidebarMap', {
-        center: [lng, lat],
-        zoom: 15,
-        key: '4bec2740-d83b-49f8-9ff1-31cf40aeb28a',
+      const map = L.map('sidebarMap', {
         zoomControl: false,
-      });
+        attributionControl: false,
+        scrollWheelZoom: false,
+      }).setView([lat, lng], 15);
 
-      setTimeout(() => {
-        new mapgl.HtmlMarker(map, {
-          coordinates: [lng, lat],
-          html: `<div style="
-            width:32px;height:32px;
-            background:linear-gradient(135deg,#0f172a,#6f9c92);
-            border-radius:50% 50% 50% 0;
-            transform:rotate(-45deg);
-            border:2px solid white;
-            box-shadow:0 3px 8px rgba(15,23,42,.40);
-            display:flex;align-items:center;justify-content:center;
-          "><span style="transform:rotate(45deg);font-size:13px;line-height:1">${icon}</span></div>`,
-          anchor: [16, 32],
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+
+      const markerHtml = `<div style="
+        width:32px;height:32px;
+        background:linear-gradient(135deg,#0f172a,#6f9c92);
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        border:2px solid white;
+        box-shadow:0 3px 8px rgba(15,23,42,.40);
+        display:flex;align-items:center;justify-content:center;
+      "><span style="transform:rotate(45deg);font-size:13px;line-height:1">${icon}</span></div>`;
+
+      L.marker([lat, lng], {
+        icon: L.divIcon({
+          html: markerHtml,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+        }),
+      })
+        .addTo(map)
+        .bindTooltip(h.name, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -18],
+          className: 'mq-map-tooltip',
         });
-        // Метка с названием клиники над маркером
-        new mapgl.HtmlMarker(map, {
-          coordinates: [lng, lat],
-          html: `<div style="
-            position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
-            background:#0f172a;color:#fff;
-            font-family:Inter,sans-serif;font-size:12px;font-weight:700;
-            padding:4px 10px;border-radius:8px;white-space:nowrap;
-            box-shadow:0 2px 8px rgba(0,0,0,.35);
-            pointer-events:none;
-          ">${h.name}</div>`,
-          anchor: [0, 0],
-        });
-      }, 400);
+
+      setTimeout(() => map.invalidateSize(), 50);
     }
 
     // ──────────────────────────────────────────
@@ -892,7 +927,7 @@
         const hours    = d.work_hours ? `⏰ ${d.work_hours}` : '';
         const days     = d.work_days  ? `🗓 ${d.work_days}` : '';
         const review = Array.isArray(d.latest_reviews) && d.latest_reviews.length
-          ? d.latest_reviews[0]
+          ? String(d.latest_reviews[0].comment || 'Без комментария').slice(0, 120)
           : null;
         return `
           <div class="doctor-card" tabindex="0"
@@ -904,7 +939,7 @@
             ${hours ? `<div class="doctor-exp">${hours}</div>` : ''}
             ${days  ? `<div class="doctor-exp">${days}</div>` : ''}
             <div class="doctor-rating">⭐ ${(Number(d.avg_rating || 0)).toFixed(1)} · 🗨️ ${d.reviews_count || 0}</div>
-            ${review ? `<div class="doctor-exp" style="margin-top:8px">«${review.comment || 'Без комментария'}»</div>` : ''}
+            ${review ? `<div class="doctor-exp" style="margin-top:8px">«${review}${review.length >= 120 ? '...' : ''}»</div>` : ''}
             <button class="doctor-book-btn"
                     onclick="event.stopPropagation();bookDoctor(${d.id})">
               📅 Записаться

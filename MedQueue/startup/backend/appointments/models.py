@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Avg, Count
 from django.contrib.auth.models import User
 from django.utils import timezone
+from statistics import median
 import random
 import string
 
@@ -147,6 +148,69 @@ class Doctor(models.Model):
             datetime__gte=timezone.now()
         ).count()
 
+    def _historical_service_minutes(self):
+        """
+        Оценка средней длительности обслуживания на основе интервалов
+        между завершенными приемами (по расписанию).
+        """
+        completed = list(
+            self.appointments.filter(status='completed')
+            .order_by('-datetime')
+            .values_list('datetime', flat=True)[:36]
+        )
+        if len(completed) < 3:
+            return UNIFORM_MINUTES_PER_PATIENT, 0
+
+        completed = sorted(completed)
+        gaps = []
+        for i in range(1, len(completed)):
+            diff = int((completed[i] - completed[i - 1]).total_seconds() // 60)
+            if 5 <= diff <= 90:
+                gaps.append(diff)
+
+        if not gaps:
+            return UNIFORM_MINUTES_PER_PATIENT, 0
+
+        return int(round(median(gaps))), len(gaps)
+
+    @property
+    def wait_forecast_minutes(self):
+        """Прогноз времени до приема у врача в минутах."""
+        queue_now = self.current_queue
+        if queue_now <= 0:
+            return 0
+
+        base_minutes, sample_size = self._historical_service_minutes()
+        now = timezone.localtime()
+
+        # Небольшая поправка на загруженные часы/дни.
+        hour_factor = 1.15 if 10 <= now.hour <= 13 else (0.92 if now.hour >= 17 else 1.0)
+        day_factor = 1.1 if now.weekday() in (0, 4) else 1.0  # пн/пт обычно плотнее
+        sample_factor = 0.95 if sample_size >= 12 else 1.0
+
+        eta = int(round(queue_now * base_minutes * hour_factor * day_factor * sample_factor))
+        return max(0, min(180, eta))
+
+    @property
+    def wait_forecast_confidence(self):
+        """Оценка уверенности прогноза в процентах."""
+        _, sample_size = self._historical_service_minutes()
+        if sample_size <= 0:
+            return 48
+        return max(55, min(93, 55 + sample_size))
+
+    @property
+    def wait_forecast_reason(self):
+        queue_now = self.current_queue
+        base_minutes, sample_size = self._historical_service_minutes()
+        if queue_now <= 0:
+            return 'Свободное окно: сейчас перед вами нет пациентов.'
+        source = 'история приемов врача' if sample_size > 0 else 'базовый шаг системы'
+        return (
+            f'Прогноз: {queue_now} в очереди x ~{base_minutes} мин, источник: {source}, '
+            f'точность {self.wait_forecast_confidence}%.'
+        )
+
 
 class Appointment(models.Model):
     """Модель записи на приём"""
@@ -194,6 +258,9 @@ class Appointment(models.Model):
     doctor_recommendation = models.TextField(blank=True, default='', verbose_name="Рекомендации врача")
     exam_summary = models.TextField(blank=True, default='', verbose_name="Итоги обследования")
     prescribed_medications = models.TextField(blank=True, default='', verbose_name="Назначенные препараты")
+    prescription_confirmed = models.BooleanField(default=False, verbose_name="Рецепт подтвержден врачом")
+    prescription_confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="Когда подтвержден рецепт")
+    prescription_confirmed_by = models.CharField(max_length=200, blank=True, default='', verbose_name="Кем подтвержден рецепт")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -344,6 +411,7 @@ class UserSubscription(models.Model):
     """Подписка пациента."""
     PLAN_CHOICES = [
         ('free', 'Базовая (0 тг)'),
+        ('social', 'Льготная Care (0 тг/мес)'),
         ('plus', 'Care Plus (2 990 тг/мес)'),
     ]
     STATUS_CHOICES = [
@@ -355,6 +423,8 @@ class UserSubscription(models.Model):
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='free', verbose_name="Тариф")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="Статус")
     auto_taxi_enabled = models.BooleanField(default=False, verbose_name="Авто-заказ такси")
+    social_reason = models.TextField(blank=True, default='', verbose_name="Причина льготной подписки")
+    social_reason_confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="Когда подтверждена причина")
     started_at = models.DateTimeField(auto_now_add=True)
     next_billing_date = models.DateField(null=True, blank=True, verbose_name="Следующее списание")
     updated_at = models.DateTimeField(auto_now=True)

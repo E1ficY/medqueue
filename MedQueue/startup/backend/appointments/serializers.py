@@ -11,6 +11,9 @@ class DoctorSerializer(serializers.ModelSerializer):
     hospital_id = serializers.IntegerField(source='hospital.id', read_only=True)
     hospital_name = serializers.CharField(source='hospital.name', read_only=True)
     latest_reviews = serializers.SerializerMethodField()
+    wait_forecast_minutes = serializers.ReadOnlyField()
+    wait_forecast_confidence = serializers.ReadOnlyField()
+    wait_forecast_reason = serializers.ReadOnlyField()
 
     def get_latest_reviews(self, obj):
         reviews = DoctorReview.objects.filter(doctor=obj).order_by('-created_at')[:2]
@@ -39,6 +42,9 @@ class DoctorSerializer(serializers.ModelSerializer):
             'hospital_id',
             'hospital_name',
             'latest_reviews',
+            'wait_forecast_minutes',
+            'wait_forecast_confidence',
+            'wait_forecast_reason',
             'is_active',
         ]
 
@@ -182,13 +188,18 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
     doctor_cabinet   = serializers.CharField(source='doctor.cabinet',   read_only=True, default=None)
     estimated_wait_time = serializers.ReadOnlyField()
     estimated_wait_reason = serializers.ReadOnlyField()
+    care_plus_support_available = serializers.SerializerMethodField()
     auto_taxi_available = serializers.SerializerMethodField()
 
-    def get_auto_taxi_available(self, obj):
+    def get_care_plus_support_available(self, obj):
         if not obj.user:
             return False
         sub = getattr(obj.user, 'subscription', None)
-        return bool(sub and sub.status == 'active' and sub.auto_taxi_enabled)
+        return bool(sub and sub.status == 'active' and sub.plan == 'plus')
+
+    def get_auto_taxi_available(self, obj):
+        # Legacy compatibility field for old frontend versions.
+        return self.get_care_plus_support_available(obj)
 
     class Meta:
         model = Appointment
@@ -211,6 +222,10 @@ class AppointmentStatusSerializer(serializers.ModelSerializer):
             'doctor_recommendation',
             'exam_summary',
             'prescribed_medications',
+            'prescription_confirmed',
+            'prescription_confirmed_at',
+            'prescription_confirmed_by',
+            'care_plus_support_available',
             'auto_taxi_available',
             'created_at',
         ]

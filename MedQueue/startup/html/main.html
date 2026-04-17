@@ -6,13 +6,18 @@
   <title>MedQueue – Удобная запись в клиники Алматы</title>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/script.js?v=1.0.7"></script>
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
+  <script src="../js/script.js?v=1.0.8"></script>
   <script src="../js/theme.js"></script>
 </head>
 <body class="page-main-avant">
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="main.html">MedQueue</a>
+      <a class="logo" href="main.html" aria-label="MedQueue — главная">
+        <img src="../images/logo-medqueue-mark.svg" alt="MedQueue" width="34" height="34" style="display:block;border-radius:8px;" />
+        <span>MedQueue</span>
+      </a>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
       <nav id="mainNav">
         <a href="main.html" class="nav-link active">Главная</a>
@@ -95,10 +100,90 @@
                 <option value="">Выберите клинику</option>
               </select>
               <button id="heroHospitalBook" class="btn btn-primary" type="button">Перейти к записи</button>
+              <a id="heroHospitalDetails" class="btn btn-outline" href="#" style="display:none;">Детали клиники</a>
             </div>
-            <p class="quick-start-note">Выберите клинику и переходите сразу к подтверждению записи без лишних шагов.</p>
+            <p class="quick-start-note">Выберите клинику, откройте детали при необходимости и переходите к подтверждению записи.</p>
           </div>
           <div class="quick-start-top" id="heroTopHospitals"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="innovation-lab wrap reveal-up" aria-label="Инновационная лаборатория записи">
+      <div class="lab-shell">
+        <div class="lab-left">
+          <span class="lab-kicker">Лаборатория записи</span>
+          <h2>Соберите лучший сценарий визита за 10 секунд</h2>
+          <p>Выберите тип приема, время дня и приоритет. MedQueue мгновенно покажет ожидаемое ожидание, индекс нагрузки и рекомендуемый слот.</p>
+
+          <div class="lab-controls">
+            <label>
+              <span>Тип визита</span>
+              <select id="labVisitType" aria-label="Тип визита">
+                <option value="plan">Плановый</option>
+                <option value="soon">Скоро</option>
+                <option value="urgent">Срочный</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Нужный специалист</span>
+              <select id="labSpecialty" aria-label="Нужный специалист">
+                <option value="Терапевт">Терапевт</option>
+                <option value="Кардиолог">Кардиолог</option>
+                <option value="Невролог">Невролог</option>
+                <option value="Педиатр">Педиатр</option>
+                <option value="Стоматолог">Стоматолог</option>
+                <option value="Хирург">Хирург</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Время дня</span>
+              <select id="labDayPart" aria-label="Время дня">
+                <option value="morning">Утро</option>
+                <option value="day" selected>День</option>
+                <option value="evening">Вечер</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Приоритет: <strong id="labUrgencyValue">5</strong>/10</span>
+              <input id="labUrgency" type="range" min="1" max="10" value="5" aria-label="Приоритет визита" />
+            </label>
+
+            <button id="labRunBtn" class="btn btn-primary" type="button">Пересчитать сценарий</button>
+            <button id="labApplyBtn" class="btn btn-outline" type="button">Применить и записаться</button>
+          </div>
+          <p id="labScenarioMeta" style="margin:10px 0 0;color:var(--muted);font-size:13px;">Сценарий можно сразу отправить в форму записи.</p>
+        </div>
+
+        <div class="lab-right" id="labResultCard">
+          <div class="lab-result-head">Живой прогноз</div>
+          <div class="lab-metric">
+            <div>
+              <small>Ожидание до приема</small>
+              <strong id="labWaitTime">~ 0 мин</strong>
+            </div>
+            <span class="lab-index" id="labLoadIndex">Load 0</span>
+          </div>
+
+          <div class="lab-lines">
+            <div>
+              <span>Рекомендуемый слот</span>
+              <strong id="labBestSlot">--:--</strong>
+            </div>
+            <div>
+              <span>Вероятность вовремя</span>
+              <strong id="labOnTime">0%</strong>
+            </div>
+            <div>
+              <span>Подходящая клиника</span>
+              <strong id="labBestHospital">—</strong>
+            </div>
+          </div>
+
+          <div class="lab-hint" id="labAdvice">Подберите параметры, чтобы получить персональную рекомендацию.</div>
         </div>
       </div>
     </section>
@@ -145,7 +230,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
-      <div class="muted">Версия 4.0</div>
+      <div class="muted">Версия 5.0</div>
     </div>
   </footer>
 

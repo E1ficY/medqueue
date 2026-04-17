@@ -3,9 +3,9 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     HospitalViewSet, DoctorCatalogViewSet, AppointmentViewSet,
-    doctor_me, doctor_appointments, doctor_update_appointment, doctor_update_recommendation,
+    doctor_me, doctor_appointments, doctor_update_appointment, doctor_update_recommendation, doctor_issue_prescription,
     create_doctor_review,
-    subscription_plans, subscription_me, subscription_save_card, subscription_verify_card, subscription_activate,
+    subscription_plans, subscription_me, subscription_save_card, subscription_verify_card, subscription_activate, subscription_reset_demo,
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
 )
@@ -32,6 +32,7 @@ urlpatterns = [
     path('doctor/appointments/', doctor_appointments),
     path('doctor/appointments/<int:appointment_id>/', doctor_update_appointment),
     path('doctor/appointments/<int:appointment_id>/recommendation/', doctor_update_recommendation),
+    path('doctor/appointments/<int:appointment_id>/prescription/', doctor_issue_prescription),
     path('reviews/doctors/<int:doctor_id>/', create_doctor_review),
     # Subscriptions (patients only for private actions)
     path('subscription/plans/', subscription_plans),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('subscription/card/', subscription_save_card),
     path('subscription/card/verify/', subscription_verify_card),
     path('subscription/activate/', subscription_activate),
+    path('subscription/reset-demo/', subscription_reset_demo),
     # Admin panel
     path('admin/stats/', admin_stats),
     path('admin/hospitals/', admin_hospitals),

@@ -1,0 +1,53 @@
+/* Unified logo system */
+.logo {
+  gap: 10px;
+}
+
+.logo img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.mq-brand-badge {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #121318;
+  background: rgba(255, 250, 242, 0.95);
+  border: 1px solid rgba(27, 46, 42, 0.16);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+  z-index: 100003;
+}
+
+.mq-brand-badge img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: block;
+}
+
+.mq-brand-badge span {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 760px) {
+  .mq-brand-badge span {
+    display: none;
+  }
+
+  .mq-brand-badge {
+    padding: 7px;
+    border-radius: 12px;
+  }
+}

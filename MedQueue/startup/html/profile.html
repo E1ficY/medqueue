@@ -6,7 +6,9 @@
   <title>Личный кабинет  MedQueue</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/script.js?v=1.0.7"></script>
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
+  <script src="../js/script.js?v=1.0.8"></script>
   <style>
     /* ---- Profile header ---- */
     .profile-header {
@@ -563,7 +565,10 @@
 <body class="page-profile-avant">
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="main.html">MedQueue</a>
+      <a class="logo" href="main.html" aria-label="MedQueue — главная">
+        <img src="../images/logo-medqueue-mark.svg" alt="MedQueue" width="34" height="34" style="display:block;border-radius:8px;" />
+        <span>MedQueue</span>
+      </a>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
             <nav id="mainNav">
         <a href="main.html" class="nav-link">Главная</a>
@@ -683,26 +688,12 @@
       </div>
     </div>
 
-    <!-- Quick booking -->
-    <div class="section-card quick-book animate-in">
-      <div class="quick-book-inner">
-        <div>
-          <h3 style="margin:0 0 6px;font-size:19px;color: #0c4a6e;"> Быстрая запись</h3>
-          <p style="margin:0;color:var(--muted);font-size:14px;">Запишитесь к врачу в несколько кликов</p>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a href="recording.html" class="btn btn-primary"> Записаться к врачу</a>
-          <a href="subscription.html" class="btn btn-outline"> Подписка</a>
-        </div>
-      </div>
-    </div>
-
   </main>
 
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue – Удобная запись и управление очередями</div>
-      <div class="muted">Версия 4.0</div>
+      <div class="muted">Версия 5.0</div>
     </div>
   </footer>
 
@@ -936,8 +927,9 @@
                 <button onclick="editComment('${app.code}')" style="background:none;border:none;color:#6f9c92;cursor:pointer;font-size:12px;white-space:nowrap;flex-shrink:0;padding:0;">✏️ изм.</button></div>` : `<button onclick="editComment('${app.code}')" class="btn btn-outline" style="font-size:12px;padding:5px 12px;">💬 Добавить комментарий</button>`
               }
             </div>
-            ${app.doctor_recommendation ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(122,167,157,0.08);border-left:3px solid #7aa79d;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);"><span style="font-weight:700;color:#5c887f;">📋 Рекомендации врача:</span> ${app.doctor_recommendation}</div>` : ''}
-            ${app.auto_taxi_available ? `<div style="margin-top:8px;font-size:12.5px;color:#4f776f;background:rgba(111,156,146,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(111,156,146,0.22);">🚕 Care Plus: после завершения приёма доступен авто-заказ такси.</div>` : ''}
+            ${app.doctor_recommendation ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(122,167,157,0.08);border-left:3px solid #7aa79d;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);"><span style="font-weight:700;color:#5c887f;">📋 Заключение приема:</span> ${app.doctor_recommendation}</div>` : ''}
+            ${app.prescribed_medications ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(92,136,127,0.10);border-left:3px solid #5c887f;border-radius:0 8px 8px 0;font-size:13px;color:var(--text);white-space:pre-wrap;"><span style="font-weight:700;color:#4f776f;">📄 Рецепт:</span> ${app.prescribed_medications}${app.prescription_confirmed ? `<div style="margin-top:6px;font-size:12px;color:#4f776f;">Подтверждено врачом: ${app.prescription_confirmed_by || 'врач'}${app.prescription_confirmed_at ? ' • ' + new Date(app.prescription_confirmed_at).toLocaleString('ru-RU') : ''}</div>` : ''}</div>` : ''}
+            ${(app.care_plus_support_available || app.auto_taxi_available) ? `<div style="margin-top:8px;font-size:12.5px;color:#4f776f;background:rgba(111,156,146,0.1);padding:8px 10px;border-radius:8px;border:1px solid rgba(111,156,146,0.22);">✨ Care Plus: доступен персональный пост-визитный план и приоритетное перепланирование.</div>` : ''}
             <div id="comment-editor-${app.code}" style="display:none;margin-top:8px;">
               <textarea id="comment-input-${app.code}" style="width:100%;box-sizing:border-box;border:1.5px solid #6f9c92;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Опишите жалобы или пожелания к приёму..." rows="3"></textarea>
               <div style="display:flex;gap:8px;margin-top:6px;">

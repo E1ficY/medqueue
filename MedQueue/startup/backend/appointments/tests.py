@@ -3,11 +3,24 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
+from django.test.utils import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 from datetime import timedelta
 
-from .models import Appointment, Doctor, DoctorInviteCode, DoctorReview, Hospital, UserProfile
+from .models import (
+	Appointment,
+	CardVerificationCode,
+	Doctor,
+	DoctorInviteCode,
+	DoctorReview,
+	Hospital,
+	PasswordResetCode,
+	PaymentCard,
+	PaymentTransaction,
+	UserProfile,
+	VerificationCode,
+)
 
 
 class AIChatRecommendationTests(APITestCase):
@@ -216,7 +229,7 @@ class DoctorPortalMedicalNotesTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		appointment.refresh_from_db()
 		self.assertEqual(appointment.exam_summary, 'ОРВИ без осложнений')
-		self.assertIn('Парацетамол', appointment.prescribed_medications)
+		self.assertEqual(appointment.doctor_recommendation, 'Отдых и питьевой режим')
 
 
 class DoctorReviewEndpointTests(APITestCase):
@@ -425,3 +438,205 @@ class AINameLookupTests(APITestCase):
 		reply = response.data.get('reply', '')
 		self.assertIn(surgeon.full_name, reply)
 		self.assertNotIn(therapist.full_name, reply)
+
+
+@override_settings(EMAIL_HOST_USER='noreply@medqueue.test')
+class AuthFlowTests(APITestCase):
+	def test_register_verify_and_login_patient_flow(self):
+		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True), patch('appointments.auth_views.send_mail'):
+			register_payload = {
+				'name': 'Test Patient',
+				'email': 'patient_auth_flow@example.com',
+				'username': 'patient_auth_flow',
+				'password': 'StrongPass123!@#',
+				'role': 'patient',
+				'captcha_token': 'ok-token',
+			}
+			register_response = self.client.post('/api/auth/register/', data=register_payload, format='json')
+
+		self.assertEqual(register_response.status_code, status.HTTP_200_OK)
+		user = User.objects.get(email='patient_auth_flow@example.com')
+		self.assertFalse(user.is_active)
+
+		verification = user and user.email
+		self.assertTrue(verification)
+		verification_code = VerificationCode.objects.filter(email=user.email).order_by('-created_at').first()
+		self.assertIsNotNone(verification_code)
+
+		verify_response = self.client.post(
+			'/api/auth/verify/',
+			data={'email': user.email, 'code': verification_code.code},
+			format='json',
+		)
+		self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+		user.refresh_from_db()
+		self.assertTrue(user.is_active)
+		self.assertEqual(user.profile.role, 'patient')
+
+		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True):
+			login_response = self.client.post(
+				'/api/auth/login/',
+				data={'login': 'patient_auth_flow', 'password': 'StrongPass123!@#', 'captcha_token': 'ok-token'},
+				format='json',
+			)
+		self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+		self.assertIn('access', login_response.data)
+
+	def test_register_doctor_requires_valid_invite_code(self):
+		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True):
+			response = self.client.post(
+				'/api/auth/register/',
+				data={
+					'name': 'Doctor Candidate',
+					'email': 'doctor_candidate@example.com',
+					'username': 'doctor_candidate',
+					'password': 'StrongPass123!@#',
+					'role': 'doctor',
+					'captcha_token': 'ok-token',
+				},
+				format='json',
+			)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('код приглашения', response.data.get('error', '').lower())
+
+
+@override_settings(EMAIL_HOST_USER='noreply@medqueue.test')
+class PasswordResetFlowTests(APITestCase):
+	def setUp(self):
+		self.user = User.objects.create_user(
+			username='reset_flow_user',
+			email='reset_flow_user@example.com',
+			password='OldPass123!@#',
+			first_name='Reset User',
+			is_active=True,
+		)
+
+	def test_password_reset_request_and_confirm(self):
+		with patch('appointments.auth_views.send_mail'):
+			request_resp = self.client.post(
+				'/api/auth/password-reset/',
+				data={'email': self.user.email},
+				format='json',
+			)
+
+		self.assertEqual(request_resp.status_code, status.HTTP_200_OK)
+
+		reset_code = PasswordResetCode.objects.filter(email=self.user.email).order_by('-created_at').first()
+		self.assertIsNotNone(reset_code)
+
+		confirm_resp = self.client.post(
+			'/api/auth/password-reset/confirm/',
+			data={
+				'email': self.user.email,
+				'code': reset_code.code,
+				'new_password': 'NewPass123!@#',
+			},
+			format='json',
+		)
+		self.assertEqual(confirm_resp.status_code, status.HTTP_200_OK)
+		self.assertIn('access', confirm_resp.data)
+
+		self.user.refresh_from_db()
+		self.assertTrue(self.user.check_password('NewPass123!@#'))
+
+
+class DoctorCodeValidationTests(APITestCase):
+	def test_validate_doctor_code_success(self):
+		hospital = Hospital.objects.create(
+			name='Invite Hospital',
+			type='Больница',
+			address='г. Алматы, ул. Инвайт 1',
+			is_active=True,
+		)
+		DoctorInviteCode.objects.create(
+			code='MEDQ-ABC123',
+			hospital=hospital,
+			specialty='Терапевт',
+			is_used=False,
+		)
+
+		response = self.client.post('/api/auth/validate-doctor-code/', data={'code': 'MEDQ-ABC123'}, format='json')
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertTrue(response.data.get('valid'))
+		self.assertEqual(response.data.get('hospital'), hospital.name)
+
+
+class SubscriptionFlowTests(APITestCase):
+	def setUp(self):
+		self.user = User.objects.create_user(
+			username='sub_patient',
+			email='sub_patient@example.com',
+			password='SubPass123!@#',
+			first_name='Sub Patient',
+			is_active=True,
+		)
+		UserProfile.objects.create(user=self.user, role='patient')
+		self.client.force_authenticate(user=self.user)
+
+	def test_subscription_me_returns_default_plan(self):
+		response = self.client.get('/api/subscription/me/')
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.data['subscription']['plan_id'], 'free')
+		self.assertIsNone(response.data['card'])
+
+	def test_plus_activation_requires_card(self):
+		response = self.client.post('/api/subscription/activate/', data={'plan_id': 'plus'}, format='json')
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('сначала добавьте платежную карту', response.data.get('error', '').lower())
+
+	def test_card_save_verify_and_plus_activation_success(self):
+		save_resp = self.client.post(
+			'/api/subscription/card/',
+			data={
+				'card_number': '4242424242424242',
+				'card_holder': 'SUB PATIENT',
+				'exp_month': 12,
+				'exp_year': timezone.localtime().year + 2,
+				'cvc': '123',
+			},
+			format='json',
+		)
+		self.assertEqual(save_resp.status_code, status.HTTP_200_OK)
+		self.assertTrue(save_resp.data.get('requires_verification'))
+
+		verify = CardVerificationCode.objects.filter(user=self.user, is_used=False).order_by('-created_at').first()
+		self.assertIsNotNone(verify)
+
+		verify_resp = self.client.post('/api/subscription/card/verify/', data={'code': verify.code}, format='json')
+		self.assertEqual(verify_resp.status_code, status.HTTP_200_OK)
+		self.assertTrue(verify_resp.data['card']['is_verified'])
+
+		activate_resp = self.client.post('/api/subscription/activate/', data={'plan_id': 'plus'}, format='json')
+		self.assertEqual(activate_resp.status_code, status.HTTP_200_OK)
+		self.assertEqual(activate_resp.data['subscription']['plan_id'], 'plus')
+		self.assertIn('payment_receipt', activate_resp.data)
+
+	def test_subscription_reset_demo_clears_payment_data(self):
+		PaymentCard.objects.create(
+			user=self.user,
+			card_holder='SUB PATIENT',
+			brand='VISA',
+			last4='4242',
+			exp_month=12,
+			exp_year=timezone.localtime().year + 2,
+			token='TOK123',
+			is_verified=True,
+		)
+		PaymentTransaction.objects.create(
+			user=self.user,
+			amount=2990,
+			currency='KZT',
+			status='paid',
+			transaction_ref='MQPTEST0001',
+			card_last4='4242',
+			card_brand='VISA',
+		)
+
+		response = self.client.post('/api/subscription/reset-demo/', data={}, format='json')
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertTrue(response.data.get('ok'))
+		self.assertEqual(response.data['subscription']['plan_id'], 'free')
+		self.assertEqual(PaymentCard.objects.filter(user=self.user).count(), 0)
+		self.assertEqual(PaymentTransaction.objects.filter(user=self.user).count(), 0)
+		self.assertEqual(CardVerificationCode.objects.filter(user=self.user).count(), 0)

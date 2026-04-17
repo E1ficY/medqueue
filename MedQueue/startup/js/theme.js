@@ -2,6 +2,20 @@
 (function () {
   var STORAGE_KEY = 'medqueue_theme';
 
+  function injectBrandBadge() {
+    if (!document.body) return;
+    if (document.body.getAttribute('data-no-brand-badge') === '1') return;
+    if (document.querySelector('.mq-brand-badge')) return;
+
+    var link = document.createElement('a');
+    link.className = 'mq-brand-badge';
+    link.href = 'main.html';
+    link.setAttribute('aria-label', 'MedQueue');
+    link.title = 'MedQueue';
+    link.innerHTML = '<img src="../images/logo-medqueue-mark.svg" alt="MedQueue" /><span>MedQueue</span>';
+    document.body.appendChild(link);
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('.theme-checkbox').forEach(function (cb) {
@@ -23,7 +37,12 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     applyTheme(localStorage.getItem(STORAGE_KEY) || 'light');
+    injectBrandBadge();
   });
+
+  if (document.readyState !== 'loading') {
+    injectBrandBadge();
+  }
 })();
 
 

@@ -271,6 +271,18 @@ SUBSCRIPTION_PLANS = {
             'Уведомления о времени приёма',
         ],
     },
+    'social': {
+        'id': 'social',
+        'title': 'Льготный Care',
+        'price_kzt': 0,
+        'period': 'month',
+        'is_popular': False,
+        'benefits': [
+            'Бесплатно для социально уязвимых категорий после подтверждения причины',
+            'Приоритетные слоты в непиковые часы',
+            'Расширенные напоминания о приеме и документах',
+        ],
+    },
     'plus': {
         'id': 'plus',
         'title': 'Care Plus',
@@ -279,11 +291,20 @@ SUBSCRIPTION_PLANS = {
         'is_popular': True,
         'benefits': [
             'Приоритетные временные слоты в популярных клиниках',
-            'Расширенные напоминания и рекомендации после приёма',
-            'Автоматический заказ такси после завершения приёма',
+            'Навигатор подготовки к приему с чек-листом документов',
+            'Умные пост-визитные напоминания и контроль рекомендаций',
+            'Гибкое перепланирование без потери очереди',
         ],
     },
 }
+
+
+def _subscription_features(plan_id):
+    return {
+        'care_navigator_enabled': plan_id in {'social', 'plus'},
+        'smart_followup_enabled': plan_id in {'social', 'plus'},
+        'priority_reschedule_enabled': plan_id == 'plus',
+    }
 
 
 def _get_user_role(user):
@@ -310,6 +331,21 @@ def _detect_card_brand(card_number: str):
     return 'CARD'
 
 
+def _is_valid_luhn(card_number: str) -> bool:
+    if not card_number or not card_number.isdigit():
+        return False
+    total = 0
+    reverse_digits = card_number[::-1]
+    for i, ch in enumerate(reverse_digits):
+        d = int(ch)
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return total % 10 == 0
+
+
 def _make_tx_ref():
     suffix = ''.join(random.choices(string.digits, k=8))
     return f"MQP{timezone.now().strftime('%y%m%d')}{suffix}"
@@ -331,7 +367,11 @@ def _issue_card_verification_code(user, card):
 @permission_classes([AllowAny])
 def subscription_plans(request):
     """GET /api/subscription/plans/ — публичный список планов."""
-    return Response({'plans': [SUBSCRIPTION_PLANS['free'], SUBSCRIPTION_PLANS['plus']]})
+    return Response({'plans': [
+        SUBSCRIPTION_PLANS['free'],
+        SUBSCRIPTION_PLANS['social'],
+        SUBSCRIPTION_PLANS['plus'],
+    ]})
 
 
 @api_view(['GET'])
@@ -347,6 +387,7 @@ def subscription_me(request):
         defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
     )
     plan_data = SUBSCRIPTION_PLANS.get(sub.plan, SUBSCRIPTION_PLANS['free'])
+    features = _subscription_features(sub.plan)
 
     card = PaymentCard.objects.filter(user=user).first()
     txs = PaymentTransaction.objects.filter(user=user)[:5]
@@ -359,7 +400,10 @@ def subscription_me(request):
             'status': sub.status,
             'price_kzt': plan_data['price_kzt'],
             'benefits': plan_data['benefits'],
-            'auto_taxi_enabled': sub.auto_taxi_enabled,
+            'auto_taxi_enabled': False,
+            **features,
+            'social_reason': sub.social_reason,
+            'social_reason_confirmed_at': sub.social_reason_confirmed_at.isoformat() if sub.social_reason_confirmed_at else None,
             'started_at': sub.started_at.isoformat() if sub.started_at else None,
             'next_billing_date': sub.next_billing_date.isoformat() if sub.next_billing_date else None,
         },
@@ -408,19 +452,55 @@ def subscription_save_card(request):
 
     if len(card_number) < 12 or len(card_number) > 19:
         return Response({'error': 'Некорректный номер карты'}, status=400)
+    if not _is_valid_luhn(card_number):
+        return Response({'error': 'Номер карты не прошел проверку корректности'}, status=400)
     if not card_holder or len(card_holder) < 3:
         return Response({'error': 'Укажите имя держателя карты'}, status=400)
     if exp_month < 1 or exp_month > 12:
         return Response({'error': 'Некорректный месяц действия карты'}, status=400)
-    current_year = timezone.now().year
+    now_local = timezone.localtime()
+    current_year = now_local.year
+    current_month = now_local.month
     if exp_year < current_year or exp_year > current_year + 15:
         return Response({'error': 'Некорректный год действия карты'}, status=400)
+    if exp_year == current_year and exp_month < current_month:
+        return Response({'error': 'Срок действия карты истек'}, status=400)
     if len(cvc) < 3 or len(cvc) > 4:
         return Response({'error': 'Некорректный CVC/CVV код'}, status=400)
 
     brand = _detect_card_brand(card_number)
     last4 = card_number[-4:]
     token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))
+
+    existing_card = PaymentCard.objects.filter(user=user).first()
+    same_card = bool(
+        existing_card
+        and existing_card.last4 == last4
+        and existing_card.exp_month == exp_month
+        and existing_card.exp_year == exp_year
+        and (existing_card.card_holder or '').strip().upper() == card_holder.strip().upper()
+    )
+
+    if same_card and existing_card.is_verified:
+        existing_card.brand = brand
+        existing_card.token = token
+        existing_card.save(update_fields=['brand', 'token', 'updated_at'])
+        return Response({
+            'ok': True,
+            'message': 'Карта уже подтверждена и готова к использованию',
+            'bank_message': f"Карта •••• {existing_card.last4} уже активна",
+            'requires_verification': False,
+            'verification_expires_at': None,
+            'card': {
+                'card_holder': existing_card.card_holder,
+                'brand': existing_card.brand,
+                'last4': existing_card.last4,
+                'masked_pan': f"**** **** **** {existing_card.last4}",
+                'exp_month': existing_card.exp_month,
+                'exp_year': existing_card.exp_year,
+                'is_verified': existing_card.is_verified,
+            }
+        })
 
     card, _ = PaymentCard.objects.update_or_create(
         user=user,
@@ -517,50 +597,69 @@ def subscription_activate(request):
     )
     selected = SUBSCRIPTION_PLANS[plan_id]
     card = PaymentCard.objects.filter(user=user).first()
+    social_reason = (request.data.get('social_reason') or '').strip()
+
+    if plan_id == 'social':
+        if len(social_reason) < 12:
+            return Response({'error': 'Для льготного тарифа укажите причину минимум из 12 символов'}, status=400)
 
     if plan_id == 'plus' and not card:
-        return Response({'error': 'Для тарифа Care Plus сначала добавьте платежную карту'}, status=400)
+        return Response({'error': 'Для платного тарифа сначала добавьте платежную карту'}, status=400)
     if plan_id == 'plus' and card and not card.is_verified:
         return Response({'error': 'Сначала подтвердите карту кодом из банка'}, status=400)
 
     amount = selected['price_kzt']
-    transaction = PaymentTransaction.objects.create(
-        user=user,
-        subscription=sub,
-        amount=amount,
-        currency='KZT',
-        status='processing',
-        transaction_ref=_make_tx_ref(),
-        merchant_name='MedQueue Health Services',
-        card_last4=card.last4 if card else '',
-        card_brand=card.brand if card else '',
-        description=f"Оплата тарифа {selected['title']}",
-    )
+    transaction = None
+    if plan_id == 'plus':
+        transaction = PaymentTransaction.objects.create(
+            user=user,
+            subscription=sub,
+            amount=amount,
+            currency='KZT',
+            status='processing',
+            transaction_ref=_make_tx_ref(),
+            merchant_name='MedQueue Health Services',
+            card_last4=card.last4 if card else '',
+            card_brand=card.brand if card else '',
+            description=f"Оплата тарифа {selected['title']}",
+        )
 
-    # Симулируем реалистичный жизненный цикл платежа.
-    transaction.status = 'paid'
-    transaction.authorization_code = ''.join(random.choices(string.digits, k=6))
-    transaction.paid_at = timezone.now()
-    transaction.save(update_fields=['status', 'authorization_code', 'paid_at'])
+        # Симулируем реалистичный жизненный цикл платежа.
+        transaction.status = 'paid'
+        transaction.authorization_code = ''.join(random.choices(string.digits, k=6))
+        transaction.paid_at = timezone.now()
+        transaction.save(update_fields=['status', 'authorization_code', 'paid_at'])
 
     sub.plan = plan_id
     sub.status = 'active'
-    sub.auto_taxi_enabled = (plan_id == 'plus')
+    sub.auto_taxi_enabled = False
     sub.next_billing_date = timezone.now().date() + timedelta(days=30) if plan_id == 'plus' else None
-    sub.save(update_fields=['plan', 'status', 'auto_taxi_enabled', 'next_billing_date', 'updated_at'])
+    if plan_id == 'social':
+        sub.social_reason = social_reason
+        sub.social_reason_confirmed_at = timezone.now()
+    else:
+        sub.social_reason = ''
+        sub.social_reason_confirmed_at = None
+    sub.save(update_fields=['plan', 'status', 'auto_taxi_enabled', 'next_billing_date', 'social_reason', 'social_reason_confirmed_at', 'updated_at'])
 
-    return Response({
+    payload = {
         'ok': True,
         'message': f"Тариф {selected['title']} успешно активирован",
         'subscription': {
             'plan_id': sub.plan,
             'plan_title': selected['title'],
             'price_kzt': selected['price_kzt'],
-            'auto_taxi_enabled': sub.auto_taxi_enabled,
+            'auto_taxi_enabled': False,
+            **_subscription_features(sub.plan),
             'next_billing_date': sub.next_billing_date.isoformat() if sub.next_billing_date else None,
+            'social_reason': sub.social_reason,
+            'social_reason_confirmed_at': sub.social_reason_confirmed_at.isoformat() if sub.social_reason_confirmed_at else None,
             'benefits': selected['benefits'],
         },
-        'payment_receipt': {
+    }
+
+    if transaction:
+        payload['payment_receipt'] = {
             'status': transaction.status,
             'status_timeline': ['PROCESSING', 'AUTHORIZED', 'CAPTURED'],
             'transaction_ref': transaction.transaction_ref,
@@ -572,6 +671,54 @@ def subscription_activate(request):
             'card_masked': f"{transaction.card_brand} •••• {transaction.card_last4}" if transaction.card_last4 else 'NO-CARD',
             'description': transaction.description,
         }
+
+    return Response(payload)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_reset_demo(request):
+    """POST /api/subscription/reset-demo/ — очистить демо-данные платежей и карты у пациента."""
+    user, err = _require_patient(request)
+    if err:
+        return err
+
+    deleted_codes = CardVerificationCode.objects.filter(user=user).delete()[0]
+    deleted_cards = PaymentCard.objects.filter(user=user).delete()[0]
+    deleted_txs = PaymentTransaction.objects.filter(user=user).delete()[0]
+
+    sub, _ = UserSubscription.objects.get_or_create(
+        user=user,
+        defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
+    )
+    sub.plan = 'free'
+    sub.status = 'active'
+    sub.auto_taxi_enabled = False
+    sub.next_billing_date = None
+    sub.social_reason = ''
+    sub.social_reason_confirmed_at = None
+    sub.save(update_fields=['plan', 'status', 'auto_taxi_enabled', 'next_billing_date', 'social_reason', 'social_reason_confirmed_at', 'updated_at'])
+
+    free_plan = SUBSCRIPTION_PLANS['free']
+    return Response({
+        'ok': True,
+        'message': 'Демо-данные платежей и карты очищены',
+        'deleted': {
+            'transactions': deleted_txs,
+            'cards': deleted_cards,
+            'verification_codes': deleted_codes,
+        },
+        'subscription': {
+            'plan_id': sub.plan,
+            'plan_title': free_plan['title'],
+            'price_kzt': free_plan['price_kzt'],
+            'auto_taxi_enabled': False,
+            **_subscription_features(sub.plan),
+            'next_billing_date': None,
+            'social_reason': '',
+            'social_reason_confirmed_at': None,
+            'benefits': free_plan['benefits'],
+        },
     })
 
 
@@ -765,6 +912,9 @@ def doctor_appointments(request):
             'doctor_recommendation': appt.doctor_recommendation or '',
             'exam_summary': appt.exam_summary or '',
             'prescribed_medications': appt.prescribed_medications or '',
+            'prescription_confirmed': bool(appt.prescription_confirmed),
+            'prescription_confirmed_at': appt.prescription_confirmed_at.isoformat() if appt.prescription_confirmed_at else None,
+            'prescription_confirmed_by': appt.prescription_confirmed_by or '',
         })
 
     return Response(data)
@@ -802,8 +952,7 @@ def doctor_update_recommendation(request, appointment_id):
     PATCH /api/doctor/appointments/<id>/recommendation/
         Body: {
             "doctor_recommendation": "Общие рекомендации",
-            "exam_summary": "Итоги обследования",
-            "prescribed_medications": "Назначенные препараты"
+            "exam_summary": "Итоги обследования"
         }
     """
     hospital, doctor_entry, err = _require_doctor(request)
@@ -817,18 +966,80 @@ def doctor_update_recommendation(request, appointment_id):
 
     recommendation = (request.data.get('doctor_recommendation') or '').strip()
     exam_summary = (request.data.get('exam_summary') or '').strip()
-    prescribed_medications = (request.data.get('prescribed_medications') or '').strip()
 
     appt.doctor_recommendation = recommendation
     appt.exam_summary = exam_summary
-    appt.prescribed_medications = prescribed_medications
-    appt.save(update_fields=['doctor_recommendation', 'exam_summary', 'prescribed_medications', 'updated_at'])
+    appt.save(update_fields=['doctor_recommendation', 'exam_summary', 'updated_at'])
     return Response({
         'ok': True,
         'id': appt.id,
         'doctor_recommendation': appt.doctor_recommendation,
         'exam_summary': appt.exam_summary,
         'prescribed_medications': appt.prescribed_medications,
+    })
+
+
+def _to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on', 'да'}
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def doctor_issue_prescription(request, appointment_id):
+    """
+    PATCH /api/doctor/appointments/<id>/prescription/
+    Body: {
+      "prescribed_medications": "...",
+      "doctor_confirmation": true
+    }
+    """
+    hospital, doctor_entry, err = _require_doctor(request)
+    if err:
+        return err
+
+    if doctor_entry:
+        appt = get_object_or_404(Appointment, id=appointment_id, doctor=doctor_entry)
+    else:
+        appt = get_object_or_404(Appointment, id=appointment_id, hospital=hospital)
+
+    prescribed_medications = (request.data.get('prescribed_medications') or '').strip()
+    doctor_confirmation = _to_bool(request.data.get('doctor_confirmation'))
+
+    if not prescribed_medications:
+        return Response({'error': 'Укажите текст рецепта'}, status=400)
+    if not doctor_confirmation:
+        return Response({'error': 'Подтвердите рецепт как врач перед сохранением'}, status=400)
+
+    doctor_name = (
+        (doctor_entry.full_name if doctor_entry else '')
+        or request.user.get_full_name()
+        or request.user.first_name
+        or request.user.username
+    )
+
+    appt.prescribed_medications = prescribed_medications
+    appt.prescription_confirmed = True
+    appt.prescription_confirmed_at = timezone.now()
+    appt.prescription_confirmed_by = doctor_name
+    appt.save(update_fields=[
+        'prescribed_medications',
+        'prescription_confirmed',
+        'prescription_confirmed_at',
+        'prescription_confirmed_by',
+        'updated_at',
+    ])
+
+    return Response({
+        'ok': True,
+        'id': appt.id,
+        'prescribed_medications': appt.prescribed_medications,
+        'prescription_confirmed': appt.prescription_confirmed,
+        'prescription_confirmed_at': appt.prescription_confirmed_at.isoformat() if appt.prescription_confirmed_at else None,
+        'prescription_confirmed_by': appt.prescription_confirmed_by,
     })
 
 

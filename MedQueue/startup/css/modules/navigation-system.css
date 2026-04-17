@@ -1,0 +1,27 @@
+/* Unified navigation strategy: quick dock + brand badge for patient pages */
+body.page-main-avant .site-header,
+body.page-doctors-avant .site-header,
+body.page-recording-avant .site-header,
+body.page-status-avant .site-header,
+body.page-profile-avant .site-header,
+body.page-subscription-avant .site-header,
+body.page-contacts-avant .site-header {
+  display: none !important;
+}
+
+body.page-main-avant .mq-quick-dock,
+body.page-doctors-avant .mq-quick-dock,
+body.page-recording-avant .mq-quick-dock,
+body.page-status-avant .mq-quick-dock,
+body.page-profile-avant .mq-quick-dock,
+body.page-subscription-avant .mq-quick-dock,
+body.page-contacts-avant .mq-quick-dock {
+  display: grid;
+}
+
+body.page-admin-avant .mq-quick-dock,
+body.page-doctor-avant .mq-quick-dock,
+body.page-admin-avant .mq-palette,
+body.page-doctor-avant .mq-palette {
+  display: none !important;
+}

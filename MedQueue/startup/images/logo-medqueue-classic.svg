@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="420" viewBox="0 0 1400 420" role="img" aria-labelledby="title desc">
+  <title id="title">MedQueue classic logo</title>
+  <desc id="desc">Elegant serif wordmark in warm neutral palette.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #eee9df; }
+      .wordmark {
+        fill: #121318;
+        font-family: "Iowan Old Style", "Bodoni MT", "Didot", "Times New Roman", serif;
+        font-size: 180px;
+        font-weight: 700;
+        letter-spacing: -1.4px;
+      }
+      .tagline {
+        fill: #3a3b42;
+        font-family: "Iowan Old Style", "Bodoni MT", "Didot", "Times New Roman", serif;
+        font-size: 44px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+      }
+      .accent {
+        stroke: #121318;
+        stroke-width: 3;
+        fill: none;
+        opacity: 0.7;
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="420" rx="0" />
+
+  <text class="wordmark" x="92" y="220">MedQueue</text>
+  <path class="accent" d="M95 260 C 360 276, 625 272, 890 258" />
+  <text class="tagline" x="95" y="340">Запись в клинику без хаоса</text>
+</svg>

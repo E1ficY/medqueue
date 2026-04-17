@@ -5,13 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Запись к врачу - MedQueue</title>
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/script.js?v=1.0.7"></script>
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
+  <script src="../js/script.js?v=1.0.8"></script>
   <script src="../js/theme.js"></script>
 </head>
 <body class="page-recording-avant" data-skip-unified-hero="1">
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="main.html">MedQueue</a>
+      <a class="logo" href="main.html" aria-label="MedQueue — главная">
+        <img src="../images/logo-medqueue-mark.svg" alt="MedQueue" width="34" height="34" style="display:block;border-radius:8px;" />
+        <span>MedQueue</span>
+      </a>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
       <nav id="mainNav">
         <a href="main.html" class="nav-link">Главная</a>
@@ -112,6 +117,7 @@
 
         <div class="recording-actions">
           <button class="btn btn-primary" type="submit">Подтвердить запись</button>
+          <button class="btn btn-outline" type="button" id="demoBookingBtn">Демо-запись (без сервера)</button>
           <span class="recording-note">Данные защищены и используются только для записи.</span>
         </div>
         <div id="appMsg" class="mini-msg" aria-live="polite"></div>
@@ -130,12 +136,18 @@
       </form>
     </section>
 
+    <section id="demo-showcase" class="status-card animate-in">
+      <h3>Демо функционала для показа</h3>
+      <p class="recording-note" style="margin-bottom:12px;">Этот блок помогает показать ключевую идею MedQueue: запись, ожидание, напоминания и полезный досуг в очереди даже офлайн.</p>
+      <div id="mqDemoShowcase"></div>
+    </section>
+
   </main>
 
   <footer class="site-footer">
     <div class="wrap">
       <div>© 2026 MedQueue - Удобная запись и управление очередями</div>
-      <div class="muted">Версия 4.0</div>
+      <div class="muted">Версия 5.0</div>
     </div>
   </footer>
 
