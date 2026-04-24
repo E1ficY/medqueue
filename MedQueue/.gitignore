@@ -31,6 +31,8 @@ db.sqlite3
 db.sqlite3-journal
 media/
 .env
+startup/backend/.certs/
+startup/backend/db_backups/
 
 # VS Code
 .vscode/

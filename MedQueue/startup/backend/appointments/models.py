@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Avg, Count
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import timedelta
 from statistics import median
 import random
 import string
@@ -277,12 +278,22 @@ class Appointment(models.Model):
         if not self.code:
             self.code = self.generate_unique_code()
         
-        # Автоматически присваиваем место в очереди
-        if not self.queue_position or self.queue_position == 1:
+        # На создании считаем позицию устойчиво по интервалу локального дня.
+        if self._state.adding or not self.queue_position:
+            local_dt = timezone.localtime(self.datetime) if timezone.is_aware(self.datetime) else self.datetime
+            day_start = local_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            if timezone.is_naive(day_start):
+                day_start = timezone.make_aware(day_start, timezone.get_current_timezone())
+                day_end = timezone.make_aware(day_end, timezone.get_current_timezone())
+
             same_day_appointments = Appointment.objects.filter(
                 hospital=self.hospital,
-                datetime__date=self.datetime.date(),
-                status='confirmed'
+                status='confirmed',
+                datetime__gte=day_start,
+                datetime__lt=day_end,
+                datetime__lte=self.datetime,
             ).exclude(pk=self.pk).count()
             self.queue_position = same_day_appointments + 1
         

@@ -831,7 +831,7 @@ def _build_ai_db_context(message):
 
 
 def _fallback_db_recommendation_response(message):
-    """Rule-based ответ с конкретными врачами/больницами из БД."""
+    """Rule-based ответ с конкретными врачами/больницами из БД в разговорном формате."""
     data = _get_ai_recommendation_data(message)
     doctors = data['doctors']
     hospitals = data['hospitals']
@@ -843,22 +843,49 @@ def _fallback_db_recommendation_response(message):
     top_doctor = doctors[0] if doctors else None
 
     if top_doctor:
+        phone = top_doctor.hospital.phone or 'телефон не указан'
         lines = []
+
         if specialty_hint:
-            lines.append(f"Специальность: {specialty_hint}")
-        for doc in doctors[:3]:
-            phone = doc.hospital.phone or 'телефон не указан'
-            lines.append(
-                f"- {doc.full_name} ({doc.specialty}) | {doc.hospital.name} | рейтинг {doc.avg_rating}/5 | {phone}"
-            )
-        return {'reply': '\n'.join(lines)}
+            lines.append(f"По вашему описанию лучше начать с {specialty_hint.lower()}.")
+        else:
+            lines.append('По вашему запросу вот самый подходящий вариант:')
+
+        lines.append(
+            f"Основная рекомендация: {top_doctor.full_name} ({top_doctor.specialty}), "
+            f"{top_doctor.hospital.name}, рейтинг {top_doctor.avg_rating}/5, тел. {phone}."
+        )
+
+        alternatives = doctors[1:3]
+        if alternatives:
+            alt_parts = []
+            for doc in alternatives:
+                alt_phone = doc.hospital.phone or 'телефон не указан'
+                alt_parts.append(
+                    f"{doc.full_name} ({doc.specialty}), {doc.hospital.name}, рейтинг {doc.avg_rating}/5, тел. {alt_phone}"
+                )
+            lines.append('Альтернативы: ' + '; '.join(alt_parts) + '.')
+
+        lines.append('Если симптомы усиливаются или держатся больше 2-3 дней, лучше записаться на очный прием.')
+        return {'reply': ' '.join(lines)}
 
     if hospitals:
-        lines = []
-        for h in hospitals[:3]:
-            phone = h.phone or 'телефон не указан'
-            lines.append(f"- {h.name} | {h.address} | {phone}")
-        return {'reply': '\n'.join(lines)}
+        first = hospitals[0]
+        first_phone = first.phone or 'телефон не указан'
+        lines = [
+            f"Можно начать с {first.name} ({first.address}, тел. {first_phone})."
+        ]
+
+        rest = hospitals[1:3]
+        if rest:
+            options = []
+            for h in rest:
+                phone = h.phone or 'телефон не указан'
+                options.append(f"{h.name} ({h.address}, тел. {phone})")
+            lines.append('Еще варианты: ' + '; '.join(options) + '.')
+
+        lines.append('Выберите клинику по удобному адресу и ближайшему времени приема.')
+        return {'reply': ' '.join(lines)}
 
     return None
 

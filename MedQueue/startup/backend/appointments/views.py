@@ -106,11 +106,12 @@ class DoctorCatalogViewSet(viewsets.ReadOnlyModelViewSet):
         return qs
 
 
-class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     API для записей на приём.
 
     POST /api/appointments/                    — создать запись (гость или авторизованный)
+    GET  /api/appointments/                    — мои записи (требует авторизации)
     GET  /api/appointments/check/{code}/       — проверить статус по коду (публичный)
     POST /api/appointments/cancel/             — отменить запись по коду (публичный)
     GET  /api/appointments/my_appointments/    — мои записи (требует авторизации)
@@ -125,6 +126,18 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if self.action == 'create':
             return AppointmentCreateSerializer
         return AppointmentStatusSerializer
+
+    def get_permissions(self):
+        """GET списка доступен только авторизованным пользователям."""
+        if self.action in {'list', 'my_appointments', 'update_comment'}:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        """Список записей текущего пользователя."""
+        appointments = Appointment.objects.filter(user=request.user).order_by('-created_at')
+        serializer = self.get_serializer(appointments, many=True)
+        return Response(serializer.data)
 
     def create(self, request):
         """
@@ -247,10 +260,8 @@ class AppointmentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         GET /api/appointments/my_appointments/
         Требует: Authorization: Bearer <access_token>
         """
-        appointments = Appointment.objects.filter(
-            user=request.user
-        ).order_by('-created_at')
-        serializer = AppointmentStatusSerializer(appointments, many=True)
+        appointments = Appointment.objects.filter(user=request.user).order_by('-created_at')
+        serializer = self.get_serializer(appointments, many=True)
         return Response(serializer.data)
 
 

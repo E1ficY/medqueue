@@ -1,0 +1,54 @@
+name: MedQueue Deploy
+
+on:
+  push:
+    branches: ["staging", "main"]
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    env:
+      STAGING_HOST_SECRET: STAGING_HOST
+      STAGING_USER_SECRET: STAGING_USER
+      STAGING_KEY_SECRET: STAGING_SSH_KEY
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets[env.STAGING_HOST_SECRET] }}
+          username: ${{ secrets[env.STAGING_USER_SECRET] }}
+          key: ${{ secrets[env.STAGING_KEY_SECRET] }}
+          script: |
+            cd /opt/medqueue
+            git fetch --all
+            git checkout staging
+            git pull origin staging
+            docker compose -f startup/docker-compose.yml up -d --build
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      PROD_HOST_SECRET: PROD_HOST
+      PROD_USER_SECRET: PROD_USER
+      PROD_KEY_SECRET: PROD_SSH_KEY
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets[env.PROD_HOST_SECRET] }}
+          username: ${{ secrets[env.PROD_USER_SECRET] }}
+          key: ${{ secrets[env.PROD_KEY_SECRET] }}
+          script: |
+            cd /opt/medqueue
+            git fetch --all
+            git checkout main
+            git pull origin main
+            docker compose -f startup/docker-compose.yml up -d --build

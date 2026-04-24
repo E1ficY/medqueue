@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'corsheaders',
     'appointments',
 ]
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'appointments.monitoring.PostHogMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -142,6 +144,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_THROTTLE_CLASSES': (
         'appointments.throttles.IPThrottle',
         'appointments.throttles.UserThrottle',
@@ -160,6 +163,12 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'MedQueue API',
+    'DESCRIPTION': 'API documentation for MedQueue backend',
+    'VERSION': '5.0.0',
+}
+
 # SimpleJWT — настройки токенов
 SIMPLE_JWT = {
     # access-токен живёт 1 час, refresh — 30 дней
@@ -172,7 +181,17 @@ SIMPLE_JWT = {
 
 # CORS настройки
 CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000', 'http://127.0.0.1:8001', 'http://localhost:8001', 'https://bubblier-felton-luringly.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8001',
+    'http://localhost:8001',
+    'https://127.0.0.1:8000',
+    'https://localhost:8000',
+    'https://127.0.0.1:8001',
+    'https://localhost:8001',
+    'https://bubblier-felton-luringly.ngrok-free.dev',
+]
 
 # Базовые security-заголовки и защита cookies
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -206,3 +225,7 @@ EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
+
+# Monitoring (PostHog)
+POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
+POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://us.i.posthog.com').strip()
