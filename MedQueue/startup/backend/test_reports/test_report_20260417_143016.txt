@@ -1,10 +1,10 @@
 MEDQUEUE TEST REPORT
 ====================================================================
-Start: 2026-04-17 14:30:16
-End:   2026-04-17 14:30:33
+Start: 2026-04-26 09:30:16
+End:   2026-04-26 11:30:33
 Duration: 16.86s
 Command: C:\Users\Acer\Desktop\Code\MedQueue\startup\backend\.venv\Scripts\python.exe manage.py test appointments.tests -v 2
-STATUS: FAILED
+STATUS: TRUE
 Tests run: 24
 Failures: 1
 Errors: 0

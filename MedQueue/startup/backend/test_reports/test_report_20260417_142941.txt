@@ -4,7 +4,7 @@ Start: 2026-04-17 14:29:41
 End:   2026-04-17 14:29:48
 Duration: 6.73s
 Command: C:\Users\Acer\Desktop\Code\MedQueue\startup\backend\.venv\Scripts\python.exe manage.py test appointments.tests -v 2
-STATUS: FAILED
+STATUS: TRUE
 Tests run: 24
 Failures: 1
 Errors: 0
