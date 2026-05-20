@@ -19,7 +19,7 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env', override=True)
-FRONTEND_DIR = BASE_DIR.parent
+FRONTEND_DIR = Path(os.getenv('FRONTEND_DIR', str(BASE_DIR.parent)))
 
 
 # Quick-start development settings - unsuitable for production
@@ -92,12 +92,26 @@ WSGI_APPLICATION = 'medqueue_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
+
+if DB_ENGINE == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'medqueue'),
+            'USER': os.getenv('POSTGRES_USER', 'medqueue'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'medqueue'),
+            'HOST': os.getenv('POSTGRES_HOST', 'db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -122,11 +136,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
-    FRONTEND_DIR / 'css',
-    FRONTEND_DIR / 'js',
-    FRONTEND_DIR / 'images',
+    ('css', FRONTEND_DIR / 'css'),
+    ('js', FRONTEND_DIR / 'js'),
+    ('images', FRONTEND_DIR / 'images'),
+    ('video', FRONTEND_DIR / 'video'),
 ]
 
 # Default primary key field type

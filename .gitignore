@@ -3,36 +3,49 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
 
 # Virtual environments
 venv/
 .venv/
 env/
 ENV/
+.env/
 
 # Django
 *.log
 local_settings.py
 db.sqlite3
-*.sqlite3
-
-# Environment files
+db.sqlite3-journal
+media/
 .env
+startup/backend/.certs/
+startup/backend/db_backups/
 
-# OS files
+# VS Code
+.vscode/
+
+# OS
 .DS_Store
 Thumbs.db
+__MACOSX/
 
-# IDE
-.vscode/settings.json
-*.code-workspace
-
-# Distribution
-dist/
-build/
-*.egg-info/
-
-# Non-project files at workspace root
+# Excluded projects
+ren_project/
 Samir.html
 Samir.py
-.vscode/
+
+# Node
+node_modules/
