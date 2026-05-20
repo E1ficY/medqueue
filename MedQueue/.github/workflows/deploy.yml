@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Staging Server
-        if: "${{ secrets.STAGING_HOST && secrets.STAGING_USER && secrets.STAGING_SSH_KEY }}"
+        if: "${{ secrets.STAGING_HOST != '' && secrets.STAGING_USER != '' && secrets.STAGING_SSH_KEY != '' }}"
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.STAGING_HOST }}
@@ -27,10 +27,15 @@ jobs:
             # Run migrations on the remote before restarting services
             docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
+            echo "Staging deployment completed successfully"
+            
       - name: Skip staging deploy when secrets missing
-        if: "${{ !secrets.STAGING_HOST || !secrets.STAGING_USER || !secrets.STAGING_SSH_KEY }}"
+        if: "${{ secrets.STAGING_HOST == '' || secrets.STAGING_USER == '' || secrets.STAGING_SSH_KEY == '' }}"
         run: |
-          echo "Staging deploy secrets are not set; skipping staging deploy."
+          echo "⚠️  Staging deploy secrets not configured. Setup in GitHub Settings > Secrets > Actions:"
+          echo "  - STAGING_HOST"
+          echo "  - STAGING_USER"
+          echo "  - STAGING_SSH_KEY"
           exit 0
 
   deploy-production:
@@ -41,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Production Server
-        if: "${{ secrets.PROD_HOST && secrets.PROD_USER && secrets.PROD_SSH_KEY }}"
+        if: "${{ secrets.PROD_HOST != '' && secrets.PROD_USER != '' && secrets.PROD_SSH_KEY != '' }}"
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
@@ -55,8 +60,13 @@ jobs:
             # Run migrations on the remote before restarting services
             docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
+            echo "Production deployment completed successfully"
+            
       - name: Skip production deploy when secrets missing
-        if: "${{ !secrets.PROD_HOST || !secrets.PROD_USER || !secrets.PROD_SSH_KEY }}"
+        if: "${{ secrets.PROD_HOST == '' || secrets.PROD_USER == '' || secrets.PROD_SSH_KEY == '' }}"
         run: |
-          echo "Production deploy secrets are not set; skipping production deploy."
+          echo "⚠️  Production deploy secrets not configured. Setup in GitHub Settings > Secrets > Actions:"
+          echo "  - PROD_HOST"
+          echo "  - PROD_USER"
+          echo "  - PROD_SSH_KEY"
           exit 0
