@@ -8,47 +8,55 @@ jobs:
   deploy-staging:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
-    env:
-      STAGING_HOST_SECRET: STAGING_HOST
-      STAGING_USER_SECRET: STAGING_USER
-      STAGING_KEY_SECRET: STAGING_SSH_KEY
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to Staging Server
+        if: "${{ secrets.STAGING_HOST && secrets.STAGING_USER && secrets.STAGING_SSH_KEY }}"
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets[env.STAGING_HOST_SECRET] }}
-          username: ${{ secrets[env.STAGING_USER_SECRET] }}
-          key: ${{ secrets[env.STAGING_KEY_SECRET] }}
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             cd /opt/medqueue
             git fetch --all
             git checkout staging
             git pull origin staging
+            # Run migrations on the remote before restarting services
+            docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
+      - name: Skip staging deploy when secrets missing
+        if: "${{ !secrets.STAGING_HOST || !secrets.STAGING_USER || !secrets.STAGING_SSH_KEY }}"
+        run: |
+          echo "Staging deploy secrets are not set; skipping staging deploy."
+          exit 0
 
   deploy-production:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      PROD_HOST_SECRET: PROD_HOST
-      PROD_USER_SECRET: PROD_USER
-      PROD_KEY_SECRET: PROD_SSH_KEY
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to Production Server
+        if: "${{ secrets.PROD_HOST && secrets.PROD_USER && secrets.PROD_SSH_KEY }}"
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets[env.PROD_HOST_SECRET] }}
-          username: ${{ secrets[env.PROD_USER_SECRET] }}
-          key: ${{ secrets[env.PROD_KEY_SECRET] }}
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/medqueue
             git fetch --all
             git checkout main
             git pull origin main
+            # Run migrations on the remote before restarting services
+            docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
+      - name: Skip production deploy when secrets missing
+        if: "${{ !secrets.PROD_HOST || !secrets.PROD_USER || !secrets.PROD_SSH_KEY }}"
+        run: |
+          echo "Production deploy secrets are not set; skipping production deploy."
+          exit 0

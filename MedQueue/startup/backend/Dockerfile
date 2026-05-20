@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -14,6 +14,7 @@ COPY css /frontend/css
 COPY js /frontend/js
 COPY images /frontend/images
 COPY html /frontend/html
+COPY video /frontend/video
 COPY backend/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
