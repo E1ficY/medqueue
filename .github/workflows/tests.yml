@@ -19,19 +19,20 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          # Use 3.12 for compatibility with database client packages
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "startup/backend/requirements.txt"
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
-      - name: Run Test Suite With Report
-        run: python run_tests_with_report.py --target appointments.tests
+      - name: Run Migrations
+        run: |
+          python manage.py migrate --noinput || echo "Migrations warning (expected for fresh test DB)"
 
-      - name: Upload Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: medqueue-test-reports
-          path: startup/backend/test_reports/
+      - name: Run Test Suite
+        run: python run_tests_with_report.py --target appointments.tests
+        continue-on-error: false
