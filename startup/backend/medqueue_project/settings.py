@@ -136,11 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-<<<<<<< HEAD:startup/backend/medqueue_project/settings.py
 STATIC_URL = '/static/'
-=======
-STATIC_URL = 'static/'
->>>>>>> origin/main:MedQueue/startup/backend/medqueue_project/settings.py
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     ('css', FRONTEND_DIR / 'css'),
