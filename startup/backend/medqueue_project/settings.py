@@ -207,7 +207,14 @@ CSRF_TRUSTED_ORIGINS = [
     'https://127.0.0.1:8001',
     'https://localhost:8001',
     'https://bubblier-felton-luringly.ngrok-free.dev',
+    'http://medqueue.me',
+    'https://medqueue.me',
+    'http://www.medqueue.me',
+    'https://www.medqueue.me',
 ]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # Базовые security-заголовки и защита cookies
 SECURE_CONTENT_TYPE_NOSNIFF = True
