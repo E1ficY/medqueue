@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Hospital, Appointment, Doctor, DoctorReview
+from .models import Hospital, Appointment, Doctor, DoctorReview, UNIFORM_MINUTES_PER_PATIENT
 
 
 class DoctorSerializer(serializers.ModelSerializer):
@@ -51,18 +51,43 @@ class DoctorSerializer(serializers.ModelSerializer):
 
 class HospitalSerializer(serializers.ModelSerializer):
     """Краткий сериализатор для списка больниц"""
-    current_queue = serializers.ReadOnlyField()
-    waiting_time = serializers.ReadOnlyField(source='estimated_waiting_time')
-    waiting_time_reason = serializers.ReadOnlyField()
-    avg_rating = serializers.ReadOnlyField()
-    reviews_count = serializers.ReadOnlyField()
+    current_queue = serializers.SerializerMethodField()
+    waiting_time = serializers.SerializerMethodField()
+    waiting_time_reason = serializers.SerializerMethodField()
+    avg_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
     latest_reviews = serializers.SerializerMethodField()
+
+    def _get_current_queue(self, obj):
+        cached = getattr(obj, '_mq_current_queue', None)
+        if cached is not None:
+            return cached
+
+        value = getattr(obj, 'current_queue_count', None)
+        if value is None:
+            value = obj.current_queue
+
+        cached = int(value or 0)
+        obj._mq_current_queue = cached
+        return cached
+
+    def _get_avg_rating(self, obj):
+        value = getattr(obj, 'avg_rating_value', None)
+        if value is None:
+            value = obj.avg_rating
+        return round(float(value), 1) if value is not None else 0.0
+
+    def _get_reviews_count(self, obj):
+        value = getattr(obj, 'reviews_count_value', None)
+        if value is None:
+            value = obj.reviews_count
+        return int(value or 0)
 
     def get_latest_reviews(self, obj):
         reviews = DoctorReview.objects.filter(
             doctor__hospital=obj,
             doctor__is_active=True,
-        ).order_by('-created_at')[:2]
+        ).select_related('doctor').order_by('-created_at')[:2]
         return [
             {
                 'doctor_name': r.doctor.full_name,
@@ -73,6 +98,27 @@ class HospitalSerializer(serializers.ModelSerializer):
             }
             for r in reviews
         ]
+
+    def get_current_queue(self, obj):
+        return self._get_current_queue(obj)
+
+    def get_waiting_time(self, obj):
+        return self._get_current_queue(obj) * UNIFORM_MINUTES_PER_PATIENT
+
+    def get_waiting_time_reason(self, obj):
+        queue_count = self._get_current_queue(obj)
+        if queue_count <= 0:
+            return 'Ожидание 0 минут, потому что в очереди сейчас нет пациентов.'
+        return (
+            f'Расчет: {queue_count} чел. x {UNIFORM_MINUTES_PER_PATIENT} мин = '
+            f'{queue_count * UNIFORM_MINUTES_PER_PATIENT} мин.'
+        )
+
+    def get_avg_rating(self, obj):
+        return self._get_avg_rating(obj)
+
+    def get_reviews_count(self, obj):
+        return self._get_reviews_count(obj)
 
     class Meta:
         model = Hospital

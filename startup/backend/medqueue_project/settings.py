@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env', override=True)
 FRONTEND_DIR = Path(os.getenv('FRONTEND_DIR', str(BASE_DIR.parent)))
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '').strip()
 
 
 # Quick-start development settings - unsuitable for production
@@ -196,7 +197,21 @@ SIMPLE_JWT = {
 }
 
 # CORS настройки
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8001',
+    'http://localhost:8001',
+    'https://127.0.0.1:8000',
+    'https://localhost:8000',
+    'https://127.0.0.1:8001',
+    'https://localhost:8001',
+    'https://bubblier-felton-luringly.ngrok-free.dev',
+    'http://medqueue.me',
+    'https://medqueue.me',
+    'http://www.medqueue.me',
+    'https://www.medqueue.me',
+]
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
@@ -245,6 +260,7 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '465'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')

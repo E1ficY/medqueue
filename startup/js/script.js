@@ -177,10 +177,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function initGlobalExperienceLayer() {
+  initImagePerformanceOptimizations();
   initScrollProgressBar();
   initQuickDock();
   initCommandPalette();
   initCornerThemeToggle();
+}
+
+function initImagePerformanceOptimizations() {
+  document.querySelectorAll('img').forEach((img) => {
+    if (img.closest('.site-header, .topbar, .logo, .mq-brand-badge')) return;
+    if (!img.hasAttribute('loading')) img.loading = 'lazy';
+    if (!img.hasAttribute('decoding')) img.decoding = 'async';
+  });
 }
 
 function toggleMobileMenu() {

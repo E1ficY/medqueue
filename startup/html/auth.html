@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- MedQueue auth build: 2026-05-24-v3 -->
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -8,7 +9,8 @@
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
   <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
-  <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
+  <script>window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default:"1x00000000000000000000AA" }}';</script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
   <style>
 
     body {
@@ -165,6 +167,11 @@
 
     .submit-btn:hover {
       opacity: 0.9;
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.75;
+      cursor: wait;
     }
 
     .message {
@@ -372,31 +379,28 @@
 
     <!-- ВХОД -->
 
-    <div id="loginForm">
-      <form onsubmit="handleLogin(event)">
+    <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
           <label class="form-label">Email или логин</label>
-          <input type="text" class="form-input" id="loginInput" placeholder="Ваш email или логин" required>
+          <input type="text" class="form-input" id="loginInput" name="username" placeholder="Ваш email или логин" autocomplete="username" required>
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input type="password" class="form-input" id="loginPassword" required>
+          <input type="password" class="form-input" id="loginPassword" name="password" autocomplete="current-password" required>
         </div>
         <div class="forgot-link">
           <a href="#" onclick="showForgotStep1(); return false;">Забыли пароль?</a>
         </div>
         <div class="form-group">
           <label class="form-label">Проверка на робота</label>
-          <div id="loginRecaptcha"></div>
+          <div id="loginTurnstile" aria-label="Проверка Cloudflare Turnstile" style="min-height:65px;"></div>
         </div>
         <button type="submit" class="submit-btn">Войти</button>
-      </form>
-    </div>
+    </form>
 
     <!-- РЕГИСТРАЦИЯ -->
 
-    <div id="registerForm" class="hidden">
-      <form onsubmit="handleRegister(event)">
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
 
         <!-- Выбор роли: пациент / врач -->
         <div style="margin-bottom:16px;">
@@ -415,23 +419,23 @@
 
         <div class="form-group">
           <label class="form-label">Логин</label>
-          <input type="text" class="form-input" id="registerUsername" placeholder="Латиница, цифры и _ (3–30 символов)" pattern="[a-zA-Z0-9_]{3,30}" required>
+          <input type="text" class="form-input" id="registerUsername" name="username" placeholder="Латиница, цифры и _ (3–30 символов)" autocomplete="username" pattern="[a-zA-Z0-9_]{3,30}" required>
         </div>
         <div class="form-group">
           <label class="form-label">Имя</label>
-          <input type="text" class="form-input" id="registerName" required>
+          <input type="text" class="form-input" id="registerName" name="name" required>
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="email" class="form-input" id="registerEmail" required>
+          <input type="email" class="form-input" id="registerEmail" name="email" autocomplete="email" required>
         </div>
         <div class="form-group">
           <label class="form-label">Номер телефона</label>
-          <input type="tel" class="form-input" id="registerPhone" placeholder="+7 777 123 45 67" required>
+          <input type="tel" class="form-input" id="registerPhone" name="phone" placeholder="+7 777 123 45 67" autocomplete="tel" required>
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input type="password" class="form-input" id="registerPassword" minlength="6" required>
+          <input type="password" class="form-input" id="registerPassword" name="password" autocomplete="new-password" minlength="6" required>
           <div class="strength"><span id="registerStrengthBar"></span></div>
           <div class="strength-label" id="registerStrengthLabel">Надежность пароля: —</div>
           <div class="pass-tools">
@@ -441,7 +445,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Подтвердите пароль</label>
-          <input type="password" class="form-input" id="registerPasswordConfirm" required>
+          <input type="password" class="form-input" id="registerPasswordConfirm" name="password_confirm" autocomplete="new-password" required>
           <div class="pass-tools" style="justify-content:flex-end;">
             <button type="button" class="pass-toggle" onclick="togglePass('registerPasswordConfirm', this)">Показать</button>
           </div>
@@ -463,65 +467,66 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Проверка на робота</label>
-          <div id="registerRecaptcha"></div>
+        <div class="form-group" style="padding:14px;border:1px solid rgba(111,156,146,0.22);border-radius:14px;background:rgba(111,156,146,0.06);margin-bottom:16px;">
+          <label class="form-label" style="margin-bottom:10px;">Проверка на робота</label>
+          <div id="registerTurnstile" aria-label="Проверка Cloudflare Turnstile" style="min-height:80px;"></div>
+          <div style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;">Пройдите проверку непосредственно перед отправкой формы.</div>
         </div>
+
         <button type="submit" class="submit-btn" id="registerSubmitBtn">Зарегистрироваться</button>
-      </form>
         <div style="margin-top:16px;text-align:center;">
           <button type="button" onclick="openVideoModal()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(111,156,146,0.08);color: #0369a1;border:1.5px solid rgba(111,156,146,0.25);border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;width:100%;" onmouseover="this.style.background='rgba(111,156,146,0.15)'" onmouseout="this.style.background='rgba(111,156,146,0.08)'">
             <span style="font-size:18px;">▶️</span> Смотреть видео о проекте
           </button>
         </div>
-    </div>
+    </form>
 
     <!-- СБРОС ПАРОЛЯ — ШАГ 1: ввод email -->
-    <div id="forgotStep1" class="hidden">
-      <h3 style="margin-bottom:8px;">Сброс пароля</h3>
-      <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Введите email, указанный при регистрации. Мы вышлем 6-значный код.</p>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="forgotEmail" placeholder="you@example.com">
-      </div>
-      <button class="submit-btn" onclick="handleForgotSend()">Отправить код</button>
-      <p style="margin-top:14px;text-align:center;font-size:14px;">
-        <a href="#" onclick="showLogin(); return false;" style="color:#5c887f;font-weight:600;">← Вернуться ко входу</a>
-      </p>
-    </div>
+    <form id="forgotStep1" class="hidden" onsubmit="handleForgotSend(event)">
+        <h3 style="margin-bottom:8px;">Сброс пароля</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Введите email, указанный при регистрации. Мы вышлем 6-значный код.</p>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="forgotEmail" name="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <button type="submit" class="submit-btn">Отправить код</button>
+        <p style="margin-top:14px;text-align:center;font-size:14px;">
+          <a href="#" onclick="showLogin(); return false;" style="color:#5c887f;font-weight:600;">← Вернуться ко входу</a>
+        </p>
+    </form>
 
-    <!-- СБРОС ПАРОЛЯ — ШАГ 2: код -->
-    <div id="forgotStep2" class="hidden code-step">
-      <h3 style="margin-bottom:8px;">Введите код</h3>
-      <p style="color:#6b7280;margin-bottom:20px;">Код отправлен на <strong id="forgotEmailSent"></strong></p>
-      <div class="form-group">
-        <label class="form-label">6-значный код</label>
-        <input type="text" class="form-input code-input" id="forgotCode" maxlength="6">
-      </div>
-      <button class="submit-btn" onclick="handleForgotVerify()">Подтвердить</button>
-      <p style="margin-top:14px;font-size:14px;text-align:center;">
-        <a href="#" onclick="handleForgotSend(true); return false;" style="color:#5c887f;">Отправить снова</a>
-      </p>
-    </div>
+    <form id="forgotStep2" class="hidden code-step" onsubmit="handleForgotVerify(event)">
+        <h3 style="margin-bottom:8px;">Введите код</h3>
+        <p style="color:#6b7280;margin-bottom:20px;">Код отправлен на <strong id="forgotEmailSent"></strong></p>
+        <div class="form-group">
+          <label class="form-label">6-значный код</label>
+          <input type="text" class="form-input code-input" id="forgotCode" name="code" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" required>
+        </div>
+        <button type="submit" class="submit-btn">Подтвердить</button>
+        <p style="margin-top:14px;font-size:14px;text-align:center;">
+          <a href="#" onclick="handleForgotSend(null, true); return false;" style="color:#5c887f;">Отправить снова</a>
+        </p>
+    </form>
 
     <!-- СБРОС ПАРОЛЯ — ШАГ 3: новый пароль -->
-    <div id="forgotStep3" class="hidden">
-      <h3 style="margin-bottom:8px;">Новый пароль</h3>
-      <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Придумайте новый пароль для вашего аккаунта.</p>
-      <div class="form-group">
-        <label class="form-label">Новый пароль</label>
-        <input type="password" class="form-input" id="forgotNewPassword" minlength="6">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Подтвердите пароль</label>
-        <input type="password" class="form-input" id="forgotNewPasswordConfirm">
-      </div>
-      <button class="submit-btn" onclick="handleForgotReset()">Сохранить пароль</button>
-    </div>
+    <form id="forgotStep3" class="hidden" onsubmit="handleForgotReset(event)">
+        <h3 style="margin-bottom:8px;">Новый пароль</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Придумайте новый пароль для вашего аккаунта.</p>
+        <input type="text" id="forgotResetUsername" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;" value="">
+        <div class="form-group">
+          <label class="form-label">Новый пароль</label>
+          <input type="password" class="form-input" id="forgotNewPassword" name="new_password" autocomplete="new-password" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Подтвердите пароль</label>
+          <input type="password" class="form-input" id="forgotNewPasswordConfirm" name="new_password_confirm" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="submit-btn">Сохранить пароль</button>
+    </form>
 
     <!-- ПОДТВЕРЖДЕНИЕ КОДА -->
 
-    <div id="verifyForm" class="hidden code-step">
+    <form id="verifyForm" class="hidden code-step" onsubmit="handleVerify(event)">
       <h3 style="margin-bottom: 15px;">Проверьте почту</h3>
       <p style="color: #6b7280; margin-bottom: 20px;">
         Код отправлен на <strong id="emailSent"></strong>
@@ -533,13 +538,13 @@
       </p>
       <div class="form-group">
         <label class="form-label">Введите код</label>
-        <input type="text" class="form-input code-input" id="verifyCode" maxlength="6" required>
+        <input type="text" class="form-input code-input" id="verifyCode" name="verify_code" maxlength="6" autocomplete="one-time-code" required>
       </div>
-      <button onclick="handleVerify()" class="submit-btn">Подтвердить</button>
+      <button type="submit" class="submit-btn">Подтвердить</button>
       <p style="margin-top: 15px; font-size: 14px;">
         <a href="#" onclick="resendCode(); return false;" style="color: #6f9c92;">Отправить код снова</a>
       </p>
-    </div>
+    </form>
     <div class="back-link">
       <a href="main.html">← Вернуться на главную</a>
     </div>
@@ -551,26 +556,36 @@
       : window.location.origin;
     const API_URL = `${API_BASE}/api`;
     const AUTH_STORAGE_KEY = 'medqueue_current_user';
-    const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+    const AUTH_RETURN_KEY = 'medqueue_auth_return_url';
+    const TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
     const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
     let currentEmail = '';
     let selectedRole  = 'patient';  // 'patient' | 'doctor'
     let doctorCodeValid = false;
-    const recaptchaWidgets = {
-      login: null,
-      register: null,
-
-    };
+    const turnstileWidgets = { login: null, register: null };
 
     function redirectAfterAuth() {
       const params = new URLSearchParams(window.location.search);
       const next = params.get('next');
+      const returnUrl = sessionStorage.getItem(AUTH_RETURN_KEY);
+      const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      const isAdminUser = !!user && (
+        user.role === 'admin' ||
+        user.is_superuser ||
+        user.is_staff ||
+        user.username === 'admin'
+      );
+      if (returnUrl) {
+        sessionStorage.removeItem(AUTH_RETURN_KEY);
+        window.location.href = returnUrl;
+        return;
+
+      }
       if (next) {
         window.location.href = next;
         return;
       }
-      const user = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
-      if (user && user.role === 'admin') {
+      if (isAdminUser) {
         window.location.href = 'admin-panel.html';
         return;
       }
@@ -580,7 +595,7 @@
       }
       window.location.href = 'profile.html';
     }
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       const currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
@@ -596,66 +611,21 @@
         showLogin();
 
       }
-      initRecaptchaWidgets();
       initPasswordUX();
       setTimeout(() => {
         if (IS_FILE_PROTOCOL) {
-          showMessage('reCAPTCHA не работает при открытии файла напрямую (file://). Откройте страницу через http://localhost или http://127.0.0.1.', 'error');
+          showMessage('Turnstile не работает при открытии файла напрямую (file://). Откройте страницу через http://localhost или http://127.0.0.1.', 'error');
           return;
 
         }
-        if (!window.grecaptcha) {
-          showMessage('reCAPTCHA не загрузилась. Проверьте интернет и отключите блокировщик рекламы.', 'error');
+        if (!window.turnstile) {
+          showMessage('Turnstile не загрузилась. Проверьте интернет и отключите блокировщик рекламы.', 'error');
 
         }
 
       }, 3500);
 
     });
-
-    function initRecaptchaWidgets() {
-      if (IS_FILE_PROTOCOL) {
-        return;
-
-      }
-      if (!window.grecaptcha || !window.grecaptcha.render) {
-        setTimeout(initRecaptchaWidgets, 200);
-        return;
-
-      }
-      if (recaptchaWidgets.login === null) {
-        const loginContainer = document.getElementById('loginRecaptcha');
-        if (loginContainer) {
-          recaptchaWidgets.login = window.grecaptcha.render(loginContainer, {
-            sitekey: RECAPTCHA_SITE_KEY,
-            'error-callback': function() {
-              showMessage('Ошибка ключа/домена reCAPTCHA. Проверьте Site Key в Google Console.', 'error');
-
-            },
-
-          });
-
-        }
-
-      }
-      if (recaptchaWidgets.register === null) {
-        const registerContainer = document.getElementById('registerRecaptcha');
-        if (registerContainer) {
-          recaptchaWidgets.register = window.grecaptcha.render(registerContainer, {
-            sitekey: RECAPTCHA_SITE_KEY,
-            'error-callback': function() {
-              showMessage('Ошибка ключа/домена reCAPTCHA. Проверьте Site Key в Google Console.', 'error');
-
-            },
-
-          });
-
-        }
-
-      }
-
-    }
-    window.initRecaptchaWidgets = initRecaptchaWidgets;
 
     function togglePass(inputId, btn) {
       const el = document.getElementById(inputId);
@@ -700,23 +670,83 @@
       });
     }
 
-    function getCaptchaToken(type) {
-      const widgetId = recaptchaWidgets[type];
-      if (widgetId === null || !window.grecaptcha) {
-        return '';
+    function turnstileContainer(type) {
+      return document.getElementById(type === 'login' ? 'loginTurnstile' : 'registerTurnstile');
+    }
 
+    function whenTurnstileReady(fn) {
+      if (IS_FILE_PROTOCOL) return;
+      function canRender() {
+        return window.turnstile && typeof window.turnstile.render === 'function';
       }
-      return window.grecaptcha.getResponse(widgetId) || '';
+      if (canRender()) {
+        fn();
+        return;
+      }
+      let attempts = 0;
+      const timer = setInterval(() => {
+        attempts += 1;
+        if (canRender()) {
+          clearInterval(timer);
+          fn();
+        } else if (attempts > 100) {
+          clearInterval(timer);
+          showMessage('Turnstile не загрузилась. Обновите страницу или отключите блокировщик рекламы.', 'error');
+        }
+      }, 100);
+    }
 
+    function unmountTurnstile(type) {
+      const widgetId = turnstileWidgets[type];
+      if (widgetId != null && window.turnstile && typeof window.turnstile.remove === 'function') {
+        try { window.turnstile.remove(widgetId); } catch (e) { /* ignore */ }
+      }
+      turnstileWidgets[type] = null;
+      const container = turnstileContainer(type);
+      if (container) {
+        container.innerHTML = '';
+        container.dataset.token = '';
+      }
+    }
+
+    function mountTurnstile(type) {
+      if (IS_FILE_PROTOCOL) return;
+      const container = turnstileContainer(type);
+      if (!container) return;
+      const other = type === 'login' ? 'register' : 'login';
+      unmountTurnstile(other);
+      unmountTurnstile(type);
+      whenTurnstileReady(() => {
+        if (!window.turnstile || typeof window.turnstile.render !== 'function') return;
+        requestAnimationFrame(() => {
+          container.innerHTML = '';
+          container.dataset.token = '';
+          turnstileWidgets[type] = window.turnstile.render(container, {
+            sitekey: TURNSTILE_SITE_KEY,
+            theme: 'dark',
+            size: 'normal',
+            callback(token) { container.dataset.token = token; },
+            'expired-callback'() { container.dataset.token = ''; },
+            'error-callback'() { container.dataset.token = ''; },
+          });
+        });
+      });
+    }
+
+    function getCaptchaToken(type) {
+      const container = turnstileContainer(type);
+      if (!container) return '';
+      const tokenInput = container.querySelector('input[name="cf-turnstile-response"]');
+      return (tokenInput && tokenInput.value) || container.dataset.token || '';
     }
 
     function resetCaptcha(type) {
-      const widgetId = recaptchaWidgets[type];
-      if (widgetId !== null && window.grecaptcha) {
-        window.grecaptcha.reset(widgetId);
-
+      const container = turnstileContainer(type);
+      const widgetId = turnstileWidgets[type];
+      if (widgetId != null && window.turnstile && typeof window.turnstile.reset === 'function') {
+        try { window.turnstile.reset(widgetId); } catch (e) { /* ignore */ }
       }
-
+      if (container) container.dataset.token = '';
     }
 
     // === ВЫБОР РОЛИ ===
@@ -786,11 +816,17 @@
 
     function hideAllForms() {
       ['loginForm','registerForm','verifyForm','forgotStep1','forgotStep2','forgotStep3'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('hidden');
+        }
       });
+      unmountTurnstile('login');
+      unmountTurnstile('register');
     }
 
-    async function handleForgotSend(isResend) {
+    async function handleForgotSend(e, isResend) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
       const email = (document.getElementById('forgotEmail').value || forgotEmail).trim();
       if (!email) { showMessage('Введите email', 'error'); return; }
       forgotEmail = email;
@@ -814,17 +850,21 @@
       }
     }
 
-    async function handleForgotVerify() {
+    async function handleForgotVerify(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
       const code = document.getElementById('forgotCode').value.trim();
       if (code.length !== 6) { showMessage('Введите 6-значный код', 'error'); return; }
       forgotResetCode = code;
       // Move to step 3 — actual reset happens there
       hideAllForms();
       document.getElementById('forgotStep3').classList.remove('hidden');
+      const forgotUser = document.getElementById('forgotResetUsername');
+      if (forgotUser) forgotUser.value = forgotEmail;
       hideMessage();
     }
 
-    async function handleForgotReset() {
+    async function handleForgotReset(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
       const newPassword = document.getElementById('forgotNewPassword').value;
       const confirm = document.getElementById('forgotNewPasswordConfirm').value;
       if (newPassword.length < 6) { showMessage('Пароль должен быть не менее 6 символов', 'error'); return; }
@@ -865,9 +905,8 @@
       document.getElementById('registerTab').classList.remove('active');
       hideAllForms();
       document.getElementById('loginForm').classList.remove('hidden');
-      initRecaptchaWidgets();
       hideMessage();
-
+      mountTurnstile('login');
     }
 
     function showRegister() {
@@ -875,9 +914,8 @@
       document.getElementById('registerTab').classList.add('active');
       hideAllForms();
       document.getElementById('registerForm').classList.remove('hidden');
-      initRecaptchaWidgets();
       hideMessage();
-
+      mountTurnstile('register');
     }
 
     function showMessage(text, type) {
@@ -897,12 +935,7 @@
     async function handleLogin(e) {
       e.preventDefault();
       if (IS_FILE_PROTOCOL) {
-        showMessage('Для работы reCAPTCHA откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
-        return;
-
-      }
-      if (!window.grecaptcha) {
-        showMessage('reCAPTCHA не загрузилась. Отключите блокировщик рекламы и обновите страницу.', 'error');
+        showMessage('Для работы Turnstile откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
         return;
 
       }
@@ -943,23 +976,32 @@
     }
     // РЕГИСТРАЦИЯ
 
+    function setRegisterLoading(isLoading) {
+      const btn = document.getElementById('registerSubmitBtn');
+      if (!btn) return;
+      btn.disabled = isLoading;
+      btn.textContent = isLoading ? 'Отправка…' : 'Зарегистрироваться';
+      btn.style.opacity = isLoading ? '0.75' : '1';
+      btn.style.cursor = isLoading ? 'wait' : 'pointer';
+    }
+
     async function handleRegister(e) {
       e.preventDefault();
       if (IS_FILE_PROTOCOL) {
-        showMessage('Для работы reCAPTCHA откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
+        showMessage('Для работы Turnstile откройте auth страницу через http://localhost или http://127.0.0.1, а не через file://', 'error');
         return;
 
       }
-      if (!window.grecaptcha) {
-        showMessage('reCAPTCHA не загрузилась. Отключите блокировщик рекламы и обновите страницу.', 'error');
+      if (!window.turnstile) {
+        showMessage('Turnstile не загрузилась. Проверьте интернет и отключите блокировщик рекламы.', 'error');
+        mountTurnstile('register');
         return;
-
       }
-      const captchaToken = getCaptchaToken('register');
+      let captchaToken = getCaptchaToken('register');
       if (!captchaToken) {
-        showMessage('Подтвердите, что вы не робот', 'error');
+        showMessage('Пройдите проверку «не робот» внизу формы', 'error');
+        mountTurnstile('register');
         return;
-
       }
       const username = document.getElementById('registerUsername').value.trim();
       const name    = document.getElementById('registerName').value;
@@ -992,6 +1034,7 @@
           return;
         }
       }
+      setRegisterLoading(true);
       try {
         const response = await fetch(`${API_URL}/auth/register/`, {
           method: 'POST',
@@ -999,30 +1042,44 @@
           body: JSON.stringify({ name, username, email, phone, password, captcha_token: captchaToken, role: selectedRole, doctor_code: doctorCode })
 
         });
-        const data = await response.json();
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (parseErr) {
+          data = {};
+        }
         if (response.ok) {
           currentEmail = email;
           document.getElementById('emailSent').textContent = email;
+          unmountTurnstile('register');
           document.getElementById('registerForm').classList.add('hidden');
           document.getElementById('verifyForm').classList.remove('hidden');
           showMessage('Код отправлен на почту ' + email + '.', 'success');
 
         } else {
-          showMessage(data.error || 'Ошибка регистрации', 'error');
-          resetCaptcha('register');
+          const errText = data.error || data.detail || 'Ошибка регистрации';
+          showMessage(errText, 'error');
+          if (String(errText).toLowerCase().includes('captcha') || String(errText).toLowerCase().includes('робот')) {
+            mountTurnstile('register');
+          } else {
+            resetCaptcha('register');
+          }
 
         }
 
       } catch (error) {
         showMessage(`Ошибка подключения к серверу. Проверьте, что backend запущен по адресу ${API_BASE}`, 'error');
-        resetCaptcha('register');
+        mountTurnstile('register');
 
+      } finally {
+        setRegisterLoading(false);
       }
 
     }
     // ПОДТВЕРЖДЕНИЕ
 
-    async function handleVerify() {
+    async function handleVerify(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
       const code = document.getElementById('verifyCode').value;
       if (code.length !== 6) {
         showMessage('Введите 6-значный код', 'error');

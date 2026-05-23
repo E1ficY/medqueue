@@ -154,6 +154,49 @@ class WaitingTimeLogicTests(TestCase):
 		self.assertIn('Перед вами 1 чел.', second.estimated_wait_reason)
 
 
+class HospitalListPerformanceTests(APITestCase):
+	def setUp(self):
+		self.base_dt = timezone.now() + timedelta(hours=2)
+		for index in range(3):
+			hospital = Hospital.objects.create(
+				name=f'Больница {index + 1}',
+				type='Больница',
+				address=f'г. Алматы, ул. Тестовая {index + 1}',
+				is_active=True,
+			)
+			doctor = Doctor.objects.create(
+				hospital=hospital,
+				full_name=f'Доктор {index + 1}',
+				specialty='Терапевт',
+				is_active=True,
+			)
+			Appointment.objects.create(
+				patient_name=f'Пациент {index + 1}',
+				hospital=hospital,
+				doctor=doctor,
+				specialty='Терапевт',
+				datetime=self.base_dt + timedelta(minutes=index * 15),
+				status='confirmed',
+			)
+			DoctorReview.objects.create(
+				doctor=doctor,
+				patient_name=f'Отзыв {index + 1}',
+				rating=5 - index,
+				comment='Хорошо',
+			)
+
+	def test_hospital_list_uses_bounded_query_count(self):
+		with self.assertNumQueries(4):
+			response = self.client.get('/api/hospitals/')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(len(response.data), 3)
+		first = response.data[0]
+		self.assertIn('current_queue', first)
+		self.assertIn('avg_rating', first)
+		self.assertIn('reviews_count', first)
+
+
 class DoctorRatingTests(TestCase):
 	def test_doctor_avg_rating_and_reviews_count(self):
 		hospital = Hospital.objects.create(

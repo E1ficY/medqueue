@@ -324,10 +324,9 @@
   async function init(){
     const user=getUser();
     if(!user){window.location.href='auth.html?next=doctor.html';return;}
-    if(user.role!=='doctor'){alert('Страница только для врачей.');window.location.href='profile.html';return;}
     const res=await apiFetch(`${API}/doctor/me/`);
     if(!res) return;
-    if(!res.ok){const d=await res.json().catch(()=>({}));showToast(d.error||'Ошибка');setTimeout(logout,2000);return;}
+    if(!res.ok){const d=await res.json().catch(()=>({}));showToast(d.error||'Ошибка');setTimeout(()=>{window.location.href='profile.html';},2000);return;}
     const d=await res.json();
     const ini=(d.name||'?').trim().split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
     document.getElementById('avatarInitial').textContent=ini;

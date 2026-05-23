@@ -280,22 +280,29 @@ class Appointment(models.Model):
         
         # На создании считаем позицию устойчиво по интервалу локального дня.
         if self._state.adding or not self.queue_position:
-            local_dt = timezone.localtime(self.datetime) if timezone.is_aware(self.datetime) else self.datetime
-            day_start = local_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-            day_end = day_start + timedelta(days=1)
-
-            if timezone.is_naive(day_start):
-                day_start = timezone.make_aware(day_start, timezone.get_current_timezone())
-                day_end = timezone.make_aware(day_end, timezone.get_current_timezone())
-
-            same_day_appointments = Appointment.objects.filter(
-                hospital=self.hospital,
-                status='confirmed',
-                datetime__gte=day_start,
-                datetime__lt=day_end,
-                datetime__lte=self.datetime,
-            ).exclude(pk=self.pk).count()
-            self.queue_position = same_day_appointments + 1
+            from django.db import transaction
+            with transaction.atomic():
+                if self.hospital_id:
+                    Hospital.objects.select_for_update().get(pk=self.hospital_id)
+                    
+                local_dt = timezone.localtime(self.datetime) if timezone.is_aware(self.datetime) else self.datetime
+                day_start = local_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+    
+                if timezone.is_naive(day_start):
+                    day_start = timezone.make_aware(day_start, timezone.get_current_timezone())
+                    day_end = timezone.make_aware(day_end, timezone.get_current_timezone())
+    
+                same_day_appointments = Appointment.objects.filter(
+                    hospital=self.hospital,
+                    status='confirmed',
+                    datetime__gte=day_start,
+                    datetime__lt=day_end,
+                    datetime__lte=self.datetime,
+                ).exclude(pk=self.pk).count()
+                self.queue_position = same_day_appointments + 1
+                super().save(*args, **kwargs)
+            return
         
         super().save(*args, **kwargs)
     
@@ -536,6 +543,7 @@ class VerificationCode(models.Model):
     password    = models.CharField(max_length=200, verbose_name="Пароль")
     role        = models.CharField(max_length=20, default='patient', verbose_name="Роль")
     doctor_code = models.CharField(max_length=12, blank=True, default='', verbose_name="Код врача")
+    phone       = models.CharField(max_length=30, blank=True, default='', verbose_name="Телефон")
     created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:

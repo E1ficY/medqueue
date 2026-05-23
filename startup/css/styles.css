@@ -104,6 +104,78 @@ body {
   padding: clamp(16px, 2.5vw, 32px);
 }
 
+/* ===== Extracted component styles (moved from inline HTML) ===== */
+/* Auth / form components */
+.auth-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 32px 36px;
+  max-width: 450px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+  margin: auto 0;
+  scroll-behavior: smooth;
+}
+.auth-card::-webkit-scrollbar { width: 5px; }
+.auth-card::-webkit-scrollbar-track { background: transparent; }
+.auth-card::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+.logo { text-align:center; margin-bottom:20px }
+.logo-icon { font-size:48px; margin-bottom:6px }
+.logo-title { font-size:22px; font-weight:900; color:var(--accent); margin:0 }
+
+.tabs { display:flex; gap:10px; margin-bottom:20px; background:#f3f4f6; padding:5px; border-radius:12px }
+.tab { flex:1; padding:12px; border:none; background:transparent; border-radius:8px; font-weight:700; cursor:pointer; color:#6b7280 }
+.tab.active { background:white; color:var(--accent-dark); box-shadow:0 2px 8px rgba(0,0,0,0.06) }
+
+.form-group { margin-bottom:14px }
+.form-label { display:block; font-weight:600; margin-bottom:8px; color:var(--muted) }
+.form-input { width:100%; padding:12px; border:2px solid var(--border); border-radius:10px; font-size:15px; font-family: Inter, system-ui }
+.form-input:focus { outline:none; border-color:var(--accent) }
+
+.pass-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; font-size:12px; color:#6b7280 }
+.pass-toggle { border:1px solid #d1d5db; background:#f9fafb; border-radius:8px; padding:4px 8px; cursor:pointer; font-size:12px; font-weight:700; color:#334155 }
+.strength { margin-top:6px; height:8px; border-radius:999px; background:#e5e7eb; overflow:hidden }
+.strength > span { display:block; height:100%; width:0; background:#ef4444; transition:width .2s ease, background .2s ease }
+.strength-label { margin-top:6px; font-size:12px; font-weight:700; color:#6b7280; min-height:16px }
+
+.submit-btn { width:100%; padding:14px; background: linear-gradient(135deg, var(--navy), var(--accent)); color:white; border:none; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer }
+.submit-btn:hover { opacity:0.95 }
+
+.message { padding:12px; border-radius:8px; margin-bottom:20px; display:none }
+.message.error { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5 }
+.message.success { background:var(--accent-light); color:var(--accent-dark); border:1px solid #5eead4 }
+
+.role-selector { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px }
+.role-btn { padding:14px 10px; border:2px solid #e5e7eb; border-radius:12px; background:transparent }
+.role-btn.active { border-color:var(--accent); background: linear-gradient(180deg, rgba(111,156,146,0.06), rgba(111,156,146,0.02)) }
+
+/* Profile components */
+.profile-header { background: linear-gradient(135deg, #6f9c92 0%, #6a8f87 60%, #0891b2 100%); color: white; padding:28px 32px; border-radius:20px; margin-bottom:24px; box-shadow:0 16px 40px rgba(8,145,178,0.22); position:relative; overflow:hidden }
+.profile-header::before { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.06) }
+.profile-header::after { content:''; position:absolute; right:40px; bottom:-60px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,0.04) }
+.profile-header-inner { display:flex; align-items:center; gap:22px; flex-wrap:wrap; position:relative; z-index:1 }
+.profile-avatar { width:76px; height:76px; border-radius:50%; background:rgba(255,255,255,0.22); border:3px solid rgba(255,255,255,0.45); display:flex; align-items:center; justify-content:center; font-size:34px; box-shadow:0 4px 14px rgba(0,0,0,0.08) }
+.profile-info h1 { margin:0 0 4px; font-size:24px; font-weight:900 }
+.profile-info .profile-username { margin:0 0 2px; font-size:14px; opacity:0.75; font-weight:500 }
+.profile-info .profile-email { margin:0; font-size:13px; opacity:0.65 }
+.profile-badges { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap }
+.profile-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600 }
+
+/* End extracted component styles */
+
+/* Page-specific small defaults */
+body.page-auth-avant {
+  background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+}
+
 /* ===== HEADER =====
    z-index: 2000 — поверх Leaflet-карты (1000-1100) и любых попапов
    Glassmorphism: полупрозрачный белый с размытием фона              */

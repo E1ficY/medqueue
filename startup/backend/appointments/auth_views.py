@@ -19,6 +19,7 @@ import time
 import urllib.parse
 import urllib.request
 import urllib.error
+import logging
 
 from .models import (
     VerificationCode, DoctorInviteCode, UserProfile, PasswordResetCode,
@@ -40,6 +41,8 @@ from .throttles import (
     AIChatThrottle,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def get_tokens_for_user(user):
     """Генерирует JWT access и refresh токены для пользователя"""
@@ -54,12 +57,34 @@ def normalize_email(value):
     return (value or '').strip().lower()
 
 
+def get_effective_role(user):
+    if getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
+        return 'admin'
+    try:
+        return user.profile.role
+    except Exception:
+        return 'patient'
+
+
 def verify_recaptcha_token(token, remote_ip=None):
-    """Server-side Google reCAPTCHA verification."""
+    """Server-side Cloudflare Turnstile verification."""
     if not token:
         return False
 
-    secret_key = os.getenv('RECAPTCHA_SECRET_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe')
+    # Reject obvious dummy/test tokens returned by headless or automated environments
+    try:
+        t = str(token)
+        if 'DUMMY' in t.upper() or t.startswith('XXXX.'):
+            logger.warning('Rejected dummy Turnstile token from %s', remote_ip)
+            return False
+    except Exception:
+        pass
+
+    secret_key = os.getenv('TURNSTILE_SECRET_KEY', '').strip()
+    if not secret_key:
+        logger.error('TURNSTILE_SECRET_KEY is not configured on the server')
+        return False
+
     payload = {
         'secret': secret_key,
         'response': token,
@@ -71,7 +96,7 @@ def verify_recaptcha_token(token, remote_ip=None):
 
     try:
         request = urllib.request.Request(
-            url='https://www.google.com/recaptcha/api/siteverify',
+            url='https://challenges.cloudflare.com/turnstile/v0/siteverify',
             data=data,
             method='POST',
         )
@@ -113,12 +138,20 @@ def register_user(request):
     doctor_code  = (request.data.get('doctor_code') or '').strip().upper()
     client_ip = get_client_ip(request)
 
+    if not os.getenv('TURNSTILE_SECRET_KEY', '').strip():
+        return Response(
+            {'error': 'Сервер не настроен: отсутствует TURNSTILE_SECRET_KEY в backend/.env'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
     if not verify_recaptcha_token(captcha_token, client_ip):
         return Response(
-            {'error': 'Проверка CAPTCHA не пройдена'},
+            {'error': 'Проверка «не робот» не пройдена. Обновите страницу и пройдите проверку снова.'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    phone = (request.data.get('phone') or '').strip()
+
     if not all([name, email, password, username]):
         return Response(
             {'error': 'Все поля обязательны (включая логин)'},
@@ -201,6 +234,7 @@ def register_user(request):
             password='',
             role=role,
             doctor_code=doctor_code,
+            phone=phone,
         )
     
     from_email = settings.EMAIL_HOST_USER
@@ -274,6 +308,9 @@ def verify_email(request):
 
             # Защита от гонок: если username уже занят другим пользователем — ошибка.
             actual_username = verification.username or user.username or email
+            if not re.match(r'^[a-zA-Z0-9_]{3,30}$', actual_username):
+                import uuid
+                actual_username = f"user_{uuid.uuid4().hex[:10]}"
             if User.objects.filter(username=actual_username).exclude(pk=user.pk).exists():
                 return Response(
                     {'error': 'Логин уже занят. Повторите регистрацию с другим логином.'},
@@ -289,7 +326,11 @@ def verify_email(request):
             # Создаём/обновляем UserProfile с ролью
             profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'role': verification.role or 'patient'})
             profile.role = verification.role or profile.role or 'patient'
-            profile.save(update_fields=['role'])
+            if getattr(verification, 'phone', None):
+                profile.phone = verification.phone
+                profile.save(update_fields=['role', 'phone'])
+            else:
+                profile.save(update_fields=['role'])
 
             # Если врач — помечаем код приглашения как использованный и создаём Doctor-запись
             if verification.role == 'doctor' and verification.doctor_code:
@@ -309,6 +350,8 @@ def verify_email(request):
             verification.delete()
         tokens = get_tokens_for_user(user)
 
+        effective_role = get_effective_role(user)
+
         return Response({
             'message': 'Регистрация успешна!',
             'user': {
@@ -316,7 +359,9 @@ def verify_email(request):
                 'name': user.first_name,
                 'email': user.email,
                 'username': user.username,
-                'role': verification.role,
+                'role': effective_role,
+                'is_superuser': user.is_superuser,
+                'is_staff': user.is_staff,
             },
             **tokens
         })
@@ -385,11 +430,7 @@ def login_user(request):
     
     tokens = get_tokens_for_user(user)
 
-    # Получаем роль из UserProfile (patient по умолчанию)
-    try:
-        role = user.profile.role
-    except Exception:
-        role = 'patient'
+    role = get_effective_role(user)
 
     return Response({
         'message': 'Успешно',
@@ -399,6 +440,8 @@ def login_user(request):
             'email': user.email,
             'username': user.username,
             'role': role,
+            'is_superuser': user.is_superuser,
+            'is_staff': user.is_staff,
         },
         **tokens
     })

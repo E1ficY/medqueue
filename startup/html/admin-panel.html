@@ -516,7 +516,7 @@ let hospitals = [];
 
 async function init(){
   const user = getUser();
-  if(!user){ window.location.href = 'auth.html?next=admin-panel.html'; return; }
+  if(!user){ sessionStorage.setItem('medqueue_auth_return_url', 'admin-panel.html'); window.location.href = 'auth.html'; return; }
 
   // Check admin role
   const roleOk = user.role === 'admin';

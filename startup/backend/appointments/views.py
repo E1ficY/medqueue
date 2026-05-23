@@ -3,13 +3,13 @@ from datetime import timedelta
 import random
 import string
 from rest_framework import viewsets, mixins, status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, Q, Subquery
 from .models import (
     Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile, DoctorReview,
     UserSubscription, PaymentCard, PaymentTransaction, CardVerificationCode,
@@ -22,6 +22,7 @@ from .serializers import (
     AppointmentStatusSerializer,
     DoctorSerializer,
 )
+from .throttles import UserThrottle
 
 
 class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,7 +38,34 @@ class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Возвращаем только активные больницы"""
-        return Hospital.objects.filter(is_active=True)
+        current_time = timezone.now()
+        current_queue_subquery = Appointment.objects.filter(
+            hospital_id=OuterRef('pk'),
+            status='confirmed',
+            datetime__gte=current_time,
+        ).order_by().values('hospital_id').annotate(
+            total=Count('pk')
+        ).values('total')
+
+        reviews_count_subquery = DoctorReview.objects.filter(
+            doctor__hospital_id=OuterRef('pk'),
+            doctor__is_active=True,
+        ).order_by().values('doctor__hospital_id').annotate(
+            total=Count('pk')
+        ).values('total')
+
+        avg_rating_subquery = DoctorReview.objects.filter(
+            doctor__hospital_id=OuterRef('pk'),
+            doctor__is_active=True,
+        ).order_by().values('doctor__hospital_id').annotate(
+            total=Avg('rating')
+        ).values('total')
+
+        return Hospital.objects.filter(is_active=True).annotate(
+            current_queue_count=Subquery(current_queue_subquery, output_field=IntegerField()),
+            reviews_count_value=Subquery(reviews_count_subquery, output_field=IntegerField()),
+            avg_rating_value=Subquery(avg_rating_subquery, output_field=FloatField()),
+        )
 
     def get_serializer_class(self):
         """Для детального запроса используем расширенный сериализатор"""
@@ -200,6 +228,12 @@ class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewset
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if appointment.user and appointment.user != request.user:
+            return Response(
+                {'error': 'Эту запись может отменить только ее создатель. Авторизуйтесь, если это ваша запись.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         appointment.status = 'cancelled'
         appointment.save()
 
@@ -321,6 +355,20 @@ def _subscription_features(plan_id):
 def _get_user_role(user):
     profile = getattr(user, 'profile', None)
     return profile.role if profile else 'patient'
+
+
+def _get_display_role(user):
+    if getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
+        return 'admin'
+
+    if Doctor.objects.filter(user=user, is_active=True).exists():
+        return 'doctor'
+
+    profile = getattr(user, 'profile', None)
+    if profile and profile.role:
+        return profile.role
+
+    return 'patient'
 
 
 def _require_patient(request):
@@ -735,6 +783,7 @@ def subscription_reset_demo(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([UserThrottle])
 def create_doctor_review(request, doctor_id):
     """
     POST /api/reviews/doctors/<doctor_id>/
@@ -814,14 +863,17 @@ def _require_doctor(request):
     """
     if not request.user.is_authenticated:
         return None, None, Response({'error': 'Требуется авторизация'}, status=401)
+
+    doctor_entry = Doctor.objects.filter(user=request.user).first()
+    if doctor_entry:
+        return doctor_entry.hospital, doctor_entry, None
+
     try:
         invite = request.user.doctor_invite  # OneToOne from DoctorInviteCode
     except Exception:
         return None, None, Response({'error': 'Аккаунт врача не найден'}, status=403)
     if not invite.hospital:
         return None, None, Response({'error': 'Больница не привязана к вашему аккаунту'}, status=403)
-    # Ищем конкретную запись Doctor, привязанную к этому пользователю
-    doctor_entry = Doctor.objects.filter(user=request.user).first()
     return invite.hospital, doctor_entry, None
 
 
@@ -836,7 +888,7 @@ def doctor_me(request):
     if err:
         return err
 
-    invite = request.user.doctor_invite
+    invite = getattr(request.user, 'doctor_invite', None)
     today = timezone.now().date()
 
     # Если врач привязан к конкретной записи Doctor — считаем только его записи
@@ -854,7 +906,7 @@ def doctor_me(request):
     return Response({
         'name': request.user.get_full_name() or request.user.first_name or request.user.username,
         'email': request.user.email,
-        'specialty': (doctor_entry.specialty if doctor_entry else invite.specialty) or 'Не указана',
+        'specialty': (doctor_entry.specialty if doctor_entry else getattr(invite, 'specialty', None)) or 'Не указана',
         'cabinet': doctor_entry.cabinet if doctor_entry else '',
         'work_days': doctor_entry.work_days if doctor_entry else 'Пн-Пт',
         'work_hours': doctor_entry.work_hours if doctor_entry else '08:00-18:00',
@@ -883,7 +935,7 @@ def doctor_appointments(request):
     if err:
         return err
 
-    invite = request.user.doctor_invite
+    invite = getattr(request.user, 'doctor_invite', None)
 
     # Если есть конкретная Doctor-запись — фильтруем строго по ней
     if doctor_entry:
@@ -1266,7 +1318,7 @@ def admin_users(request):
         'id':         u.id,
         'name':       u.get_full_name() or u.first_name or u.username,
         'email':      u.email,
-        'role':       getattr(u, 'profile', None) and u.profile.role or 'patient',
+        'role':       _get_display_role(u),
         'joined':     u.date_joined.strftime('%d.%m.%Y'),
         'is_active':  u.is_active,
     } for u in users]
