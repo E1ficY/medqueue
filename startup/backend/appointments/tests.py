@@ -493,7 +493,7 @@ class AuthFlowTests(APITestCase):
 		self.assertContains(response, "window.TURNSTILE_SITE_KEY = 'site-key-123'")
 
 	def test_register_verify_and_login_patient_flow(self):
-		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True), patch('appointments.auth_views.send_mail'):
+		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True), patch('appointments.auth_views.send_email'):
 			register_payload = {
 				'name': 'Test Patient',
 				'email': 'patient_auth_flow@example.com',
@@ -563,7 +563,7 @@ class PasswordResetFlowTests(APITestCase):
 		)
 
 	def test_password_reset_request_and_confirm(self):
-		with patch('appointments.auth_views.send_mail'):
+		with patch('appointments.auth_views.send_email'):
 			request_resp = self.client.post(
 				'/api/auth/password-reset/',
 				data={'email': self.user.email},

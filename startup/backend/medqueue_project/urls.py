@@ -4,9 +4,13 @@ from django.views.generic import RedirectView, TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
-AUTH_PAGE_CONTEXT = {
-    'turnstile_site_key': settings.TURNSTILE_SITE_KEY,
-}
+class AuthPageView(TemplateView):
+    template_name = 'auth.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['turnstile_site_key'] = settings.TURNSTILE_SITE_KEY
+        return context
+
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
@@ -17,7 +21,7 @@ urlpatterns = [
     path('recording.html', TemplateView.as_view(template_name='recording.html')),
     path('profile.html', TemplateView.as_view(template_name='profile.html')),
     path('contacts and about.html', TemplateView.as_view(template_name='contacts and about.html')),
-    path('auth.html', TemplateView.as_view(template_name='auth.html', extra_context=AUTH_PAGE_CONTEXT)),
+    path('auth.html', AuthPageView.as_view()),
     path('hospital.html', TemplateView.as_view(template_name='hospital.html')),
     path('doctor.html', TemplateView.as_view(template_name='doctor.html')),
     path('admin-panel.html', TemplateView.as_view(template_name='admin-panel.html')),
