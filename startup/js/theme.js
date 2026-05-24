@@ -110,8 +110,9 @@
     var tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-    if (!e || typeof e.key !== 'string') return;
-    buffer += e.key.toLowerCase();
+      if (e && typeof e.key === "string") {
+        buffer += e.key.toLowerCase();
+      }
     if (buffer.length > MAX_LEN) buffer = buffer.slice(-MAX_LEN);
 
     clearTimeout(bufferTimer);
