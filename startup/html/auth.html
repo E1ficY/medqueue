@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
   <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
-  <script>window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default:"1x00000000000000000000AA" }}';</script>
+  <script>window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default_if_none:"" }}';</script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
   <style>
 
@@ -362,7 +362,7 @@
       }
     }
   </style>
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js?v=20260525"></script>
 </head>
 <body class="page-auth-avant">
   <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
@@ -557,7 +557,7 @@
     const API_URL = `${API_BASE}/api`;
     const AUTH_STORAGE_KEY = 'medqueue_current_user';
     const AUTH_RETURN_KEY = 'medqueue_auth_return_url';
-    const TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+    const TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '';
     const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
     let currentEmail = '';
     let selectedRole  = 'patient';  // 'patient' | 'doctor'
@@ -711,6 +711,10 @@
 
     function mountTurnstile(type) {
       if (IS_FILE_PROTOCOL) return;
+      if (!TURNSTILE_SITE_KEY) {
+        showMessage('Turnstile не настроена на сервере. Проверьте TURNSTILE_SITE_KEY в backend/.env и перезапустите сервер.', 'error');
+        return;
+      }
       const container = turnstileContainer(type);
       if (!container) return;
       const other = type === 'login' ? 'register' : 'login';

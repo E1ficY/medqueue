@@ -1,12 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView, TemplateView
-import os
 from django.conf import settings
 from django.conf.urls.static import static
 
 AUTH_PAGE_CONTEXT = {
-    'turnstile_site_key': os.getenv('TURNSTILE_SITE_KEY', '1x00000000000000000000AA'),
+    'turnstile_site_key': settings.TURNSTILE_SITE_KEY,
 }
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 

@@ -337,7 +337,8 @@ function initCommandPalette() {
   });
 
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+    if ((e.ctrlKey || e.metaKey) && key === 'k') {
       e.preventDefault();
       visible ? close() : open();
     }

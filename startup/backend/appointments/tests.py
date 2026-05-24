@@ -485,6 +485,13 @@ class AINameLookupTests(APITestCase):
 
 @override_settings(EMAIL_HOST_USER='noreply@medqueue.test')
 class AuthFlowTests(APITestCase):
+	def test_auth_page_uses_configured_turnstile_site_key(self):
+		with override_settings(TURNSTILE_SITE_KEY='site-key-123'):
+			response = self.client.get('/auth.html')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertContains(response, "window.TURNSTILE_SITE_KEY = 'site-key-123'")
+
 	def test_register_verify_and_login_patient_flow(self):
 		with patch('appointments.auth_views.verify_recaptcha_token', return_value=True), patch('appointments.auth_views.send_mail'):
 			register_payload = {
