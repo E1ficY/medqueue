@@ -8,17 +8,21 @@ jobs:
   deploy-staging:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
+    env:
+      STAGING_HOST: ${{ secrets.STAGING_HOST }}
+      STAGING_USER: ${{ secrets.STAGING_USER }}
+      STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to Staging Server
-        if: ${{ secrets.STAGING_HOST != '' && secrets.STAGING_USER != '' && secrets.STAGING_SSH_KEY != '' }}
+        if: ${{ env.STAGING_HOST != '' && env.STAGING_USER != '' && env.STAGING_SSH_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          host: ${{ env.STAGING_HOST }}
+          username: ${{ env.STAGING_USER }}
+          key: ${{ env.STAGING_SSH_KEY }}
           script: |
             cd /opt/medqueue
             git fetch --all
@@ -30,7 +34,7 @@ jobs:
             echo "Staging deployment completed successfully"
 
       - name: Skip staging deploy when secrets missing
-        if: ${{ secrets.STAGING_HOST == '' || secrets.STAGING_USER == '' || secrets.STAGING_SSH_KEY == '' }}
+        if: ${{ env.STAGING_HOST == '' || env.STAGING_USER == '' || env.STAGING_SSH_KEY == '' }}
         run: |
           echo "Staging deploy secrets not configured. Set them in GitHub Settings > Secrets > Actions:"
           echo "  - STAGING_HOST"
@@ -41,17 +45,21 @@ jobs:
   deploy-production:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_USER: ${{ secrets.PROD_USER }}
+      PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to Production Server
-        if: ${{ secrets.PROD_HOST != '' && secrets.PROD_USER != '' && secrets.PROD_SSH_KEY != '' }}
+        if: ${{ env.PROD_HOST != '' && env.PROD_USER != '' && env.PROD_SSH_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
+          host: ${{ env.PROD_HOST }}
+          username: ${{ env.PROD_USER }}
+          key: ${{ env.PROD_SSH_KEY }}
           script: |
             cd /opt/medqueue
             git fetch --all
@@ -63,7 +71,7 @@ jobs:
             echo "Production deployment completed successfully"
 
       - name: Skip production deploy when secrets missing
-        if: ${{ secrets.PROD_HOST == '' || secrets.PROD_USER == '' || secrets.PROD_SSH_KEY == '' }}
+        if: ${{ env.PROD_HOST == '' || env.PROD_USER == '' || env.PROD_SSH_KEY == '' }}
         run: |
           echo "Production deploy secrets not configured. Set them in GitHub Settings > Secrets > Actions:"
           echo "  - PROD_HOST"
