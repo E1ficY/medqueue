@@ -42,12 +42,12 @@ def _send_via_resend(*, to: str, subject: str, text: str) -> None:
         or 'MedQueue <onboarding@resend.dev>'
     )
 
-    params = resend.Emails.SendParams(
-        from_=from_email,
-        to=[to],
-        subject=subject,
-        text=text,
-    )
+    params = {
+        "from": from_email,
+        "to": [to],
+        "subject": subject,
+        "text": text,
+    }
     result = resend.Emails.send(params)
     logger.info('Resend email sent: id=%s to=%s subject=%s', result.get('id'), to, subject)
 
