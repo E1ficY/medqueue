@@ -23,6 +23,16 @@ jobs:
 
       - name: Deploy to Staging Server
         if: ${{ env.STAGING_HOST != '' && env.STAGING_USER != '' && env.STAGING_SSH_KEY != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.STAGING_HOST }}
+          username: ${{ env.STAGING_USER }}
+          key: ${{ env.STAGING_SSH_KEY }}
+          source: startup/html/auth.html
+          target: /opt/medqueue/startup/html/
+
+      - name: Deploy to Staging Server
+        if: ${{ env.STAGING_HOST != '' && env.STAGING_USER != '' && env.STAGING_SSH_KEY != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.STAGING_HOST }}
@@ -58,6 +68,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Deploy to Production Server
+        if: ${{ env.PROD_HOST != '' && env.PROD_USER != '' && env.PROD_SSH_KEY != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.PROD_HOST }}
+          username: ${{ env.PROD_USER }}
+          key: ${{ env.PROD_SSH_KEY }}
+          source: startup/html/auth.html
+          target: /opt/medqueue/startup/html/
 
       - name: Deploy to Production Server
         if: ${{ env.PROD_HOST != '' && env.PROD_USER != '' && env.PROD_SSH_KEY != '' }}
