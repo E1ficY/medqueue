@@ -30,9 +30,10 @@ jobs:
           key: ${{ env.STAGING_SSH_KEY }}
           script: |
             cd /opt/medqueue
-            git fetch --all
+            git fetch origin staging
             git checkout staging
-            git pull origin staging
+            git reset --hard origin/staging
+            git clean -fd
             # Run migrations on the remote before restarting services
             docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
@@ -67,9 +68,10 @@ jobs:
           key: ${{ env.PROD_SSH_KEY }}
           script: |
             cd /opt/medqueue
-            git fetch --all
+            git fetch origin main
             git checkout main
-            git pull origin main
+            git reset --hard origin/main
+            git clean -fd
             # Run migrations on the remote before restarting services
             docker compose -f startup/docker-compose.yml run --rm backend python manage.py migrate --noinput || true
             docker compose -f startup/docker-compose.yml up -d --build
