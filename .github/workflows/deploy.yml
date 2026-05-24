@@ -3,6 +3,11 @@ name: MedQueue Deploy
 on:
   push:
     branches: ["staging", "main"]
+  workflow_dispatch:
+
+concurrency:
+  group: medqueue-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy-staging:
