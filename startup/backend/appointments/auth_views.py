@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from .email_service import send_email
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
@@ -237,23 +237,14 @@ def register_user(request):
             phone=phone,
         )
     
-    from_email = settings.EMAIL_HOST_USER
-    if not from_email:
-        return Response(
-            {'error': 'Email-сервис не настроен. Заполните EMAIL_HOST_USER и EMAIL_HOST_PASSWORD в файле .env и перезапустите сервер.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
     try:
-        send_mail(
+        send_email(
+            to=email,
             subject='Код подтверждения MedQueue',
-            message=f'Ваш код подтверждения: {code}\n\nКод действителен в течение 10 минут.\n\nЕсли вы не регистрировались — просто проигнорируйте это письмо.',
-            from_email=from_email,
-            recipient_list=[email],
-            fail_silently=False,
+            text=f'Ваш код подтверждения: {code}\n\nКод действителен в течение 10 минут.\n\nЕсли вы не регистрировались — просто проигнорируйте это письмо.',
         )
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        logger.error('[EMAIL ERROR] register: %s', e)
         return Response(
             {'error': f'Не удалось отправить письмо: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -484,23 +475,14 @@ def resend_code(request):
         username=old_username, role=old_role, doctor_code=old_doctor_code,
     )
     
-    from_email = settings.EMAIL_HOST_USER
-    if not from_email:
-        return Response(
-            {'error': 'Email-сервис не настроен. Заполните EMAIL_HOST_USER в файле .env и перезапустите сервер.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
     try:
-        send_mail(
+        send_email(
+            to=email,
             subject='Код подтверждения MedQueue',
-            message=f'Ваш новый код подтверждения: {new_code}\n\nКод действителен в течение 10 минут.',
-            from_email=from_email,
-            recipient_list=[email],
-            fail_silently=False,
+            text=f'Ваш новый код подтверждения: {new_code}\n\nКод действителен в течение 10 минут.',
         )
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        logger.error('[EMAIL ERROR] resend: %s', e)
         return Response(
             {'error': f'Не удалось отправить письмо: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -537,22 +519,14 @@ def password_reset_request(request):
     code = ''.join(random.choices(string.digits, k=6))
     PasswordResetCode.objects.create(email=email, code=code)
 
-    from_email = settings.EMAIL_HOST_USER
-    if not from_email:
-        return Response(
-            {'error': 'Email-сервис не настроен'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
     try:
-        send_mail(
+        send_email(
+            to=email,
             subject='Сброс пароля MedQueue',
-            message='Вы запросили сброс пароля.\nВаш код: ' + code + '\n\nКод действителен 15 минут.\nЕсли вы ничего не запрашивали — просто игнорируйте это письмо.',
-            from_email=from_email,
-            recipient_list=[email],
-            fail_silently=False,
+            text='Вы запросили сброс пароля.\nВаш код: ' + code + '\n\nКод действителен 15 минут.\nЕсли вы ничего не запрашивали — просто игнорируйте это письмо.',
         )
     except Exception as e:
-        print(f'[EMAIL ERROR] {e}')
+        logger.error('[EMAIL ERROR] password_reset: %s', e)
         return Response({'error': f'Не удалось отправить письмо: {e}'}, status=500)
 
     return Response({'message': f'Код отправлен на {email}'})

@@ -254,16 +254,34 @@ TIME_ZONE = 'Asia/Almaty'
 USE_I18N = True
 USE_TZ = True
 
-# Email настройки (Yandex Mail)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '465'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
-EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
+# Email настройки
+# Если задан RESEND_API_KEY — используем Resend HTTP API (работает на DigitalOcean, нет нужды в SMTP-портах).
+# Иначе — стандартный SMTP (Yandex и пр.).
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '').strip()
+
+if RESEND_API_KEY:
+    # Resend SMTP relay (порт 465 SSL) — но DO блокирует; используем встроенный Resend backend
+    # https://resend.com/docs/send-with-django
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.resend.com'
+    EMAIL_PORT = 465
+    EMAIL_USE_SSL = True
+    EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = 'resend'
+    EMAIL_HOST_PASSWORD = RESEND_API_KEY
+    EMAIL_TIMEOUT = 15
+    # DEFAULT_FROM_EMAIL будет взят из env (RESEND_FROM_EMAIL) или задан по умолчанию
+    DEFAULT_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', os.getenv('EMAIL_HOST_USER', 'onboarding@resend.dev'))
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '465'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
+    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
+    EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
 
 # Monitoring (PostHog)
 POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
