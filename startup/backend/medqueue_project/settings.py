@@ -320,5 +320,5 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'UTC')
 
 # Google & Facebook OAuth Client Settings
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '').strip()
-FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '').strip()
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '1042138271590-6e0dq3mugud8cg03j92ssl5v1bb4f1ap.apps.googleusercontent.com').strip()
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '2162637484523590').strip()
