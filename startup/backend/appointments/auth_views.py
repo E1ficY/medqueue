@@ -31,6 +31,7 @@ from .security import (
     register_login_failure,
     clear_login_failures,
     check_email_send_allowed,
+    log_failed_login,
 )
 from .throttles import (
     AuthLoginThrottle,
@@ -45,8 +46,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_tokens_for_user(user):
-    """Генерирует JWT access и refresh токены для пользователя"""
+    """Генерирует JWT access и refresh токены для пользователя с ролью и ID"""
     refresh = RefreshToken.for_user(user)
+    role = get_effective_role(user)
+    refresh['role'] = role
+    refresh.access_token['role'] = role
+    refresh['id'] = user.id
+    refresh.access_token['id'] = user.id
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
@@ -405,6 +411,7 @@ def login_user(request):
     
     if user is None:
         register_login_failure(login_id.lower(), client_ip)
+        log_failed_login(login_id.lower(), client_ip, request.META.get('HTTP_USER_AGENT'))
         return Response(
             {'error': 'Неверный логин или пароль'},
             status=status.HTTP_401_UNAUTHORIZED
@@ -412,6 +419,7 @@ def login_user(request):
 
     if not user.is_active:
         register_login_failure(login_id.lower(), client_ip)
+        log_failed_login(login_id.lower(), client_ip, request.META.get('HTTP_USER_AGENT'))
         return Response(
             {'error': 'Аккаунт не активирован. Подтвердите email кодом.'},
             status=status.HTTP_403_FORBIDDEN
@@ -1075,3 +1083,151 @@ def _fallback_ai_response(message):
         return {'reply': 'Опишите симптомы точнее: что болит, как давно и есть ли температура. Подберу врача и первый шаг.'}
 
     return {'reply': 'Уточните запрос: врач, специальность, больница или запись на прием.'}
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_oauth(request):
+    """
+    POST /api/auth/google/
+    Бэкенд принимает access_token, запрашивает профиль у Google и возвращает JWT.
+    """
+    access_token = request.data.get('access_token')
+    if not access_token:
+        return Response({'error': 'access_token обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        url = 'https://www.googleapis.com/oauth2/v3/userinfo'
+        req = urllib.request.Request(
+            url,
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            profile = json.loads(response.read().decode('utf-8'))
+    except Exception as e:
+        logger.error('[GOOGLE OAuth Error]: %s', e)
+        return Response({'error': 'Не удалось проверить токен в Google: ' + str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    email = normalize_email(profile.get('email'))
+    if not email:
+        return Response({'error': 'Google не вернул email'}, status=status.HTTP_400_BAD_REQUEST)
+
+    name = profile.get('name') or profile.get('given_name') or email.split('@')[0]
+
+    with transaction.atomic():
+        user = User.objects.filter(email=email).first()
+        if not user:
+            username = email.split('@')[0]
+            # Валидация логина
+            import re
+            if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+                username = f"user_{User.objects.count() + 1}"
+            if User.objects.filter(username=username).exists():
+                import uuid
+                username = f"{username}_{uuid.uuid4().hex[:6]}"
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=name,
+                is_active=True
+            )
+            user.set_password(User.objects.make_random_password(length=24))
+            user.save()
+        else:
+            if not user.is_active:
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'role': 'patient'}
+        )
+
+    tokens = get_tokens_for_user(user)
+    role = get_effective_role(user)
+
+    return Response({
+        'message': 'Вход выполнен успешно через Google',
+        'user': {
+            'id': user.id,
+            'name': user.first_name or user.username,
+            'email': user.email,
+            'username': user.username,
+            'role': role,
+        },
+        **tokens
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def facebook_oauth(request):
+    """
+    POST /api/auth/facebook/
+    Бэкенд принимает access_token, запрашивает профиль у Facebook Graph API и возвращает JWT.
+    """
+    access_token = request.data.get('access_token')
+    if not access_token:
+        return Response({'error': 'access_token обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        quoted_token = urllib.parse.quote(access_token)
+        url = f"https://graph.facebook.com/me?fields=id,name,email&access_token={quoted_token}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            profile = json.loads(response.read().decode('utf-8'))
+    except Exception as e:
+        logger.error('[FACEBOOK OAuth Error]: %s', e)
+        return Response({'error': 'Не удалось проверить токен в Facebook: ' + str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    fb_id = profile.get('id')
+    if not fb_id:
+        return Response({'error': 'Facebook не вернул уникальный идентификатор профиля'}, status=status.HTTP_400_BAD_REQUEST)
+
+    email = normalize_email(profile.get('email'))
+    if not email:
+        email = f"fb_{fb_id}@facebook.com"
+
+    name = profile.get('name') or email.split('@')[0]
+
+    with transaction.atomic():
+        user = User.objects.filter(email=email).first()
+        if not user:
+            username = f"fb_{fb_id}"
+            if User.objects.filter(username=username).exists():
+                import uuid
+                username = f"{username}_{uuid.uuid4().hex[:6]}"
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=name,
+                is_active=True
+            )
+            user.set_password(User.objects.make_random_password(length=24))
+            user.save()
+        else:
+            if not user.is_active:
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'role': 'patient'}
+        )
+
+    tokens = get_tokens_for_user(user)
+    role = get_effective_role(user)
+
+    return Response({
+        'message': 'Вход выполнен успешно через Facebook',
+        'user': {
+            'id': user.id,
+            'name': user.first_name or user.username,
+            'email': user.email,
+            'username': user.username,
+            'role': role,
+        },
+        **tokens
+    })

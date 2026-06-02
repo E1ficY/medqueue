@@ -37,8 +37,8 @@ def _send_via_resend(*, to: str, subject: str, text: str) -> None:
     resend.api_key = api_key
 
     from_email = (
-        getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-        or os.getenv('RESEND_FROM_EMAIL', '')
+        os.getenv('RESEND_FROM_EMAIL', '')
+        or getattr(settings, 'RESEND_FROM_EMAIL', '')
         or 'MedQueue <onboarding@resend.dev>'
     )
 

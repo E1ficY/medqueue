@@ -11,3 +11,6 @@ posthog>=3.6.0
 locust>=2.32.1
 psycopg2-binary==2.9.9
 resend>=2.0.0
+django-redis>=5.4.0
+redis>=5.0.0
+celery>=5.2.0

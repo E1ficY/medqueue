@@ -21,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env', override=False)
 FRONTEND_DIR = Path(os.getenv('FRONTEND_DIR', str(BASE_DIR.parent)))
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '').strip()
+CACHE_URL = os.getenv('CACHE_URL', '').strip()
 
 
 # Quick-start development settings - unsuitable for production
@@ -60,11 +61,14 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'appointments.middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'appointments.middleware.PasswordValidationMiddleware',
     'django.middleware.common.CommonMiddleware',
     'appointments.monitoring.PostHogMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'appointments.middleware.AdminRBACMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -106,11 +110,30 @@ if DB_ENGINE == 'postgres':
             'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
+
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+if CACHE_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': CACHE_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'medqueue-local-cache',
         }
     }
 
@@ -286,3 +309,12 @@ else:
 # Monitoring (PostHog)
 POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
 POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://us.i.posthog.com').strip()
+
+# Celery configuration
+# By default we use Redis configured in `CACHE_URL` as broker and result backend.
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', CACHE_URL or 'redis://redis:6379/1')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'UTC')

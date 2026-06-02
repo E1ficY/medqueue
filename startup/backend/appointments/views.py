@@ -23,6 +23,7 @@ from .serializers import (
     DoctorSerializer,
 )
 from .throttles import UserThrottle
+from .permissions import IsAdminRole, IsResourceOwnerOrAdmin
 
 
 class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
@@ -157,8 +158,10 @@ class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewset
 
     def get_permissions(self):
         """GET списка доступен только авторизованным пользователям."""
-        if self.action in {'list', 'my_appointments', 'update_comment'}:
+        if self.action in {'list', 'my_appointments'}:
             return [IsAuthenticated()]
+        if self.action == 'update_comment':
+            return [IsResourceOwnerOrAdmin()]
         return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
@@ -254,7 +257,7 @@ class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewset
         })
 
     @action(detail=False, methods=['patch'], url_path='update_comment',
-            permission_classes=[IsAuthenticated])
+            permission_classes=[IsResourceOwnerOrAdmin])
     def update_comment(self, request):
         """
         Обновить/добавить комментарий к записи по коду.
@@ -273,12 +276,8 @@ class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewset
 
         appointment = get_object_or_404(Appointment, code=code)
 
-        # Только владелец записи может менять комментарий.
-        if appointment.user != request.user:
-            return Response(
-                {'error': 'Нет доступа'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Check BOLA via DRF permission class
+        self.check_object_permissions(request, appointment)
 
         appointment.comment = comment.strip()
         appointment.save(update_fields=['comment'])

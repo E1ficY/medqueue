@@ -25,6 +25,8 @@ urlpatterns = [
     path('auth/validate-doctor-code/', auth_views.validate_doctor_code),
     path('auth/password-reset/', auth_views.password_reset_request),
     path('auth/password-reset/confirm/', auth_views.password_reset_confirm),
+    path('auth/google/', auth_views.google_oauth),
+    path('auth/facebook/', auth_views.facebook_oauth),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('ai/chat/', auth_views.ai_chat),
     # Doctor portal

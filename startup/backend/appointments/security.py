@@ -78,3 +78,31 @@ def check_email_send_allowed(purpose, email, ip):
 
     cache.set(cooldown_key, 1, timeout=EMAIL_CODE_COOLDOWN_SECONDS)
     return True, None
+
+
+def log_failed_login(email, ip, user_agent):
+    import os
+    import json
+    from django.utils import timezone
+    from django.conf import settings
+
+    log_dir = os.path.join(settings.BASE_DIR, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'security.log')
+
+    log_entry = {
+        'timestamp': timezone.now().isoformat(),
+        'event': 'FAILED_LOGIN',
+        'email': email,
+        'ip': ip,
+        'user_agent': user_agent or 'unknown'
+    }
+
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry) + '\n')
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Failed to write security log: %s. Entry: %s", e, log_entry)
+
