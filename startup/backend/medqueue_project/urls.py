@@ -9,6 +9,8 @@ class AuthPageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['turnstile_site_key'] = settings.TURNSTILE_SITE_KEY
+        context['google_client_id'] = getattr(settings, 'GOOGLE_CLIENT_ID', '')
+        context['facebook_app_id'] = getattr(settings, 'FACEBOOK_APP_ID', '')
         return context
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView

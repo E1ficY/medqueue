@@ -9,7 +9,11 @@
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
   <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
-  <script>window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default_if_none:"" }}';</script>
+  <script>
+    window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default_if_none:"" }}';
+    window.GOOGLE_CLIENT_ID = '{{ google_client_id|default_if_none:"" }}';
+    window.FACEBOOK_APP_ID = '{{ facebook_app_id|default_if_none:"" }}';
+  </script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
   <style>
 
@@ -342,6 +346,19 @@
       color: #2dd4bf;
     }
 
+    [data-theme="dark"] .oauth-divider span {
+      background: #111827 !important;
+      color: #9ca3af !important;
+    }
+    [data-theme="dark"] .oauth-buttons button {
+      background: #0d1117 !important;
+      border-color: rgba(136,176,169,0.20) !important;
+      color: #cbd5e1 !important;
+    }
+    [data-theme="dark"] .oauth-buttons button:hover {
+      background: #1f2937 !important;
+    }
+
     /* ===== MOBILE FIXES ===== */
     @media (max-width: 480px) {
       body { padding: 12px; }
@@ -396,6 +413,20 @@
           <div id="loginTurnstile" aria-label="Проверка Cloudflare Turnstile" style="min-height:65px;"></div>
         </div>
         <button type="submit" class="submit-btn">Войти</button>
+        <div class="oauth-divider" style="text-align: center; margin: 18px 0; color: #9ca3af; font-size: 13px; font-weight: 600; position: relative;">
+          <span style="background: white; padding: 0 10px; position: relative; z-index: 1; transition: background 0.3s;">или войти через</span>
+          <hr style="position: absolute; top: 50%; left: 0; right: 0; border: none; border-top: 1px solid #e5e7eb; margin: 0; z-index: 0;" />
+        </div>
+        <div class="oauth-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+          <button type="button" onclick="handleGoogleLogin()" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; background: white; font-weight: 700; font-size: 14px; cursor: pointer; color: #374151; transition: all 0.2s;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 18px; height: 18px;" />
+            Google
+          </button>
+          <button type="button" onclick="handleFacebookLogin()" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; background: white; font-weight: 700; font-size: 14px; cursor: pointer; color: #374151; transition: all 0.2s;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook" style="width: 18px; height: 18px;" />
+            Facebook
+          </button>
+        </div>
     </form>
 
     <!-- РЕГИСТРАЦИЯ -->
@@ -595,7 +626,75 @@
       }
       window.location.href = 'profile.html';
     }
+
+    function handleGoogleLogin() {
+      // Default fallback client ID if not configured on server
+      const clientId = window.GOOGLE_CLIENT_ID || '109284209384-unconfigured-placeholder.apps.googleusercontent.com';
+      const redirectUri = window.location.origin + window.location.pathname;
+      const scope = 'openid email profile';
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                  `client_id=${clientId}&` +
+                  `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                  `response_type=token&` +
+                  `scope=${encodeURIComponent(scope)}&` +
+                  `state=google`;
+      window.location.href = url;
+    }
+
+    function handleFacebookLogin() {
+      const clientId = window.FACEBOOK_APP_ID || 'unconfigured-placeholder-app-id';
+      const redirectUri = window.location.origin + window.location.pathname;
+      const scope = 'email public_profile';
+      const url = `https://www.facebook.com/v18.0/dialog/oauth?` +
+                  `client_id=${clientId}&` +
+                  `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                  `response_type=token&` +
+                  `scope=${encodeURIComponent(scope)}&` +
+                  `state=facebook`;
+      window.location.href = url;
+    }
+
+    async function loginWithProvider(provider, accessToken) {
+      showMessage(`Вход через ${provider === 'google' ? 'Google' : 'Facebook'}...`, 'success');
+      try {
+        const res = await fetch(`${API_URL}/auth/${provider}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: accessToken })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
+          localStorage.setItem('medqueue_access_token', data.access);
+          localStorage.setItem('medqueue_refresh_token', data.refresh);
+          showMessage('Вход выполнен успешно!', 'success');
+          setTimeout(() => {
+            redirectAfterAuth();
+          }, 1000);
+        } else {
+          showMessage(data.error || 'Ошибка входа через внешнего провайдера', 'error');
+        }
+      } catch (err) {
+        showMessage('Не удалось подключиться к серверу авторизации', 'error');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async function() {
+      // Check for OAuth hash callback redirect
+      const hash = window.location.hash;
+      if (hash) {
+        const hashParams = new URLSearchParams(hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const state = hashParams.get('state');
+        if (accessToken) {
+          window.history.replaceState(null, null, window.location.pathname);
+          if (state === 'google' || state === 'facebook') {
+            await loginWithProvider(state, accessToken);
+            return;
+          }
+        }
+      }
+
       const currentUser = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');

@@ -318,3 +318,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'UTC')
+
+# Google & Facebook OAuth Client Settings
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '').strip()
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '').strip()
