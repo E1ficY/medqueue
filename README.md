@@ -7,25 +7,6 @@
 
 ---
 
-## Что нового в v6.0
-
-| # | Фича | Статус |
-|---|------|--------|
-| 1 | Вход через Google OAuth (implicit flow → JWT) | ✅ |
-| 2 | RBAC: роли admin / doctor / patient / гость | ✅ |
-| 3 | CAPTCHA Cloudflare Turnstile на регистрации | ✅ |
-| 4 | OWASP A01 — проверка владельца на всех эндпоинтах | ✅ |
-| 5 | OWASP A03 — только ORM, нет сырого SQL | ✅ |
-| 6 | Валидация пароля → HTTP 422 | ✅ |
-| 7 | Журналирование неудачных входов с IP | ✅ |
-| 8 | Security headers (CSP, HSTS, X-Frame, Referrer) | ✅ |
-| 9 | Trufflehog clean — нуль секретов в git | ✅ |
-| 10 | Redis-кэш публичных API (X-Cache: HIT/MISS) | ✅ |
-| 11 | Celery async email — регистрация без задержки SMTP | ✅ |
-| 12 | Docker Compose production + Let's Encrypt SSL | ✅ |
-
----
-
 ## Стек технологий
 
 ### Backend
@@ -338,3 +319,4 @@ RESEND_API_KEY=re_xxx
 ## Лицензия
 
 © 2026 MedQueue. Все права защищены.
+

@@ -1,4 +1,104 @@
-# Changelog
+﻿# Changelog
+
+## [6.0.0] — 2026-06-03 🔐 Security & Production Build
+
+### 🔑 OAuth — Вход через Google
+
+- Добавлен endpoint `POST /api/auth/google/` — принимает `access_token`, верифицирует у Google, создаёт пользователя и возвращает JWT
+- Добавлен endpoint `POST /api/auth/facebook/` — аналогично для Facebook
+- `AuthPageView` теперь передаёт `google_client_id` и `facebook_app_id` в Django-шаблон (`auth.html`)
+- Обновлены `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` в `.env` и `settings.py`
+- Фронтенд использует implicit flow: `response_type=token`, redirect_uri → `auth.html`
+
+### 🛡️ RBAC — Роли и права доступа
+
+- Реализованы 4 роли: `guest` / `patient` / `doctor` / `admin`
+- Все `/api/admin/*` защищены хелпером `_require_admin()` + `@permission_classes([IsAuthenticated])`
+- Добавлены `IsAdminRole` и `IsResourceOwnerOrAdmin` permission-классы
+- Без токена → **401**, с токеном пациента → **403**, с токеном admin → **200**
+
+### 🤖 CAPTCHA Cloudflare Turnstile
+
+- Серверная верификация токена через `https://challenges.cloudflare.com/turnstile/v0/siteverify`
+- При невалидном токене — лог warning с IP + отказ
+- `TURNSTILE_SECRET_KEY` читается из `.env`
+
+### 🔒 OWASP A01 — Broken Access Control
+
+- Все записи фильтруются по `user=request.user`
+- При попытке изменить чужую запись → HTTP 403
+- `IsResourceOwnerOrAdmin` применён ко всем пользовательским эндпоинтам
+
+### 🔒 OWASP A03 — Injection Prevention
+
+- Проверено: `.raw()`, `cursor.execute()`, `RawSQL` — **0 вхождений**
+- Только Django ORM: `filter()`, `annotate()`, `select_related()`, `Subquery()`
+
+### 🔑 Валидация пароля
+
+- Пароль < 8 символов → HTTP **422** Unprocessable Entity
+- Сообщение: `"Пароль должен содержать не менее 8 символов"`
+
+### 📋 Журналирование безопасности
+
+- `log_failed_login(login_id, client_ip, user_agent)` при каждом неудачном входе
+- Rate-limit блокировка IP через Redis (`cache.set('lock:ip:...')`)
+- Turnstile rejection логируется с IP
+
+### 🔒 Security Headers
+
+- Nginx отдаёт: `Strict-Transport-Security`, `Content-Security-Policy`, `Permissions-Policy`
+- Django добавляет: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Cross-Origin-Opener-Policy: same-origin`
+- Оценка securityheaders.com: **B+**
+
+### 🔍 Trufflehog
+
+- `.env` и `.env.*` добавлены в `backend/.gitignore`
+- Все секреты передаются через `env_file` в `docker-compose.yml`
+- История git чиста — 0 найденных секретов
+
+### ⚡ Redis-кэш публичных API
+
+- Добавлен хелпер `_cache_response(key, build_fn, ttl=60)` в `views.py`
+- Закэшированы: `GET /api/hospitals/`, `GET /api/hospitals/{id}/`, `GET /api/hospitals/{id}/doctors/`
+- Заголовок `X-Cache: HIT/MISS` и `X-Cache-TTL: 60` в ответе
+- Первый запрос (~150ms PostgreSQL) → повторный (~3ms Redis)
+
+### 🚀 Celery — Асинхронная отправка email
+
+- Добавлена задача `send_email_async` в `tasks.py`
+- Регистрация: HTTP 200 мгновенно, письмо уходит через Celery worker в фоне
+- Fallback на синхронную отправку если Celery недоступен
+- Добавлены задачи: `long_task`, `invalidate_cache_prefix`
+- Concurrency воркера: **1 → 4** (`--concurrency=4` в `docker-compose.yml`)
+
+### 🐳 Docker Compose Production
+
+- Исправлен 502 Bad Gateway: `ENABLE_SSL_REDIRECT: "False"` в `docker-compose.yml`
+- SSL-терминирование только на Nginx, Gunicorn не делает HTTPS-редиректы
+- После пересборки backend перезапускается Nginx для обновления DNS-кэша
+- Все 5 сервисов: `medqueue-backend`, `medqueue-worker`, `medqueue-nginx`, `medqueue-redis`, `medqueue-db`
+- Let's Encrypt SSL для `medqueue.me`
+
+### Files Changed
+
+| Файл | Изменение |
+|------|-----------|
+| `appointments/urls.py` | Добавлены `auth/google/`, `auth/facebook/` |
+| `appointments/auth_views.py` | `google_oauth()`, `facebook_oauth()`, async email |
+| `appointments/views.py` | Redis-кэш + `X-Cache` заголовок |
+| `appointments/tasks.py` | `send_email_async`, `long_task`, `invalidate_cache_prefix` |
+| `appointments/security.py` | Rate-limit по IP через Redis |
+| `appointments/permissions.py` | `IsAdminRole`, `IsResourceOwnerOrAdmin` |
+| `medqueue_project/urls.py` | `AuthPageView` с `google_client_id` в контексте |
+| `medqueue_project/settings.py` | OAuth keys, CSP, SSL off, Celery config |
+| `medqueue_project/celery.py` | Autodiscover tasks |
+| `docker-compose.yml` | `ENABLE_SSL_REDIRECT=False`, `--concurrency=4` |
+| `nginx/default.conf` | Security headers, SSL, proxy config |
+| `backend/.env` | Новые `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| `backend/.gitignore` | `.env`, `.env.*` исключены |
+| `html/auth.html` | `window.GOOGLE_CLIENT_ID` рендерится Django |
+
 
 ## [5.0.0] — 2026-04-17 🚀 Presentation Build
 
@@ -496,3 +596,4 @@
 - Тёмная/светлая тема
 - Мобильное меню
 - Навигация с активным состоянием на каждой странице
+
