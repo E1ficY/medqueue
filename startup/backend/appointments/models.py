@@ -36,6 +36,10 @@ class Hospital(models.Model):
         verbose_name = "Больница"
         verbose_name_plural = "Больницы"
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_active'], name='hospital_is_active_idx'),
+            models.Index(fields=['is_active', 'name'], name='hospital_active_name_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -125,6 +129,11 @@ class Doctor(models.Model):
         verbose_name = "Врач"
         verbose_name_plural = "Врачи"
         ordering = ['specialty', 'full_name']
+        indexes = [
+            models.Index(fields=['hospital', 'is_active'], name='doctor_hospital_active_idx'),
+            models.Index(fields=['specialty', 'is_active'], name='doctor_specialty_active_idx'),
+            models.Index(fields=['is_active'], name='doctor_is_active_idx'),
+        ]
 
     def __str__(self):
         return f"{self.full_name} ({self.specialty}) — {self.hospital.name}"
@@ -269,6 +278,20 @@ class Appointment(models.Model):
         verbose_name = "Запись"
         verbose_name_plural = "Записи"
         ordering = ['-created_at']
+        indexes = [
+            # Записи конкретного пользователя — профиль, история
+            models.Index(fields=['user', 'status'], name='appt_user_status_idx'),
+            models.Index(fields=['user', 'created_at'], name='appt_user_created_idx'),
+            # Очередь к врачу — самый частый subquery
+            models.Index(fields=['doctor', 'status', 'datetime'], name='appt_doctor_status_dt_idx'),
+            # Очередь в больнице
+            models.Index(fields=['hospital', 'status', 'datetime'], name='appt_hospital_status_dt_idx'),
+            # Поиск по коду записи (уже unique, но явный индекс)
+            models.Index(fields=['code'], name='appt_code_idx'),
+            # Для admin stats / подсчёта
+            models.Index(fields=['status'], name='appt_status_idx'),
+            models.Index(fields=['created_at'], name='appt_created_at_idx'),
+        ]
     
     def __str__(self):
         return f"{self.code} - {self.patient_name} ({self.hospital.name})"
@@ -525,6 +548,10 @@ class DoctorReview(models.Model):
         verbose_name = "Отзыв о враче"
         verbose_name_plural = "Отзывы о врачах"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['doctor', 'created_at'], name='review_doctor_created_idx'),
+            models.Index(fields=['doctor'], name='review_doctor_idx'),
+        ]
 
     def __str__(self):
         return f"{self.doctor.full_name} • {self.rating}/5"
@@ -549,6 +576,11 @@ class VerificationCode(models.Model):
     class Meta:
         verbose_name = "Код верификации"
         verbose_name_plural = "Коды верификации"
+        indexes = [
+            # Поиск кода при верификации email
+            models.Index(fields=['email', 'created_at'], name='vercode_email_created_idx'),
+            models.Index(fields=['email'], name='vercode_email_idx'),
+        ]
 
     def is_expired(self):
         """Истёк ли код (10 минут)"""
@@ -567,6 +599,11 @@ class PasswordResetCode(models.Model):
     class Meta:
         verbose_name = "Код сброса пароля"
         verbose_name_plural = "Коды сброса пароля"
+        indexes = [
+            # Поиск кода при сбросе пароля
+            models.Index(fields=['email', 'created_at'], name='resetcode_email_created_idx'),
+            models.Index(fields=['email'], name='resetcode_email_idx'),
+        ]
 
     def is_expired(self):
         return (timezone.now() - self.created_at).total_seconds() > 900  # 15 минут
