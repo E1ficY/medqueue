@@ -649,6 +649,9 @@ def subscription_activate(request):
     if plan_id not in SUBSCRIPTION_PLANS:
         return Response({'error': 'Выбранный тариф не существует'}, status=400)
 
+    if plan_id == 'plus':
+        return Response({'error': 'Оплата Plus производится через PayPal Checkout'}, status=400)
+
     sub, _ = UserSubscription.objects.get_or_create(
         user=user,
         defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
@@ -1322,3 +1325,148 @@ def admin_users(request):
         'is_active':  u.is_active,
     } for u in users]
     return Response(data)
+
+import requests
+import base64
+import logging
+logger = logging.getLogger(__name__)
+
+def get_paypal_access_token():
+    client_id = settings.PAYPAL_CLIENT_ID
+    secret = settings.PAYPAL_SECRET
+    auth_str = f"{client_id}:{secret}"
+    b64_auth_str = base64.b64encode(auth_str.encode('ascii')).decode('ascii')
+    
+    base_url = "https://api-m.sandbox.paypal.com" if settings.PAYPAL_MODE == 'sandbox' else "https://api-m.paypal.com"
+    url = f"{base_url}/v1/oauth2/token"
+    
+    headers = {
+        "Accept": "application/json",
+        "Accept-Language": "en_US",
+        "Authorization": f"Basic {b64_auth_str}"
+    }
+    data = {"grant_type": "client_credentials"}
+    
+    response = requests.post(url, headers=headers, data=data)
+    response.raise_for_status()
+    return response.json()['access_token'], base_url
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_paypal_order(request):
+    """POST /api/subscription/create-paypal-order/"""
+    user, err = _require_patient(request)
+    if err: return err
+
+    plan_id = (request.data.get('plan_id') or 'plus').strip().lower()
+    if plan_id != 'plus':
+        return Response({'error': 'Checkout доступен только для тарифа Plus'}, status=400)
+
+    selected = SUBSCRIPTION_PLANS[plan_id]
+    amount_kzt = selected['price_kzt']
+    # PayPal normally requires supported currencies like USD. KZT is not directly supported.
+    # We convert KZT to USD (approx 1 USD = 500 KZT) for integration demo purposes.
+    amount_usd = round(amount_kzt / 500.0, 2)
+
+    try:
+        access_token, base_url = get_paypal_access_token()
+        url = f"{base_url}/v2/checkout/orders"
+        
+        success_url = request.data.get('success_url')
+        cancel_url = request.data.get('cancel_url')
+        if not success_url or not cancel_url:
+            success_url = request.build_absolute_uri('/') + 'subscription.html?success=true'
+            cancel_url = request.build_absolute_uri('/') + 'subscription.html?canceled=true'
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {access_token}",
+        }
+        
+        payload = {
+            "intent": "CAPTURE",
+            "purchase_units": [{
+                "reference_id": str(user.id),
+                "description": f"Тариф {selected['title']}",
+                "amount": {
+                    "currency_code": "USD",
+                    "value": str(amount_usd)
+                }
+            }],
+            "application_context": {
+                "return_url": success_url,
+                "cancel_url": cancel_url,
+                "user_action": "PAY_NOW"
+            }
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        
+        data = response.json()
+        approve_link = next((link['href'] for link in data['links'] if link['rel'] == 'approve'), None)
+        
+        return Response({'checkout_url': approve_link, 'order_id': data['id']})
+    except Exception as e:
+        logger.error(f"PayPal Order Error: {e}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def capture_paypal_order(request):
+    """POST /api/subscription/capture-paypal-order/"""
+    user, err = _require_patient(request)
+    if err: return err
+    
+    order_id = request.data.get('token')
+    if not order_id:
+        return Response({'error': 'Не передан token заказа'}, status=400)
+        
+    try:
+        access_token, base_url = get_paypal_access_token()
+        url = f"{base_url}/v2/checkout/orders/{order_id}/capture"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {access_token}",
+        }
+        
+        response = requests.post(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        
+        if data['status'] == 'COMPLETED':
+            sub, _ = UserSubscription.objects.get_or_create(
+                user=user,
+                defaults={'plan': 'free', 'status': 'active', 'auto_taxi_enabled': False}
+            )
+            sub.plan = 'plus'
+            sub.status = 'active'
+            sub.auto_taxi_enabled = False
+            sub.next_billing_date = timezone.now().date() + timedelta(days=30)
+            sub.save()
+
+            capture = data['purchase_units'][0]['payments']['captures'][0]
+            amount_paid = float(capture['amount']['value'])
+            currency = capture['amount']['currency_code']
+            
+            PaymentTransaction.objects.create(
+                user=user,
+                subscription=sub,
+                amount=amount_paid,
+                currency=currency,
+                status='paid',
+                transaction_ref=order_id,
+                merchant_name='PayPal Checkout',
+                description="Оплата тарифа Plus",
+                paid_at=timezone.now()
+            )
+            
+            return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
+        else:
+            return Response({'error': f"Заказ не завершен. Статус: {data['status']}"}, status=400)
+            
+    except Exception as e:
+        logger.error(f"PayPal Capture Error: {e}")
+        return Response({'error': str(e)}, status=500)

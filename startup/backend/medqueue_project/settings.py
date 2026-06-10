@@ -19,9 +19,14 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env', override=False)
-FRONTEND_DIR = Path(os.getenv('FRONTEND_DIR', str(BASE_DIR.parent)))
+FRONTEND_DIR = Path('/frontend')
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '').strip()
 CACHE_URL = os.getenv('CACHE_URL', '').strip()
+
+# Stripe Keys
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '').strip()
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '').strip()
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '').strip()
 
 
 # Quick-start development settings - unsuitable for production
@@ -55,12 +60,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     'corsheaders',
+    'csp',
     'appointments',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'appointments.middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'appointments.middleware.PasswordValidationMiddleware',
@@ -261,15 +268,15 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
-ENABLE_SSL_REDIRECT = os.getenv('ENABLE_SSL_REDIRECT', 'False') == 'True'
+ENABLE_SSL_REDIRECT = False
 
-if not DEBUG and ENABLE_SSL_REDIRECT:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+# if not DEBUG and ENABLE_SSL_REDIRECT:
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
+#     SECURE_HSTS_SECONDS = 31536000
+#     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#     SECURE_HSTS_PRELOAD = True
 
 # Язык и timezone
 LANGUAGE_CODE = 'ru-ru'
@@ -320,5 +327,31 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'UTC')
 
 # Google & Facebook OAuth Client Settings
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '1042138271590-6e0dq3mugud8cg03j92ssl5v1bb4f1ap.apps.googleusercontent.com').strip()
-FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '2162637484523590').strip()
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '1042138271590-a7e8t2utlbcqja0tt4ggfib9nh9obqod.apps.googleusercontent.com').strip()
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '').strip()
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', '2162637484523590').strip()
+
+# Content Security Policy
+# Keep this aligned with nginx/default.conf so the browser sees a consistent policy.
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'base-uri': ("'self'",),
+        'block-all-mixed-content': True,
+        'connect-src': ("'self'", 'https://challenges.cloudflare.com'),
+        'default-src': ("'self'",),
+        'font-src': ("'self'", 'https://fonts.gstatic.com', 'data:'),
+        'form-action': ("'self'",),
+        'frame-ancestors': ("'self'",),
+        'frame-src': ('https://challenges.cloudflare.com',),
+        'img-src': ("'self'", 'data:', 'blob:', 'https://upload.wikimedia.org'),
+        'media-src': ("'self'", 'data:', 'blob:'),
+        'object-src': ("'none'",),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://challenges.cloudflare.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com')
+    }
+}
+
+# PayPal Settings
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '').strip()
+PAYPAL_SECRET = os.getenv('PAYPAL_SECRET', '').strip()
+PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox').strip()

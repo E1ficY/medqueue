@@ -6,6 +6,7 @@ from .views import (
     doctor_me, doctor_appointments, doctor_update_appointment, doctor_update_recommendation, doctor_issue_prescription,
     create_doctor_review,
     subscription_plans, subscription_me, subscription_save_card, subscription_verify_card, subscription_activate, subscription_reset_demo,
+    create_paypal_order, capture_paypal_order,
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
 )
@@ -43,6 +44,8 @@ urlpatterns = [
     path('subscription/card/verify/', subscription_verify_card),
     path('subscription/activate/', subscription_activate),
     path('subscription/reset-demo/', subscription_reset_demo),
+    path('subscription/create-paypal-order/', create_paypal_order),
+    path('subscription/capture-paypal-order/', capture_paypal_order),
     # Admin panel
     path('admin/stats/', admin_stats),
     path('admin/hospitals/', admin_hospitals),

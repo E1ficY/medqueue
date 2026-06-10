@@ -4,763 +4,813 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MedQueue — Подписка</title>
+  <meta name="description" content="Управление подпиской MedQueue. Выберите тариф и оплатите через PayPal." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/styles.css?v=4.2" />
-  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1" />
-  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1" />
-  <script src="../js/theme.js"></script>
-  <script src="../js/script.js?v=1.0.8"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --sub-bg-1: #0b1220;
-      --sub-bg-2: #4f776f;
-      --sub-accent: #6f9c92;
-      --sub-accent-soft: rgba(111, 156, 146, 0.16);
-      --sub-line: rgba(148, 163, 184, 0.2);
-      --sub-text-muted: #64748b;
+      --bg: #0b1220;
+      --bg2: #111827;
+      --card: #161f30;
+      --card2: #1a2540;
+      --border: rgba(255,255,255,.07);
+      --accent: #4ade80;
+      --accent2: #22c55e;
+      --paypal: #003087;
+      --paypal2: #009cde;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --muted2: #94a3b8;
+      --plus: #f59e0b;
+      --social: #818cf8;
     }
-    body { font-family: 'Manrope', sans-serif; }
-    .sub-shell {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 20px 18px 56px;
-      display: grid;
-      grid-template-columns: 230px minmax(0, 1fr);
-      gap: 18px;
-      align-items: start;
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
-    .sub-sidebar {
-      position: sticky;
-      top: 16px;
-      background: #fff;
-      border: 1px solid rgba(111,156,146,.2);
-      border-radius: 16px;
-      box-shadow: 0 10px 26px rgba(2,8,23,.08);
-      padding: 14px;
-      display: grid;
-      gap: 12px;
-      z-index: 10;
-    }
-    .sub-side-brand {
-      font-size: 19px;
-      font-weight: 800;
-      color: #0f172a;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(111,156,146,.18);
-      padding-bottom: 10px;
-    }
-    .sub-side-nav {
-      display: grid;
-      gap: 8px;
-    }
-    .sub-side-nav#mainNav {
-      background: transparent;
-      border: none;
-      padding: 0;
-      border-radius: 0;
-      display: grid;
-      gap: 8px;
-      overflow: visible;
-    }
-    .sub-side-nav#mainNav .nav-link {
-      text-decoration: none;
-      color: #334155;
-      border: 1px solid rgba(111,156,146,.2);
-      border-radius: 10px;
-      padding: 9px 11px;
-      font-size: 13px;
-      font-weight: 700;
-      transition: all .18s ease;
-    }
-    .sub-side-nav#mainNav .nav-link:hover {
-      border-color: rgba(79,119,111,.45);
-      color: #0f172a;
-      background: #f8fffe;
-    }
-    .sub-side-nav#mainNav .nav-link.active {
-      color: #0f172a;
-      background: rgba(111,156,146,.14);
-      border-color: rgba(79,119,111,.45);
-      box-shadow: none;
-    }
-    .sub-side-theme {
+
+    /* ─── NAVBAR ─── */
+    .navbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-top: 1px solid rgba(111,156,146,.18);
-      padding-top: 10px;
-      font-size: 12px;
-      color: #64748b;
-      font-weight: 700;
+      padding: 0 32px;
+      height: 64px;
+      background: rgba(11,18,32,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .sub-wrap {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 18px 56px;
-    }
-    .sub-hero {
-      background: radial-gradient(circle at 20% 10%, rgba(111,156,146,.18), transparent 42%),
-                  radial-gradient(circle at 100% 0%, rgba(136,176,169,.12), transparent 35%),
-                  linear-gradient(135deg, #f8fbff, #eef4ff);
-      color: #0f172a;
-      border-radius: 22px;
-      padding: 28px;
-      border: 1px solid rgba(111,156,146,.2);
-      box-shadow: 0 14px 34px rgba(15,23,42,.12);
-      margin-bottom: 20px;
-    }
-    .sub-hero h1 { margin: 0 0 10px; font-size: clamp(28px, 5vw, 42px); line-height: 1.05; }
-    .sub-hero p { margin: 0; font-size: 15px; color: #334155; max-width: 760px; }
-    .sub-grid {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 16px;
-    }
-    .sub-card {
-      background: #fff;
-      border: 1px solid var(--sub-line);
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 10px 26px rgba(2,8,23,.08);
-    }
-    .plan-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .plan-item {
-      border: 1.5px solid var(--sub-line);
-      border-radius: 15px;
-      padding: 16px;
-      position: relative;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    }
-    .plan-item.popular { border-color: rgba(111,156,146,.45); box-shadow: 0 8px 18px rgba(111,156,146,.15); }
-    .plan-tag {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
+    .brand {
+      font-size: 20px;
       font-weight: 800;
-      background: #4f776f;
-      color: #f2f6f4;
-      letter-spacing: .03em;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -.3px;
     }
-    .plan-title { font-size: 18px; font-weight: 800; color: #0f172a; }
-    .plan-price { font-size: 30px; font-weight: 800; color: #4f776f; margin: 8px 0; }
-    .plan-price small { font-size: 13px; color: var(--sub-text-muted); }
-    .plan-benefits { margin: 0; padding: 0; list-style: none; }
-    .plan-benefits li { font-size: 13px; color: #334155; margin-bottom: 7px; }
-    .plan-btn {
-      margin-top: 8px;
-      width: 100%;
-      border: none;
-      border-radius: 11px;
-      padding: 10px;
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link {
+      color: var(--muted2);
+      text-decoration: none;
       font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      background: linear-gradient(135deg, #0f172a, #4f776f);
-      color: #fff;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      transition: all .15s;
     }
-    .plan-btn.free { background: #e2e8f0; color: #0f172a; }
-    .muted { color: var(--sub-text-muted); font-size: 13px; }
-
-    .card-form { display: grid; gap: 10px; margin-top: 12px; }
-    .f-label { font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block; }
-    .f-input {
-      width: 100%;
-      border: 1.5px solid var(--sub-line);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
-      background: #fff;
-    }
-    .f-input:focus { border-color: #6f9c92; box-shadow: 0 0 0 4px var(--sub-accent-soft); }
-    .row { display: grid; grid-template-columns: 1fr 110px 90px; gap: 8px; }
-    .save-card-btn {
-      border: none;
-      border-radius: 11px;
-      padding: 11px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      color: #fff;
-      background: linear-gradient(135deg, #0f172a, #7ca9a0);
-    }
-
-    .current-sub {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f2f6f4 0%, #f8fafc 100%);
-      border: 1px solid rgba(136,176,169,.2);
-    }
-    .badge {
-      display: inline-flex;
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,.06); }
+    .nav-link.active { color: var(--text); background: rgba(255,255,255,.08); }
+    .nav-user {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-      background: rgba(111,156,146,.16);
-      color: #4f776f;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted2);
+    }
+    .nav-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--paypal2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #fff;
+      cursor: pointer;
     }
 
-    .receipt {
-      margin-top: 12px;
-      border: 1px solid rgba(122,167,157,.35);
+    /* ─── LAYOUT ─── */
+    .page { max-width: 1080px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    .page-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f1f5f9 30%, #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .page-hero p {
+      color: var(--muted2);
+      font-size: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 14px;
+      padding: 16px 24px;
+      margin-bottom: 32px;
+    }
+    .status-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(74,222,128,.2), rgba(34,197,94,.1));
+      border: 1px solid rgba(74,222,128,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .status-info { flex: 1; }
+    .status-plan {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .status-detail {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(74,222,128,.12);
+      color: var(--accent);
+      border: 1px solid rgba(74,222,128,.2);
+    }
+    .status-badge.plus { background: rgba(245,158,11,.12); color: var(--plus); border-color: rgba(245,158,11,.2); }
+    .status-badge.social { background: rgba(129,140,248,.12); color: var(--social); border-color: rgba(129,140,248,.2); }
+
+    /* ─── PLANS GRID ─── */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 768px) { .plans-grid { grid-template-columns: 1fr; } }
+
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: border-color .2s, transform .2s;
+      position: relative;
       overflow: hidden;
-      background: #f0fdf4;
-      display: none;
     }
-    .receipt.show { display: block; }
-    .receipt-top {
-      padding: 12px 14px;
-      background: linear-gradient(135deg, #3f5f58, #4f776f);
-      color: #f2f6f4;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: .03em;
+    .plan-card:hover { border-color: rgba(255,255,255,.15); transform: translateY(-2px); }
+    .plan-card.popular {
+      border-color: rgba(245,158,11,.35);
+      background: linear-gradient(145deg, #1a2540, #1e2c40);
     }
-    .receipt-body { padding: 14px; font-size: 13px; color: #14532d; display: grid; gap: 6px; }
-    .receipt-line { display: flex; justify-content: space-between; gap: 10px; }
-    .receipt-line span:last-child { font-weight: 700; color: #064e3b; text-align: right; }
-    .verify-box {
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px dashed rgba(136,176,169,.45);
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f2f6f4 0%, #f8fafc 100%);
-      display: none;
-    }
-    .verify-box.show { display: block; }
-    .verify-title { font-size: 13px; font-weight: 800; color: #5c887f; margin-bottom: 8px; }
-    .verify-row { display: flex; gap: 8px; }
-    .verify-btn {
-      border: none;
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: linear-gradient(135deg, #5c887f, #6a8f87);
+    .plan-card.active-plan { border-color: rgba(74,222,128,.35); }
+
+    .plan-popular-badge {
+      position: absolute; top: 16px; right: 16px;
+      font-size: 10px; font-weight: 800;
+      padding: 3px 9px; border-radius: 20px;
+      background: linear-gradient(90deg, var(--plus), #f97316);
       color: #fff;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      white-space: nowrap;
+      letter-spacing: .5px;
+      text-transform: uppercase;
     }
-    .verify-help { margin-top: 7px; font-size: 12px; color: #475569; }
-    .social-reason-box {
-      margin-top: 12px;
+
+    .plan-name {
+      font-size: 13px; font-weight: 700;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .plan-price {
+      font-size: 34px; font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+    .plan-price span { font-size: 14px; font-weight: 500; color: var(--muted); }
+
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .plan-features li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: var(--muted2); line-height: 1.4;
+    }
+    .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .plan-card.popular .plan-features li::before { color: var(--plus); }
+
+    .plan-btn {
+      width: 100%;
       padding: 12px;
-      border: 1px solid rgba(111,156,146,.3);
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f2f6f4 0%, #f8fafc 100%);
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      transition: all .2s;
+    }
+    .plan-btn.free-btn {
+      background: rgba(255,255,255,.06);
+      color: var(--muted2);
+      border: 1px solid var(--border);
+    }
+    .plan-btn.free-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+    .plan-btn.social-btn {
+      background: rgba(129,140,248,.12);
+      color: var(--social);
+      border: 1px solid rgba(129,140,248,.25);
+    }
+    .plan-btn.social-btn:hover { background: rgba(129,140,248,.22); }
+    .plan-btn.paypal-btn {
+      background: linear-gradient(135deg, var(--paypal), #0070ba);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .plan-btn.paypal-btn:hover { background: linear-gradient(135deg, #004ab3, #0070ba); transform: scale(1.02); }
+    .plan-btn:disabled {
+      opacity: .6; cursor: not-allowed;
+      transform: none !important;
+    }
+    .plan-btn.active-btn {
+      background: rgba(74,222,128,.1);
+      color: var(--accent);
+      border: 1px solid rgba(74,222,128,.25);
+      cursor: default;
+    }
+
+    /* ─── PAYPAL LOGO ─── */
+    .paypal-logo {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-weight: 800; font-size: 14px;
+    }
+    .paypal-logo .pay { color: #009cde; }
+    .paypal-logo .pal { color: #003087; }
+
+    /* ─── SOCIAL FORM ─── */
+    .social-reason-box {
+      background: var(--card);
+      border: 1px solid rgba(129,140,248,.25);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 32px;
       display: none;
     }
     .social-reason-box.show { display: block; }
-    .social-reason-title { font-size: 13px; font-weight: 800; color: #4f776f; margin-bottom: 6px; }
-    .social-reason-note { margin-top: 6px; font-size: 12px; color: #475569; }
+    .social-reason-box label {
+      display: block;
+      font-size: 13px; font-weight: 700;
+      color: var(--muted2);
+      margin-bottom: 8px;
+    }
+    .social-reason-box textarea {
+      width: 100%;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .social-reason-box textarea:focus { outline: none; border-color: var(--social); }
 
-    /* Readability hardening for both themes */
-    html:not([data-theme="dark"]) body.page-subscription-avant .sub-hero p,
-    html:not([data-theme="dark"]) body.page-subscription-avant .muted,
-    html:not([data-theme="dark"]) body.page-subscription-avant .plan-benefits li,
-    html:not([data-theme="dark"]) body.page-subscription-avant .f-label,
-    html:not([data-theme="dark"]) body.page-subscription-avant .verify-help,
-    html:not([data-theme="dark"]) body.page-subscription-avant .plan-price small,
-    html:not([data-theme="dark"]) body.page-subscription-avant .receipt-body,
-    html:not([data-theme="dark"]) body.page-subscription-avant .receipt-line span,
-    html:not([data-theme="dark"]) body.page-subscription-avant .receipt-line span:last-child {
-      color: #1e293b !important;
+    /* ─── RECEIPT ─── */
+    .receipt-section { display: none; margin-bottom: 32px; }
+    .receipt-section.show { display: block; }
+    .receipt-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
     }
+    .receipt-header {
+      background: linear-gradient(90deg, var(--card2), #1a2540);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .receipt-header .title { font-size: 12px; font-weight: 800; color: var(--muted2); letter-spacing: 1px; text-transform: uppercase; }
+    .receipt-body { padding: 4px 0; }
+    .receipt-row {
+      display: flex; justify-content: space-between;
+      padding: 10px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row .label { color: var(--muted); }
+    .receipt-row .value { color: var(--text); font-weight: 600; }
+    .receipt-row .value.success { color: var(--accent); }
 
-    [data-theme="dark"] .sub-card {
-      background: #161c1a;
-      border-color: rgba(136,176,169,.18);
-      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px; font-weight: 600;
+      color: var(--text);
+      max-width: 340px;
+      z-index: 9999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all .3s ease;
+      display: flex; align-items: center; gap: 10px;
     }
-    [data-theme="dark"] .sub-hero {
-      background: radial-gradient(circle at 20% 10%, rgba(111,156,146,.35), transparent 42%),
-                  radial-gradient(circle at 100% 0%, rgba(136,176,169,.2), transparent 35%),
-                  linear-gradient(135deg, var(--sub-bg-1), var(--sub-bg-2));
-      color: #f2f6f4;
-      border-color: rgba(255,255,255,.16);
-      box-shadow: 0 18px 50px rgba(15,23,42,.28);
-    }
-    [data-theme="dark"] .sub-hero p { color: #c9c2b6; }
-    [data-theme="dark"] .sub-card h2,
-    [data-theme="dark"] .plan-title { color: #e7e0d4; }
-    [data-theme="dark"] .muted,
-    [data-theme="dark"] .plan-benefits li,
-    [data-theme="dark"] .f-label { color: #b4aea2; }
-    [data-theme="dark"] .plan-item {
-      background: linear-gradient(180deg, #171d1b 0%, #161c1a 100%);
-      border-color: rgba(136,176,169,.2);
-    }
-    [data-theme="dark"] .plan-btn.free { background: #3f4744; color: #e7e0d4; }
-    [data-theme="dark"] .f-input {
-      background: #171d1b;
-      border-color: rgba(136,176,169,.22);
-      color: #e7e0d4;
-    }
-    [data-theme="dark"] .f-input::placeholder { color: #8f8a7f; }
-    [data-theme="dark"] .current-sub {
-      background: linear-gradient(135deg, #171d1b 0%, #27312d 100%);
-      border-color: rgba(136,176,169,.25);
-    }
-    [data-theme="dark"] .badge { background: rgba(111,156,146,.24); color: #e8efec; }
-    [data-theme="dark"] .receipt { background: #151b19; border-color: rgba(111,156,146,.35); }
-    [data-theme="dark"] .receipt-body { color: #c9d8d2; }
-    [data-theme="dark"] .receipt-line span:last-child { color: #e8efec; }
-    [data-theme="dark"] .verify-box {
-      background: linear-gradient(135deg, #171d1b 0%, #27312d 100%);
-      border-color: rgba(122,167,157,.45);
-    }
-    [data-theme="dark"] .verify-title { color: #b8cbc6; }
-    [data-theme="dark"] .verify-help { color: #b4aea2; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: rgba(74,222,128,.3); }
+    #toast.error { border-color: rgba(239,68,68,.3); }
+    #toast .toast-icon { font-size: 18px; flex-shrink: 0; }
 
-    [data-theme="dark"] body.page-subscription-avant .sub-hero p,
-    [data-theme="dark"] body.page-subscription-avant .muted,
-    [data-theme="dark"] body.page-subscription-avant .plan-benefits li,
-    [data-theme="dark"] body.page-subscription-avant .f-label,
-    [data-theme="dark"] body.page-subscription-avant .verify-help,
-    [data-theme="dark"] body.page-subscription-avant .plan-price small,
-    [data-theme="dark"] body.page-subscription-avant .receipt-body,
-    [data-theme="dark"] body.page-subscription-avant .receipt-line span,
-    [data-theme="dark"] body.page-subscription-avant .receipt-line span:last-child,
-    [data-theme="dark"] body.page-subscription-avant .card-details,
-    [data-theme="dark"] body.page-subscription-avant #currentDetails,
-    [data-theme="dark"] body.page-subscription-avant #cardDetails,
-    [data-theme="dark"] body.page-subscription-avant #verifyHelp {
-      color: #ffffff !important;
+    /* ─── LOADING ─── */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
     }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    [data-theme="dark"] .sub-sidebar {
-      background: #161c1a;
-      border-color: rgba(136,176,169,.2);
-      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    .error-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: 14px;
+      color: var(--muted2);
     }
-    [data-theme="dark"] .sub-side-brand {
-      color: #e7e0d4;
-      border-bottom-color: rgba(136,176,169,.2);
+    .error-state .err-icon { font-size: 36px; margin-bottom: 12px; }
+    .error-state h3 { color: var(--text); margin-bottom: 8px; }
+    .error-state p { font-size: 14px; margin-bottom: 16px; }
+    .retry-btn {
+      padding: 10px 24px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .2s;
     }
-    [data-theme="dark"] .sub-side-nav#mainNav .nav-link {
-      color: #c9c2b6;
-      border-color: rgba(136,176,169,.22);
-      background: #171d1b;
-    }
-    [data-theme="dark"] .sub-side-nav#mainNav .nav-link:hover,
-    [data-theme="dark"] .sub-side-nav#mainNav .nav-link.active {
-      color: #f2f6f4;
-      border-color: rgba(136,176,169,.45);
-      background: #27312d;
-    }
-    [data-theme="dark"] .sub-side-theme {
-      color: #b4aea2;
-      border-top-color: rgba(136,176,169,.2);
-    }
+    .retry-btn:hover { background: rgba(255,255,255,.14); }
 
-    @media (max-width: 980px) {
-      .sub-shell {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-      .sub-sidebar {
-        position: static;
-      }
-      .sub-side-nav {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-      .sub-side-nav#mainNav .nav-link {
-        text-align: center;
-        padding: 9px 6px;
-      }
-      .sub-grid { grid-template-columns: 1fr; }
-      .plan-list { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .sub-side-nav {
-        grid-template-columns: 1fr;
-      }
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 16px;
     }
   </style>
 </head>
-<body class="page-subscription-avant">
-  <main class="sub-wrap">
-    <section class="sub-hero">
-      <h1>Подписка MedQueue для пациентов</h1>
-      <p>Три прозрачных тарифа без скрытых условий: бесплатный, льготный и расширенный с приоритетом, навигатором визита и умным пост-визитным сопровождением.</p>
-    </section>
+<body>
 
-    <section class="sub-grid">
-      <div class="sub-card">
-        <h2 style="margin:0;font-size:21px;">Выберите тариф</h2>
-        <p class="muted" style="margin:6px 0 0;">Подписка доступна только пользователям с ролью пациента.</p>
-        <div class="plan-list" id="plansContainer"></div>
+<nav class="navbar">
+  <a href="main.html" class="brand">MedQueue</a>
+  <div class="nav-links">
+    <a href="main.html" class="nav-link">Главная</a>
+    <a href="appointments.html" class="nav-link">Запись</a>
+    <a href="subscription.html" class="nav-link active">Подписка</a>
+    <a href="profile.html" class="nav-link">Профиль</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">?</div>
+    <span id="navUserName">Загрузка...</span>
+  </div>
+</nav>
 
-        <div class="current-sub" id="currentSub">
-          <div class="badge" id="currentBadge">Текущий тариф: загрузка...</div>
-          <div class="muted" id="currentDetails" style="margin-top:7px;"></div>
-          <div class="muted" id="socialReasonCurrent" style="margin-top:7px;display:none;"></div>
-        </div>
+<div id="toast">
+  <span class="toast-icon" id="toastIcon">ℹ️</span>
+  <span id="toastMsg"></span>
+</div>
 
-        <div class="social-reason-box" id="socialReasonBox">
-          <div class="social-reason-title">Подтверждение льготной причины</div>
-          <label class="f-label" for="socialReasonInput">Укажите причину (минимум 12 символов)</label>
-          <textarea id="socialReasonInput" class="f-input" rows="3" placeholder="Например: инвалидность 2 группы, многодетная семья, временная нетрудоспособность."></textarea>
-          <div class="social-reason-note">Причина используется только для активации льготного тарифа и отображается в вашем профиле подписки.</div>
-        </div>
+<main class="page">
+  <div class="page-hero">
+    <h1>Подписка MedQueue</h1>
+    <p>Выберите подходящий тариф и получите доступ к расширенным функциям платформы</p>
+  </div>
+
+  <!-- СТАТУС ТЕКУЩЕЙ ПОДПИСКИ -->
+  <div class="status-bar" id="statusBar" style="display:none">
+    <div class="status-icon" id="statusIcon">🏥</div>
+    <div class="status-info">
+      <div class="status-plan" id="statusPlan">Тариф: Free</div>
+      <div class="status-detail" id="statusDetail">Загрузка...</div>
+    </div>
+    <div class="status-badge" id="statusBadge">Free</div>
+  </div>
+
+  <!-- ПЛАНЫ -->
+  <div class="section-title">Доступные тарифы</div>
+  <div id="plansContainer">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div>Загрузка тарифов...</div>
+    </div>
+  </div>
+
+  <!-- ФОРМА ЛЬГОТНОГО ТАРИФА -->
+  <div class="social-reason-box" id="socialBox">
+    <label for="socialReason">Причина для льготного тарифа (минимум 12 символов)</label>
+    <textarea id="socialReason" placeholder="Опишите причину (инвалидность, пенсионный возраст, многодетная семья и т.д.)..."></textarea>
+  </div>
+
+  <!-- ПОСЛЕДНИЙ ПЛАТЕЖ -->
+  <div class="receipt-section" id="receiptSection">
+    <div class="section-title">Последний платёж</div>
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <span>🧾</span>
+        <span class="title">Квитанция об оплате</span>
       </div>
+      <div class="receipt-body" id="receiptBody"></div>
+    </div>
+  </div>
+</main>
 
-      <div class="sub-card">
-        <h2 style="margin:0;font-size:21px;">Платежная карта</h2>
-        <p class="muted" style="margin:6px 0 0;">Карта обязательна только для тарифа Care Plus. Номер хранится только в маскированном виде.</p>
+<script>
+  // ═══════════════════════════════════════════
+  //  CONFIG
+  // ═══════════════════════════════════════════
+  const API_BASE = window.location.protocol === 'file:'
+    ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
+    : window.location.origin;
+  const API = `${API_BASE}/api`;
+  const AUTH_KEY = 'medqueue_current_user';
 
-        <form class="card-form" onsubmit="saveCard(event)">
-          <div>
-            <label class="f-label" for="cardNumber">Номер карты</label>
-            <input id="cardNumber" class="f-input" inputmode="numeric" placeholder="4444 3333 2222 1111" maxlength="23" required />
-          </div>
-          <div>
-            <label class="f-label" for="cardHolder">Имя держателя</label>
-            <input id="cardHolder" class="f-input" placeholder="IVAN IVANOV" required />
-          </div>
-          <div class="row">
-            <div>
-              <label class="f-label" for="expMonth">Месяц</label>
-              <input id="expMonth" class="f-input" inputmode="numeric" placeholder="12" maxlength="2" required />
+  let activePlanId = 'free';
+
+  // ═══════════════════════════════════════════
+  //  AUTH HELPERS
+  // ═══════════════════════════════════════════
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
+    catch { return null; }
+  }
+  function saveUser(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
+
+  async function refreshToken() {
+    const u = getUser();
+    if (!u?.refresh) return false;
+    try {
+      const r = await fetch(`${API}/auth/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: u.refresh })
+      });
+      if (!r.ok) return false;
+      const d = await r.json();
+      saveUser({ ...u, access: d.access });
+      return true;
+    } catch { return false; }
+  }
+
+  async function apiFetch(url, opts = {}, _retry = true) {
+    const u = getUser();
+    const headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      ...(opts.headers || {})
+    };
+    if (u?.access) headers.Authorization = `Bearer ${u.access}`;
+    const res = await fetch(url, { ...opts, headers });
+    if (res.status === 401 && _retry) {
+      if (await refreshToken()) return apiFetch(url, opts, false);
+      localStorage.removeItem(AUTH_KEY);
+      window.location.href = 'auth.html?tab=login&next=subscription.html';
+    }
+    return res;
+  }
+
+  // ═══════════════════════════════════════════
+  //  TOAST
+  // ═══════════════════════════════════════════
+  let _toastTimer;
+  function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+    document.getElementById('toastIcon').textContent = icons[type] || 'ℹ️';
+    document.getElementById('toastMsg').textContent = msg;
+    el.className = `show ${type}`;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ''; }, 4000);
+  }
+
+  // ═══════════════════════════════════════════
+  //  RENDER PLANS
+  // ═══════════════════════════════════════════
+  function renderPlans(plans, currentPlanId) {
+    activePlanId = currentPlanId || 'free';
+    const planDefs = {
+      free:   { icon: '🌱', color: 'free-btn',   label: 'Бесплатно' },
+      social: { icon: '💚', color: 'social-btn', label: 'Льготный' },
+      plus:   { icon: '⭐', color: 'paypal-btn',  label: 'PayPal' },
+    };
+
+    document.getElementById('plansContainer').innerHTML = `
+      <div class="plans-grid">
+        ${plans.map(p => {
+          const isActive = p.id === activePlanId;
+          const def = planDefs[p.id] || planDefs.free;
+          const priceText = p.price_kzt === 0 ? 'Бесплатно' : `${p.price_kzt.toLocaleString('ru-RU')} ₸`;
+          const priceSmall = p.price_kzt === 0 ? '' : '<span>/ месяц</span>';
+
+          let btnContent, btnClass;
+          if (isActive) {
+            btnContent = '✓ Текущий тариф'; btnClass = 'active-btn';
+          } else if (p.id === 'plus') {
+            btnContent = `<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span>&nbsp;Оплатить`;
+            btnClass = 'paypal-btn';
+          } else if (p.id === 'social') {
+            btnContent = 'Подтвердить льготу'; btnClass = 'social-btn';
+          } else {
+            btnContent = 'Выбрать'; btnClass = 'free-btn';
+          }
+
+          return `
+            <div class="plan-card ${p.is_popular ? 'popular' : ''} ${isActive ? 'active-plan' : ''}">
+              ${p.is_popular ? '<div class="plan-popular-badge">🔥 Популярный</div>' : ''}
+              <div class="plan-name">${def.icon} ${p.title}</div>
+              <div class="plan-price">${priceText}${priceSmall}</div>
+              <ul class="plan-features">
+                ${p.benefits.map(b => `<li>${b}</li>`).join('')}
+              </ul>
+              <button
+                id="btn-${p.id}"
+                class="plan-btn ${btnClass}"
+                onclick="handlePlan('${p.id}')"
+                ${isActive ? 'disabled' : ''}
+              >${btnContent}</button>
             </div>
-            <div>
-              <label class="f-label" for="expYear">Год</label>
-              <input id="expYear" class="f-input" inputmode="numeric" placeholder="2029" maxlength="4" required />
-            </div>
-            <div>
-              <label class="f-label" for="cvc">CVC</label>
-              <input id="cvc" class="f-input" inputmode="numeric" placeholder="123" maxlength="4" required />
-            </div>
-          </div>
-          <button class="save-card-btn" type="submit">Сохранить карту</button>
-        </form>
-
-        <div class="current-sub" style="margin-top:12px;">
-          <div class="badge" id="cardBadge">Карта: не добавлена</div>
-          <div class="muted" id="cardDetails" style="margin-top:7px;">Добавьте карту, чтобы активировать платный тариф.</div>
-          <button class="plan-btn free" type="button" style="margin-top:10px;" onclick="resetDemoPaymentFlow()">Сбросить демо-платежи и карту</button>
-        </div>
-
-        <div class="verify-box" id="verifyBox">
-          <div class="verify-title">Подтверждение карты</div>
-          <div class="verify-row">
-            <input id="verifyCode" class="f-input" inputmode="numeric" maxlength="6" placeholder="Код из SMS (6 цифр)" />
-            <button class="verify-btn" onclick="verifyCard()">Подтвердить</button>
-          </div>
-          <div class="verify-help" id="verifyHelp">Введите код подтверждения, который «прислал банк».</div>
-        </div>
-
-        <div class="receipt" id="receiptCard">
-          <div class="receipt-top">ПЛАТЕЖ ПРОВЕДЕН</div>
-          <div class="receipt-body" id="receiptBody"></div>
-        </div>
+          `;
+        }).join('')}
       </div>
-    </section>
-  </main>
+    `;
 
-  <script>
-    const SUB_API_BASE = window.location.protocol === 'file:'
-      ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
-      : window.location.origin;
-    const SUB_API = `${SUB_API_BASE}/api`;
-    const SUB_AUTH_KEY = 'medqueue_current_user';
+    // Показываем поле для льготного тарифа если нужно
+    const socialBox = document.getElementById('socialBox');
+    socialBox.classList.toggle('show', activePlanId !== 'social');
+  }
 
-    let cachedPlans = [];
-    let cachedCard = null;
+  // ═══════════════════════════════════════════
+  //  RENDER STATUS BAR
+  // ═══════════════════════════════════════════
+  function renderStatus(sub) {
+    const bar = document.getElementById('statusBar');
+    bar.style.display = 'flex';
 
-    function getUser() {
-      try { return JSON.parse(localStorage.getItem(SUB_AUTH_KEY) || 'null'); }
-      catch { return null; }
+    if (!sub) {
+      document.getElementById('statusPlan').textContent = 'Тариф: Free';
+      document.getElementById('statusDetail').textContent = 'Активируйте тариф из списка ниже';
+      document.getElementById('statusIcon').textContent = '🌱';
+      document.getElementById('statusBadge').textContent = 'Free';
+      document.getElementById('statusBadge').className = 'status-badge';
+      return;
     }
 
-    async function authFetch(url, options = {}) {
-      const user = getUser();
-      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...(options.headers || {}) };
-      if (user?.access) headers.Authorization = `Bearer ${user.access}`;
-      return fetch(url, { ...options, headers });
+    const icons = { free: '🌱', social: '💚', plus: '⭐' };
+    document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '🏥';
+    document.getElementById('statusPlan').textContent = `Тариф: ${sub.plan_title}`;
+
+    const billing = sub.next_billing_date
+      ? `Следующее списание: ${new Date(sub.next_billing_date).toLocaleDateString('ru-RU')}`
+      : 'Бесплатно';
+    document.getElementById('statusDetail').textContent = billing;
+
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = sub.plan_title;
+    badge.className = `status-badge ${sub.plan_id === 'plus' ? 'plus' : sub.plan_id === 'social' ? 'social' : ''}`;
+  }
+
+  // ═══════════════════════════════════════════
+  //  RENDER RECEIPT
+  // ═══════════════════════════════════════════
+  function renderReceipt(tx) {
+    if (!tx) return;
+    const section = document.getElementById('receiptSection');
+    const body = document.getElementById('receiptBody');
+    const method = tx.card_last4 ? `**** **** **** ${tx.card_last4}` : (tx.merchant_name || 'PayPal');
+    const amount = tx.currency === 'USD'
+      ? `$${Number(tx.amount).toFixed(2)} USD`
+      : `${Number(tx.amount).toLocaleString('ru-RU')} ${tx.currency || 'KZT'}`;
+
+    body.innerHTML = `
+      <div class="receipt-row"><span class="label">Статус</span><span class="value success">${tx.status === 'paid' ? 'ОПЛАЧЕН ✓' : tx.status.toUpperCase()}</span></div>
+      <div class="receipt-row"><span class="label">Сумма</span><span class="value">${amount}</span></div>
+      <div class="receipt-row"><span class="label">Способ оплаты</span><span class="value">${method}</span></div>
+      <div class="receipt-row"><span class="label">ID транзакции</span><span class="value" style="font-size:11px;word-break:break-all">${tx.transaction_ref || '—'}</span></div>
+      <div class="receipt-row"><span class="label">Дата</span><span class="value">${tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : '—'}</span></div>
+    `;
+    section.classList.add('show');
+  }
+
+  // ═══════════════════════════════════════════
+  //  HANDLE PLAN BUTTON
+  // ═══════════════════════════════════════════
+  async function handlePlan(planId) {
+    if (planId === activePlanId) return;
+
+    if (planId === 'plus') {
+      await startPayPal();
+      return;
     }
 
-    function formatAmount(v) {
-      return `${Number(v || 0).toLocaleString('ru-RU')} тг`;
-    }
-
-    async function init() {
-      const user = getUser();
-      if (!user) {
-        window.location.href = 'auth.html?tab=login&next=subscription.html';
+    if (planId === 'social') {
+      const reason = (document.getElementById('socialReason')?.value || '').trim();
+      if (reason.length < 12) {
+        toast('Укажите причину минимум из 12 символов в поле ниже', 'warn');
+        document.getElementById('socialBox').classList.add('show');
+        document.getElementById('socialReason').focus();
         return;
       }
-      if (user.role !== 'patient') {
-        alert('Подписка доступна только пользователям-пациентам.');
-        window.location.href = user.role === 'doctor' ? 'doctor.html' : 'main.html';
+      await activatePlan(planId, { social_reason: reason });
+      return;
+    }
+
+    await activatePlan(planId, {});
+  }
+
+  async function activatePlan(planId, extra = {}) {
+    const btn = document.getElementById(`btn-${planId}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Обработка...'; }
+
+    try {
+      const r = await apiFetch(`${API}/subscription/activate/`, {
+        method: 'POST',
+        body: JSON.stringify({ plan_id: planId, ...extra })
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        toast(d.error || 'Ошибка при активации тарифа', 'error');
+        if (btn) { btn.disabled = false; }
         return;
       }
+      toast(d.message || 'Тариф успешно активирован!', 'success');
+      await loadData();
+    } catch (e) {
+      toast('Ошибка подключения к серверу', 'error');
+      if (btn) { btn.disabled = false; }
+    }
+  }
 
-      const [plansRes, meRes] = await Promise.all([
-        fetch(`${SUB_API}/subscription/plans/`, { headers: { 'ngrok-skip-browser-warning': 'true' } }),
-        authFetch(`${SUB_API}/subscription/me/`),
+  // ═══════════════════════════════════════════
+  //  PAYPAL
+  // ═══════════════════════════════════════════
+  async function startPayPal() {
+    const btn = document.getElementById('btn-plus');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Переход к PayPal...'; }
+
+    try {
+      const r = await apiFetch(`${API}/subscription/create-paypal-order/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          plan_id: 'plus',
+          success_url: window.location.href.split('?')[0] + '?pp=1',
+          cancel_url: window.location.href.split('?')[0] + '?pp=cancel'
+        })
+      });
+      const d = await r.json();
+      if (!r.ok || !d.checkout_url) {
+        toast(d.error || 'Не удалось создать заказ PayPal', 'error');
+        if (btn) { btn.disabled = false; }
+        return;
+      }
+      window.location.href = d.checkout_url;
+    } catch (e) {
+      toast('Ошибка подключения', 'error');
+      if (btn) { btn.disabled = false; }
+    }
+  }
+
+  async function capturePayPal(token) {
+    toast('Подтверждаем платёж PayPal...', 'info');
+    try {
+      const r = await apiFetch(`${API}/subscription/capture-paypal-order/`, {
+        method: 'POST',
+        body: JSON.stringify({ token })
+      });
+      const d = await r.json();
+      if (r.ok) {
+        toast('✅ Оплата успешна! Тариф Plus активирован.', 'success');
+      } else {
+        toast(d.error || 'Ошибка подтверждения PayPal', 'error');
+      }
+    } catch {
+      toast('Ошибка при подтверждении PayPal', 'error');
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  LOAD DATA
+  // ═══════════════════════════════════════════
+  async function loadData() {
+    try {
+      // Грузим планы и данные подписки параллельно
+      const [plansRes, meRes] = await Promise.allSettled([
+        fetch(`${API}/subscription/plans/`, { headers: { 'ngrok-skip-browser-warning': 'true' } }),
+        apiFetch(`${API}/subscription/me/`)
       ]);
 
-      if (!plansRes.ok || !meRes.ok) {
-        alert('Не удалось загрузить данные подписки. Проверьте сервер.');
-        return;
-      }
-
-      const plansData = await plansRes.json();
-      const meData = await meRes.json();
-
-      cachedPlans = Array.isArray(plansData)
-        ? plansData
-        : (Array.isArray(plansData.plans) ? plansData.plans : []);
-      cachedCard = meData.card || null;
-
-      if (!cachedPlans.length) {
-        document.getElementById('plansContainer').innerHTML = '<div class="muted">Планы подписки временно недоступны. Проверьте сервер и обновите страницу.</div>';
-      }
-
-      renderPlans(meData.subscription?.plan_id || 'free');
-      renderCurrent(meData.subscription || null);
-      renderCard(cachedCard, meData.card_verification_required, meData.card_verification_expires_at);
-      if (Array.isArray(meData.transactions) && meData.transactions.length) {
-        renderReceipt(meData.transactions[0]);
-      }
-    }
-
-    function renderPlans(activePlanId) {
-      const c = document.getElementById('plansContainer');
-      c.innerHTML = (cachedPlans || []).map(plan => {
-        const isFree = plan.id === 'free';
-        const isSocial = plan.id === 'social';
-        const active = plan.id === activePlanId;
-        return `
-          <article class="plan-item ${plan.is_popular ? 'popular' : ''}">
-            ${plan.is_popular ? '<span class="plan-tag">Популярный</span>' : ''}
-            <div class="plan-title">${plan.title}</div>
-            <div class="plan-price">${formatAmount(plan.price_kzt)} <small>/ мес</small></div>
-            <ul class="plan-benefits">${plan.benefits.map(b => `<li>• ${b}</li>`).join('')}</ul>
-            <button class="plan-btn ${isFree ? 'free' : ''}" onclick="activatePlan('${plan.id}')">
-              ${active ? 'Активен' : (isFree ? 'Выбрать бесплатно' : (isSocial ? 'Подтвердить льготу' : 'Подключить тариф'))}
-            </button>
-          </article>
-        `;
-      }).join('');
-
-      const socialReasonBox = document.getElementById('socialReasonBox');
-      if (socialReasonBox) {
-        socialReasonBox.classList.toggle('show', activePlanId !== 'social');
-      }
-    }
-
-    function renderCurrent(subscription) {
-      if (!subscription) {
-        document.getElementById('currentBadge').textContent = 'Текущий тариф: Free';
-        document.getElementById('currentDetails').textContent = 'Подписка еще не активирована. Выберите тариф выше.';
-        return;
-      }
-      document.getElementById('currentBadge').textContent = `Текущий тариф: ${subscription.plan_title}`;
-      const billing = subscription.next_billing_date
-        ? `Следующее списание: ${new Date(subscription.next_billing_date).toLocaleDateString('ru-RU')}`
-        : 'Списаний нет';
-      const features = [];
-      if (subscription.care_navigator_enabled) features.push('Навигатор подготовки к приему активен');
-      if (subscription.smart_followup_enabled) features.push('Пост-визитные напоминания активны');
-      if (subscription.priority_reschedule_enabled) features.push('Гибкое перепланирование включено');
-      document.getElementById('currentDetails').textContent = `${billing} • ${features.length ? features.join(' • ') : 'Базовый режим без расширенных функций'}`;
-
-      const reasonEl = document.getElementById('socialReasonCurrent');
-      if (subscription.plan_id === 'social' && subscription.social_reason) {
-        const confirmedAt = subscription.social_reason_confirmed_at
-          ? new Date(subscription.social_reason_confirmed_at).toLocaleString('ru-RU')
-          : 'только что';
-        reasonEl.style.display = 'block';
-        reasonEl.textContent = `Причина льготы подтверждена (${confirmedAt}): ${subscription.social_reason}`;
+      // Обработка планов
+      let plans = [];
+      if (plansRes.status === 'fulfilled' && plansRes.value.ok) {
+        const data = await plansRes.value.json();
+        plans = Array.isArray(data) ? data : (data.plans || []);
       } else {
-        reasonEl.style.display = 'none';
-        reasonEl.textContent = '';
-      }
-    }
-
-    function renderCard(card, verificationRequired = false, verificationExpiresAt = null) {
-      const verifyBox = document.getElementById('verifyBox');
-      const verifyHelp = document.getElementById('verifyHelp');
-      if (!card) {
-        document.getElementById('cardBadge').textContent = 'Карта: не добавлена';
-        document.getElementById('cardDetails').textContent = 'Добавьте карту, чтобы активировать платный тариф.';
-        verifyBox.classList.remove('show');
-        return;
-      }
-      const verified = !!card.is_verified;
-      document.getElementById('cardBadge').textContent = `Карта: ${card.brand} ${card.masked_pan} ${verified ? '• подтверждена' : '• ожидает подтверждения'}`;
-      document.getElementById('cardDetails').textContent = `Держатель: ${card.card_holder} • Срок: ${String(card.exp_month).padStart(2, '0')}/${card.exp_year}`;
-
-      if (verificationRequired || !verified) {
-        verifyBox.classList.add('show');
-        verifyHelp.textContent = verificationExpiresAt
-          ? `Код действует до ${new Date(verificationExpiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
-          : 'Введите код подтверждения, который «прислал банк». Код можно увидеть в админке Django.';
-      } else {
-        verifyBox.classList.remove('show');
-      }
-    }
-
-    function renderReceipt(tx) {
-      const card = tx.card_masked || '—';
-      document.getElementById('receiptBody').innerHTML = `
-        <div class="receipt-line"><span>Статус</span><span>${tx.status === 'paid' ? 'CAPTURED' : tx.status.toUpperCase()}</span></div>
-        <div class="receipt-line"><span>Транзакция</span><span>${tx.transaction_ref || '—'}</span></div>
-        <div class="receipt-line"><span>Авторизация</span><span>${tx.authorization_code || '—'}</span></div>
-        <div class="receipt-line"><span>Сумма</span><span>${formatAmount(tx.amount)} ${tx.currency || 'KZT'}</span></div>
-        <div class="receipt-line"><span>Карта</span><span>${card}</span></div>
-        <div class="receipt-line"><span>Мерчант</span><span>${tx.merchant_name || 'MedQueue Health Services'}</span></div>
-        <div class="receipt-line"><span>Время</span><span>${tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : '—'}</span></div>
-      `;
-      document.getElementById('receiptCard').classList.add('show');
-    }
-
-    async function saveCard(e) {
-      e.preventDefault();
-      const payload = {
-        card_number: (document.getElementById('cardNumber').value || '').replace(/\s+/g, ''),
-        card_holder: (document.getElementById('cardHolder').value || '').trim().toUpperCase(),
-        exp_month: Number(document.getElementById('expMonth').value || 0),
-        exp_year: Number(document.getElementById('expYear').value || 0),
-        cvc: (document.getElementById('cvc').value || '').trim(),
-      };
-
-      const r = await authFetch(`${SUB_API}/subscription/card/`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        alert(d.error || 'Не удалось сохранить карту');
-        return;
-      }
-      cachedCard = d.card;
-      renderCard(cachedCard, d.requires_verification, d.verification_expires_at);
-      if (d.requires_verification) {
-        alert((d.bank_message || 'Карта добавлена') + '. Введите код подтверждения ниже.');
-      } else {
-        alert(d.message || 'Карта успешно сохранена и уже подтверждена.');
-      }
-    }
-
-    async function verifyCard() {
-      const code = (document.getElementById('verifyCode').value || '').trim();
-      if (!/^\d{6}$/.test(code)) {
-        alert('Введите 6-значный код подтверждения.');
+        document.getElementById('plansContainer').innerHTML = `
+          <div class="error-state">
+            <div class="err-icon">🔌</div>
+            <h3>Сервер недоступен</h3>
+            <p>Убедитесь что Django сервер запущен: <code>${API_BASE}</code></p>
+            <button class="retry-btn" onclick="loadData()">Повторить</button>
+          </div>`;
         return;
       }
 
-      const r = await authFetch(`${SUB_API}/subscription/card/verify/`, {
-        method: 'POST',
-        body: JSON.stringify({ code }),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        alert(d.error || 'Не удалось подтвердить карту');
-        return;
+      // Обработка данных подписки
+      let meData = { subscription: null, transactions: [] };
+      if (meRes.status === 'fulfilled' && meRes.value.ok) {
+        meData = await meRes.value.json();
+      } else if (meRes.status === 'fulfilled' && meRes.value.status === 401) {
+        return; // apiFetch уже сделал редирект
       }
+      // Если /me/ вернул другую ошибку — грузим страницу с пустой подпиской
 
-      cachedCard = d.card;
-      renderCard(cachedCard, false, null);
-      document.getElementById('verifyCode').value = '';
-      alert(d.message || 'Карта подтверждена.');
+      const currentPlanId = meData.subscription?.plan_id || 'free';
+      renderPlans(plans, currentPlanId);
+      renderStatus(meData.subscription || null);
+      if (meData.transactions?.length) renderReceipt(meData.transactions[0]);
+
+    } catch (e) {
+      document.getElementById('plansContainer').innerHTML = `
+        <div class="error-state">
+          <div class="err-icon">🔌</div>
+          <h3>Ошибка подключения</h3>
+          <p>${e.message || 'Не удалось соединиться с сервером'}</p>
+          <button class="retry-btn" onclick="loadData()">Повторить</button>
+        </div>`;
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════
+  async function init() {
+    const user = getUser();
+    if (!user) {
+      window.location.href = 'auth.html?tab=login&next=subscription.html';
+      return;
+    }
+    if (user.role && user.role !== 'patient') {
+      toast('Подписка доступна только пациентам', 'warn');
+      setTimeout(() => { window.location.href = user.role === 'doctor' ? 'doctor.html' : 'main.html'; }, 1500);
+      return;
     }
 
-    async function activatePlan(planId) {
-      const payload = { plan_id: planId };
-      if (planId === 'social') {
-        const socialReason = (document.getElementById('socialReasonInput')?.value || '').trim();
-        if (socialReason.length < 12) {
-          alert('Для льготного тарифа укажите причину минимум из 12 символов.');
-          return;
-        }
-        payload.social_reason = socialReason;
-      }
+    // Инициализируем навбар
+    const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
+    document.getElementById('navAvatar').textContent = initials;
+    document.getElementById('navUserName').textContent = user.name || user.username || 'Пользователь';
 
-      const r = await authFetch(`${SUB_API}/subscription/activate/`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        alert(d.error || 'Не удалось активировать тариф');
-        return;
-      }
-      renderPlans(d.subscription.plan_id);
-      renderCurrent(d.subscription);
-      if (d.payment_receipt) renderReceipt(d.payment_receipt);
-      alert(d.message || 'Тариф обновлён');
+    // Обработка возврата с PayPal
+    const params = new URLSearchParams(window.location.search);
+    window.history.replaceState(null, '', window.location.pathname);
+
+    if (params.get('pp') === 'cancel') {
+      toast('Оплата отменена', 'warn');
+    } else if (params.get('token')) {
+      await capturePayPal(params.get('token'));
     }
 
-    async function resetDemoPaymentFlow() {
-      if (!confirm('Очистить демо-данные карты и платежей для этого аккаунта?')) {
-        return;
-      }
+    await loadData();
+  }
 
-      const r = await authFetch(`${SUB_API}/subscription/reset-demo/`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        alert(d.error || 'Не удалось очистить демо-данные');
-        return;
-      }
-
-      cachedCard = null;
-      renderCard(null, false, null);
-      renderCurrent(d.subscription || null);
-      renderPlans((d.subscription && d.subscription.plan_id) || 'free');
-      const receipt = document.getElementById('receiptCard');
-      if (receipt) {
-        receipt.classList.remove('show');
-      }
-      document.getElementById('verifyCode').value = '';
-      alert(d.message || 'Демо-данные очищены');
-    }
-
-    document.getElementById('cardNumber').addEventListener('input', function () {
-      const raw = this.value.replace(/\D/g, '').slice(0, 16);
-      this.value = raw.replace(/(.{4})/g, '$1 ').trim();
-    });
-
-    document.getElementById('expMonth').addEventListener('input', function () {
-      const raw = this.value.replace(/\D/g, '').slice(0, 2);
-      this.value = raw;
-    });
-
-    document.getElementById('expYear').addEventListener('input', function () {
-      const raw = this.value.replace(/\D/g, '').slice(0, 4);
-      this.value = raw;
-    });
-
-    document.getElementById('cvc').addEventListener('input', function () {
-      const raw = this.value.replace(/\D/g, '').slice(0, 4);
-      this.value = raw;
-    });
-
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+  document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
-
-
