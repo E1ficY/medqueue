@@ -454,138 +454,107 @@
 </main>
 
 <script>
-  // ═══════════════════════════════════════════
-  //  CONFIG
-  // ═══════════════════════════════════════════
-  const API_BASE = window.location.protocol === 'file:'
-    ? (localStorage.getItem('medqueue_api_origin') || 'http://127.0.0.1:8000')
-    : window.location.origin;
-  const API = `${API_BASE}/api`;
-  const AUTH_KEY = 'medqueue_current_user';
+  var API = window.location.origin + '/api';
+  var AUTH_KEY = 'medqueue_current_user';
+  var activePlanId = 'free';
+  var isLoggedIn = false;
 
-  let activePlanId = 'free';
-
-  // ═══════════════════════════════════════════
-  //  AUTH HELPERS
-  // ═══════════════════════════════════════════
   function getUser() {
-    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
-    catch { return null; }
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch(e) { return null; }
   }
   function saveUser(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
 
-  async function refreshToken() {
-    const u = getUser();
-    if (!u?.refresh) return false;
+  async function tryRefresh() {
+    var u = getUser();
+    if (!u || !u.refresh) return false;
     try {
-      const r = await fetch(`${API}/auth/token/refresh/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh: u.refresh })
+      var r = await fetch(API + '/auth/token/refresh/', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({refresh: u.refresh})
       });
       if (!r.ok) return false;
-      const d = await r.json();
-      saveUser({ ...u, access: d.access });
+      var d = await r.json();
+      if (!d.access) return false;
+      saveUser(Object.assign({}, u, {access: d.access}));
       return true;
-    } catch { return false; }
+    } catch(e) { return false; }
   }
 
-  async function apiFetch(url, opts = {}, _retry = true) {
-    const u = getUser();
-    const headers = {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-      ...(opts.headers || {})
-    };
-    if (u?.access) headers.Authorization = `Bearer ${u.access}`;
-    const res = await fetch(url, { ...opts, headers });
-    if (res.status === 401 && _retry) {
-      if (await refreshToken()) return apiFetch(url, opts, false);
-      // Refresh тоже не сработал — токен полностью истёк
-      localStorage.removeItem(AUTH_KEY);
-      const nextPath = window.location.pathname + window.location.search;
-      window.location.href = '/auth.html?tab=login&next=' + encodeURIComponent(nextPath);
-    }
-    return res;
+  async function authFetch(url, opts) {
+    opts = opts || {};
+    var u = getUser();
+    var headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+    if (u && u.access) headers['Authorization'] = 'Bearer ' + u.access;
+    try {
+      var res = await fetch(url, Object.assign({}, opts, {headers: headers}));
+      if (res.status === 401) {
+        if (await tryRefresh()) {
+          var u2 = getUser();
+          headers['Authorization'] = 'Bearer ' + u2.access;
+          return fetch(url, Object.assign({}, opts, {headers: headers}));
+        }
+        localStorage.removeItem(AUTH_KEY);
+        isLoggedIn = false;
+        return null;
+      }
+      return res;
+    } catch(e) { return null; }
   }
 
-  // ═══════════════════════════════════════════
-  //  TOAST
-  // ═══════════════════════════════════════════
-  let _toastTimer;
-  function toast(msg, type = 'info') {
-    const el = document.getElementById('toast');
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
-    document.getElementById('toastIcon').textContent = icons[type] || 'ℹ️';
+  var toastTimer;
+  function toast(msg, type) {
+    type = type || 'info';
+    var el = document.getElementById('toast');
+    var icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warn' ? '⚠️' : 'ℹ️';
+    document.getElementById('toastIcon').textContent = icon;
     document.getElementById('toastMsg').textContent = msg;
-    el.className = `show ${type}`;
-    clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => { el.className = ''; }, 4000);
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = ''; }, 4500);
   }
 
-  // ═══════════════════════════════════════════
-  //  RENDER PLANS
-  // ═══════════════════════════════════════════
+  function requireAuth() {
+    if (isLoggedIn) return true;
+    sessionStorage.setItem('medqueue_auth_return_url', window.location.href);
+    window.location.href = '/auth.html?tab=login';
+    return false;
+  }
+
   function renderPlans(plans, currentPlanId) {
     activePlanId = currentPlanId || 'free';
-    const planDefs = {
-      free:   { icon: '🌱', color: 'free-btn',   label: 'Бесплатно' },
-      social: { icon: '💚', color: 'social-btn', label: 'Льготный' },
-      plus:   { icon: '⭐', color: 'paypal-btn',  label: 'PayPal' },
-    };
-
-    document.getElementById('plansContainer').innerHTML = `
-      <div class="plans-grid">
-        ${plans.map(p => {
-          const isActive = p.id === activePlanId;
-          const def = planDefs[p.id] || planDefs.free;
-          const priceText = p.price_kzt === 0 ? 'Бесплатно' : `${p.price_kzt.toLocaleString('ru-RU')} ₸`;
-          const priceSmall = p.price_kzt === 0 ? '' : '<span>/ месяц</span>';
-
-          let btnContent, btnClass;
-          if (isActive) {
-            btnContent = '✓ Текущий тариф'; btnClass = 'active-btn';
-          } else if (p.id === 'plus') {
-            btnContent = `<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span>&nbsp;Оплатить`;
-            btnClass = 'paypal-btn';
-          } else if (p.id === 'social') {
-            btnContent = 'Подтвердить льготу'; btnClass = 'social-btn';
-          } else {
-            btnContent = 'Выбрать'; btnClass = 'free-btn';
-          }
-
-          return `
-            <div class="plan-card ${p.is_popular ? 'popular' : ''} ${isActive ? 'active-plan' : ''}">
-              ${p.is_popular ? '<div class="plan-popular-badge">🔥 Популярный</div>' : ''}
-              <div class="plan-name">${def.icon} ${p.title}</div>
-              <div class="plan-price">${priceText}${priceSmall}</div>
-              <ul class="plan-features">
-                ${p.benefits.map(b => `<li>${b}</li>`).join('')}
-              </ul>
-              <button
-                id="btn-${p.id}"
-                class="plan-btn ${btnClass}"
-                onclick="handlePlan('${p.id}')"
-                ${isActive ? 'disabled' : ''}
-              >${btnContent}</button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-
-    // Показываем поле для льготного тарифа если нужно
-    const socialBox = document.getElementById('socialBox');
-    socialBox.classList.toggle('show', activePlanId !== 'social');
+    var defs = {free: '🌱', social: '💚', plus: '⭐'};
+    var html = '<div class="plans-grid">';
+    for (var i = 0; i < plans.length; i++) {
+      var p = plans[i];
+      var isActive = p.id === activePlanId && isLoggedIn;
+      var icon = defs[p.id] || '⚙️';
+      var priceText = p.price_kzt === 0 ? 'Бесплатно' : p.price_kzt.toLocaleString('ru-RU') + ' ₸';
+      var priceSub = p.price_kzt === 0 ? '' : '<span>/ месяц</span>';
+      var btnContent, btnClass;
+      if (isActive) { btnContent = '✓ Текущий тариф'; btnClass = 'active-btn'; }
+      else if (p.id === 'plus') { btnContent = '<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span> Оплатить'; btnClass = 'paypal-btn'; }
+      else if (p.id === 'social') { btnContent = 'Подтвердить льготу'; btnClass = 'social-btn'; }
+      else { btnContent = isLoggedIn ? 'Выбрать' : 'Войти для выбора'; btnClass = 'free-btn'; }
+      var benefits = '';
+      for (var j = 0; j < p.benefits.length; j++) benefits += '<li>' + p.benefits[j] + '</li>';
+      html += '<div class="plan-card' + (p.is_popular ? ' popular' : '') + (isActive ? ' active-plan' : '') + '">';
+      if (p.is_popular) html += '<div class="plan-popular-badge">🔥 Популярный</div>';
+      html += '<div class="plan-name">' + icon + ' ' + p.title + '</div>';
+      html += '<div class="plan-price">' + priceText + priceSub + '</div>';
+      html += '<ul class="plan-features">' + benefits + '</ul>';
+      html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
+      html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('plansContainer').innerHTML = html;
+    var sb = document.getElementById('socialBox');
+    if (sb) sb.classList.toggle('show', isLoggedIn && activePlanId !== 'social');
   }
 
-  // ═══════════════════════════════════════════
-  //  RENDER STATUS BAR
-  // ═══════════════════════════════════════════
   function renderStatus(sub) {
-    const bar = document.getElementById('statusBar');
+    var bar = document.getElementById('statusBar');
+    if (!isLoggedIn) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
-
+    var icons = {free: '🌱', social: '💚', plus: '⭐'};
     if (!sub) {
       document.getElementById('statusPlan').textContent = 'Тариф: Free';
       document.getElementById('statusDetail').textContent = 'Активируйте тариф из списка ниже';
@@ -594,215 +563,136 @@
       document.getElementById('statusBadge').className = 'status-badge';
       return;
     }
-
-    const icons = { free: '🌱', social: '💚', plus: '⭐' };
     document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '🏥';
-    document.getElementById('statusPlan').textContent = `Тариф: ${sub.plan_title}`;
-
-    const billing = sub.next_billing_date
-      ? `Следующее списание: ${new Date(sub.next_billing_date).toLocaleDateString('ru-RU')}`
+    document.getElementById('statusPlan').textContent = 'Тариф: ' + sub.plan_title;
+    var billing = sub.next_billing_date
+      ? 'Следующее списание: ' + new Date(sub.next_billing_date).toLocaleDateString('ru-RU')
       : 'Бесплатно';
     document.getElementById('statusDetail').textContent = billing;
-
-    const badge = document.getElementById('statusBadge');
+    var badge = document.getElementById('statusBadge');
     badge.textContent = sub.plan_title;
-    badge.className = `status-badge ${sub.plan_id === 'plus' ? 'plus' : sub.plan_id === 'social' ? 'social' : ''}`;
+    badge.className = 'status-badge' + (sub.plan_id === 'plus' ? ' plus' : sub.plan_id === 'social' ? ' social' : '');
   }
 
-  // ═══════════════════════════════════════════
-  //  RENDER RECEIPT
-  // ═══════════════════════════════════════════
   function renderReceipt(tx) {
     if (!tx) return;
-    const section = document.getElementById('receiptSection');
-    const body = document.getElementById('receiptBody');
-    const method = tx.card_last4 ? `**** **** **** ${tx.card_last4}` : (tx.merchant_name || 'PayPal');
-    const amount = tx.currency === 'USD'
-      ? `$${Number(tx.amount).toFixed(2)} USD`
-      : `${Number(tx.amount).toLocaleString('ru-RU')} ${tx.currency || 'KZT'}`;
-
-    body.innerHTML = `
-      <div class="receipt-row"><span class="label">Статус</span><span class="value success">${tx.status === 'paid' ? 'ОПЛАЧЕН ✓' : tx.status.toUpperCase()}</span></div>
-      <div class="receipt-row"><span class="label">Сумма</span><span class="value">${amount}</span></div>
-      <div class="receipt-row"><span class="label">Способ оплаты</span><span class="value">${method}</span></div>
-      <div class="receipt-row"><span class="label">ID транзакции</span><span class="value" style="font-size:11px;word-break:break-all">${tx.transaction_ref || '—'}</span></div>
-      <div class="receipt-row"><span class="label">Дата</span><span class="value">${tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : '—'}</span></div>
-    `;
+    var section = document.getElementById('receiptSection');
+    var body = document.getElementById('receiptBody');
+    var method = tx.card_last4 ? '**** **** **** ' + tx.card_last4 : (tx.merchant_name || 'PayPal');
+    var amount = tx.currency === 'USD'
+      ? '$' + Number(tx.amount).toFixed(2) + ' USD'
+      : Number(tx.amount).toLocaleString('ru-RU') + ' ' + (tx.currency || 'KZT');
+    body.innerHTML =
+      '<div class="receipt-row"><span class="label">Статус</span><span class="value success">' + (tx.status === 'paid' ? 'ОПЛАЧЕН ✓' : tx.status.toUpperCase()) + '</span></div>' +
+      '<div class="receipt-row"><span class="label">Сумма</span><span class="value">' + amount + '</span></div>' +
+      '<div class="receipt-row"><span class="label">Оплата</span><span class="value">' + method + '</span></div>' +
+      '<div class="receipt-row"><span class="label">ID</span><span class="value" style="font-size:11px;word-break:break-all">' + (tx.transaction_ref || '—') + '</span></div>' +
+      '<div class="receipt-row"><span class="label">Дата</span><span class="value">' + (tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : '—') + '</span></div>';
     section.classList.add('show');
   }
 
-  // ═══════════════════════════════════════════
-  //  HANDLE PLAN BUTTON
-  // ═══════════════════════════════════════════
   async function handlePlan(planId) {
-    if (planId === activePlanId) return;
-
-    if (planId === 'plus') {
-      await startPayPal();
-      return;
-    }
-
+    if (!requireAuth()) return;
+    if (planId === activePlanId && isLoggedIn) return;
+    if (planId === 'plus') { await startPayPal(); return; }
     if (planId === 'social') {
-      const reason = (document.getElementById('socialReason')?.value || '').trim();
+      var reason = (document.getElementById('socialReason').value || '').trim();
       if (reason.length < 12) {
         toast('Укажите причину минимум из 12 символов в поле ниже', 'warn');
         document.getElementById('socialBox').classList.add('show');
         document.getElementById('socialReason').focus();
         return;
       }
-      await activatePlan(planId, { social_reason: reason });
+      await activatePlan(planId, {social_reason: reason});
       return;
     }
-
     await activatePlan(planId, {});
   }
 
-  async function activatePlan(planId, extra = {}) {
-    const btn = document.getElementById(`btn-${planId}`);
+  async function activatePlan(planId, extra) {
+    var btn = document.getElementById('btn-' + planId);
     if (btn) { btn.disabled = true; btn.textContent = 'Обработка...'; }
-
-    try {
-      const r = await apiFetch(`${API}/subscription/activate/`, {
-        method: 'POST',
-        body: JSON.stringify({ plan_id: planId, ...extra })
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        toast(d.error || 'Ошибка при активации тарифа', 'error');
-        if (btn) { btn.disabled = false; }
-        return;
-      }
-      toast(d.message || 'Тариф успешно активирован!', 'success');
-      await loadData();
-    } catch (e) {
-      toast('Ошибка подключения к серверу', 'error');
-      if (btn) { btn.disabled = false; }
-    }
+    var payload = JSON.stringify(Object.assign({plan_id: planId}, extra || {}));
+    var r = await authFetch(API + '/subscription/activate/', {method: 'POST', body: payload});
+    if (!r) { toast('Сессия истекла. Войдите снова', 'warn'); if (btn) btn.disabled = false; return; }
+    var d = await r.json();
+    if (!r.ok) { toast(d.error || 'Ошибка активации', 'error'); if (btn) btn.disabled = false; return; }
+    toast(d.message || 'Тариф активирован!', 'success');
+    await loadData();
   }
 
-  // ═══════════════════════════════════════════
-  //  PAYPAL
-  // ═══════════════════════════════════════════
   async function startPayPal() {
-    const btn = document.getElementById('btn-plus');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Переход к PayPal...'; }
-
-    try {
-      const r = await apiFetch(`${API}/subscription/create-paypal-order/`, {
-        method: 'POST',
-        body: JSON.stringify({
-          plan_id: 'plus',
-          success_url: window.location.href.split('?')[0] + '?pp=1',
-          cancel_url: window.location.href.split('?')[0] + '?pp=cancel'
-        })
-      });
-      const d = await r.json();
-      if (!r.ok || !d.checkout_url) {
-        toast(d.error || 'Не удалось создать заказ PayPal', 'error');
-        if (btn) { btn.disabled = false; }
-        return;
-      }
-      window.location.href = d.checkout_url;
-    } catch (e) {
-      toast('Ошибка подключения', 'error');
-      if (btn) { btn.disabled = false; }
-    }
+    var btn = document.getElementById('btn-plus');
+    if (btn) { btn.disabled = true; btn.textContent = 'Переход к PayPal...'; }
+    var r = await authFetch(API + '/subscription/create-paypal-order/', {
+      method: 'POST',
+      body: JSON.stringify({plan_id: 'plus', success_url: window.location.origin + '/subscription.html?pp=1', cancel_url: window.location.origin + '/subscription.html?pp=cancel'})
+    });
+    if (!r) { toast('Ошибка сессии', 'error'); if (btn) btn.disabled = false; return; }
+    var d = await r.json();
+    if (!r.ok || !d.checkout_url) { toast(d.error || 'Ошибка PayPal', 'error'); if (btn) btn.disabled = false; return; }
+    window.location.href = d.checkout_url;
   }
 
   async function capturePayPal(token) {
-    toast('Подтверждаем платёж PayPal...', 'info');
-    try {
-      const r = await apiFetch(`${API}/subscription/capture-paypal-order/`, {
-        method: 'POST',
-        body: JSON.stringify({ token })
-      });
-      const d = await r.json();
-      if (r.ok) {
-        toast('✅ Оплата успешна! Тариф Plus активирован.', 'success');
-      } else {
-        toast(d.error || 'Ошибка подтверждения PayPal', 'error');
-      }
-    } catch {
-      toast('Ошибка при подтверждении PayPal', 'error');
-    }
+    toast('Подтверждаем платёж...', 'info');
+    var r = await authFetch(API + '/subscription/capture-paypal-order/', {method: 'POST', body: JSON.stringify({token: token})});
+    if (!r) { toast('Ошибка сессии', 'error'); return; }
+    var d = await r.json();
+    toast(r.ok ? 'Оплата успешна! Тариф Plus активирован.' : (d.error || 'Ошибка PayPal'), r.ok ? 'success' : 'error');
+    if (r.ok) await loadData();
   }
 
-  // ═══════════════════════════════════════════
-  //  LOAD DATA
-  // ═══════════════════════════════════════════
   async function loadData() {
+    var plans = [];
     try {
-      // Грузим планы и данные подписки параллельно
-      const [plansRes, meRes] = await Promise.allSettled([
-        fetch(`${API}/subscription/plans/`, { headers: { 'ngrok-skip-browser-warning': 'true' } }),
-        apiFetch(`${API}/subscription/me/`)
-      ]);
+      var pr = await fetch(API + '/subscription/plans/');
+      if (pr.ok) { var pd = await pr.json(); plans = Array.isArray(pd) ? pd : (pd.plans || []); }
+    } catch(e) {}
 
-      // Обработка планов
-      let plans = [];
-      if (plansRes.status === 'fulfilled' && plansRes.value.ok) {
-        const data = await plansRes.value.json();
-        plans = Array.isArray(data) ? data : (data.plans || []);
-      } else {
-        document.getElementById('plansContainer').innerHTML = `
-          <div class="error-state">
-            <div class="err-icon">🔌</div>
-            <h3>Сервер недоступен</h3>
-            <p>Убедитесь что Django сервер запущен: <code>${API_BASE}</code></p>
-            <button class="retry-btn" onclick="loadData()">Повторить</button>
-          </div>`;
-        return;
-      }
-
-      // Обработка данных подписки
-      let meData = { subscription: null, transactions: [] };
-      if (meRes.status === 'fulfilled' && meRes.value.ok) {
-        meData = await meRes.value.json();
-      } else if (meRes.status === 'fulfilled' && meRes.value.status === 401) {
-        return; // apiFetch уже сделал редирект
-      }
-      // Если /me/ вернул другую ошибку — грузим страницу с пустой подпиской
-
-      const currentPlanId = meData.subscription?.plan_id || 'free';
-      renderPlans(plans, currentPlanId);
-      renderStatus(meData.subscription || null);
-      if (meData.transactions?.length) renderReceipt(meData.transactions[0]);
-
-    } catch (e) {
-      document.getElementById('plansContainer').innerHTML = `
-        <div class="error-state">
-          <div class="err-icon">🔌</div>
-          <h3>Ошибка подключения</h3>
-          <p>${e.message || 'Не удалось соединиться с сервером'}</p>
-          <button class="retry-btn" onclick="loadData()">Повторить</button>
-        </div>`;
-    }
-  }
-
-  // ═══════════════════════════════════════════
-  //  INIT
-  // ═══════════════════════════════════════════
-  async function init() {
-    let user = getUser();
-    if (!user) {
-      // Нет пользователя вообще — на логин
-      const nextPath = window.location.pathname;
-      window.location.href = '/auth.html?tab=login&next=' + encodeURIComponent(nextPath);
+    if (!plans.length) {
+      document.getElementById('plansContainer').innerHTML =
+        '<div class="error-state"><div class="err-icon">🔌</div><h3>Сервер недоступен</h3><p>Не удалось загрузить тарифы. Обновите страницу.</p><button class="retry-btn" onclick="loadData()">Повторить</button></div>';
       return;
     }
 
-    // Инициализируем навбар (для всех ролей — подписка доступна всем)
-    const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
-    document.getElementById('navAvatar').textContent = initials;
-    document.getElementById('navUserName').textContent = user.name || user.username || 'Пользователь';
+    var meData = {subscription: null, transactions: []};
+    if (isLoggedIn) {
+      var meRes = await authFetch(API + '/subscription/me/');
+      if (meRes && meRes.ok) {
+        meData = await meRes.json();
+      } else if (!meRes) {
+        isLoggedIn = false;
+        toast('Сессия истекла. Войдите снова для управления подпиской.', 'warn');
+      }
+    }
 
-    // Обработка возврата с PayPal
-    const params = new URLSearchParams(window.location.search);
+    var currentPlanId = isLoggedIn ? ((meData.subscription && meData.subscription.plan_id) || 'free') : null;
+    renderPlans(plans, currentPlanId);
+    renderStatus(isLoggedIn ? (meData.subscription || null) : null);
+    if (meData.transactions && meData.transactions.length) renderReceipt(meData.transactions[0]);
+  }
+
+  async function init() {
+    var user = getUser();
+    isLoggedIn = !!(user && user.access);
+
+    if (user) {
+      var initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
+      document.getElementById('navAvatar').textContent = initials;
+      document.getElementById('navUserName').textContent = user.name || user.username || 'Профиль';
+    } else {
+      document.getElementById('navAvatar').textContent = '→';
+      document.getElementById('navUserName').textContent = 'Войти';
+      document.getElementById('navUserName').style.cursor = 'pointer';
+      document.getElementById('navUserName').onclick = function() { window.location.href = '/auth.html'; };
+    }
+
+    var params = new URLSearchParams(window.location.search);
     window.history.replaceState(null, '', window.location.pathname);
-
     if (params.get('pp') === 'cancel') {
       toast('Оплата отменена', 'warn');
-    } else if (params.get('token')) {
+    } else if (params.get('token') && isLoggedIn) {
       await capturePayPal(params.get('token'));
     }
 
