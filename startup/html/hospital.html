@@ -34,7 +34,7 @@
 
     /* ===== Hero banner split layout (text + mini-map) ===== */
     .hospital-hero-banner {
-      background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
+      background: linear-gradient(120deg, var(--bg2) 0%, #3f5f58 60%, #6f9c92 100%);
       padding: 40px 40px 36px;
       position: relative;
       overflow: hidden;
@@ -68,7 +68,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg,#1e293b,#3f5f58);
+      background: linear-gradient(135deg,var(--card),#3f5f58);
       color: rgba(255,255,255,.5);
       font-size: 48px;
       gap: 8px;
@@ -215,7 +215,7 @@
       color: var(--accent);
     }
     .spec-tab.active {
-      background: linear-gradient(135deg, #0f172a, var(--accent));
+      background: linear-gradient(135deg, var(--bg2), var(--accent));
       border-color: transparent;
       color: #fff;
     }
@@ -248,7 +248,7 @@
       width: 52px;
       height: 52px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #0f172a, #6f9c92);
+      background: linear-gradient(135deg, var(--bg2), #6f9c92);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -350,7 +350,7 @@
     }
 
     .mq-map-tooltip {
-      background: #0f172a;
+      background: var(--bg2);
       border: none;
       border-radius: 8px;
       color: #fff;
@@ -380,7 +380,7 @@
       width: 100%;
       padding: 11px 0;
       text-align: center;
-      background: linear-gradient(135deg, #0f172a, #6f9c92);
+      background: linear-gradient(135deg, var(--bg2), #6f9c92);
       color: #fff;
       font-size: 14px;
       font-weight: 700;
@@ -393,7 +393,7 @@
 
     /* CTA-записаться */
     .cta-book {
-      background: linear-gradient(120deg, #0f172a 0%, #3f5f58 60%, #6f9c92 100%);
+      background: linear-gradient(120deg, var(--bg2) 0%, #3f5f58 60%, #6f9c92 100%);
       border-radius: 20px;
       padding: 28px 24px;
       text-align: center;
@@ -831,7 +831,7 @@
 
       const markerHtml = `<div style="
         width:36px;height:36px;
-        background:linear-gradient(135deg,#0f172a,#6f9c92);
+        background:linear-gradient(135deg,var(--bg2),#6f9c92);
         border-radius:50% 50% 50% 0;
         transform:rotate(-45deg);
         border:3px solid white;
@@ -872,7 +872,7 @@
 
       const markerHtml = `<div style="
         width:32px;height:32px;
-        background:linear-gradient(135deg,#0f172a,#6f9c92);
+        background:linear-gradient(135deg,var(--bg2),#6f9c92);
         border-radius:50% 50% 50% 0;
         transform:rotate(-45deg);
         border:2px solid white;
@@ -1053,7 +1053,7 @@
           `<div class="doctors-empty">
             <p style="font-size:32px;margin-bottom:8px">👨‍⚕️</p>
             <p>Нет данных о врачах этой клиники</p>
-            <a href="auth.html?tab=register" style="margin-top:12px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#0f172a,#6f9c92);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px">👨‍⚕️ Регистрация врача</a>
+            <a href="auth.html?tab=register" style="margin-top:12px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,var(--bg2),#6f9c92);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px">👨‍⚕️ Регистрация врача</a>
           </div>`;
         document.getElementById('statDoctors').textContent = '0';
       }
