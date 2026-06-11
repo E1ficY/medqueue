@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Вход в MedQueue</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/styles.css?v=20260602">
   <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
   <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
   <script>
@@ -606,14 +606,15 @@
         user.is_staff ||
         user.username === 'admin'
       );
+      // Приоритет 1: ?next= параметр в URL
+      if (next) {
+        window.location.href = next;
+        return;
+      }
+      // Приоритет 2: sessionStorage
       if (returnUrl) {
         sessionStorage.removeItem(AUTH_RETURN_KEY);
         window.location.href = returnUrl;
-        return;
-
-      }
-      if (next) {
-        window.location.href = next;
         return;
       }
       if (isAdminUser) {

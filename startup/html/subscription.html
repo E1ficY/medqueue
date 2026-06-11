@@ -501,8 +501,10 @@
     const res = await fetch(url, { ...opts, headers });
     if (res.status === 401 && _retry) {
       if (await refreshToken()) return apiFetch(url, opts, false);
+      // Refresh тоже не сработал — токен полностью истёк
       localStorage.removeItem(AUTH_KEY);
-      window.location.href = 'auth.html?tab=login&next=subscription.html';
+      const nextPath = window.location.pathname + window.location.search;
+      window.location.href = '/auth.html?tab=login&next=' + encodeURIComponent(nextPath);
     }
     return res;
   }
@@ -781,18 +783,15 @@
   //  INIT
   // ═══════════════════════════════════════════
   async function init() {
-    const user = getUser();
+    let user = getUser();
     if (!user) {
-      window.location.href = 'auth.html?tab=login&next=subscription.html';
-      return;
-    }
-    if (user.role && user.role !== 'patient') {
-      toast('Подписка доступна только пациентам', 'warn');
-      setTimeout(() => { window.location.href = user.role === 'doctor' ? 'doctor.html' : 'main.html'; }, 1500);
+      // Нет пользователя вообще — на логин
+      const nextPath = window.location.pathname;
+      window.location.href = '/auth.html?tab=login&next=' + encodeURIComponent(nextPath);
       return;
     }
 
-    // Инициализируем навбар
+    // Инициализируем навбар (для всех ролей — подписка доступна всем)
     const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
     document.getElementById('navAvatar').textContent = initials;
     document.getElementById('navUserName').textContent = user.name || user.username || 'Пользователь';
