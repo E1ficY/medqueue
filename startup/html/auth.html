@@ -665,7 +665,8 @@
         });
         const data = await res.json();
         if (res.ok) {
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
+          const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
           localStorage.setItem('medqueue_access_token', data.access);
           localStorage.setItem('medqueue_refresh_token', data.refresh);
           showMessage('Вход выполнен успешно!', 'success');

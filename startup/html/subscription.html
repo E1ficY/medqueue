@@ -7,29 +7,30 @@
   <meta name="description" content="Управление подпиской MedQueue. Выберите тариф и оплатите через PayPal." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0b1220;
-      --bg2: #111827;
-      --card: #161f30;
-      --card2: #1a2540;
-      --border: rgba(255,255,255,.07);
-      --accent: #4ade80;
-      --accent2: #22c55e;
+      --bg: #f0f5fb;
+      --bg2: #e8eef8;
+      --card: #ffffff;
+      --card2: #f8fafd;
+      --border: rgba(0,0,0,.08);
+      --accent: #10b981;
+      --accent2: #059669;
       --paypal: #003087;
       --paypal2: #009cde;
-      --text: #f1f5f9;
+      --text: #0f172a;
       --muted: #64748b;
-      --muted2: #94a3b8;
-      --plus: #f59e0b;
-      --social: #818cf8;
+      --muted2: #475569;
+      --plus: #d97706;
+      --social: #6366f1;
+      --shadow: 0 2px 16px rgba(0,0,0,.07);
     }
 
     body {
-      font-family: 'Manrope', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -42,7 +43,7 @@
       justify-content: space-between;
       padding: 0 32px;
       height: 64px;
-      background: rgba(11,18,32,.85);
+      background: rgba(255,255,255,.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       position: sticky;
@@ -119,6 +120,7 @@
       border-radius: 14px;
       padding: 16px 24px;
       margin-bottom: 32px;
+      box-shadow: var(--shadow);
     }
     .status-icon {
       width: 44px; height: 44px;
@@ -165,6 +167,7 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 18px;
+      box-shadow: var(--shadow);
       padding: 24px;
       display: flex;
       flex-direction: column;
@@ -321,8 +324,9 @@
     #toast {
       position: fixed;
       bottom: 28px; right: 28px;
-      background: #1e293b;
+      background: #ffffff;
       border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
       border-radius: 12px;
       padding: 14px 20px;
       font-size: 14px; font-weight: 600;
@@ -347,7 +351,7 @@
     }
     .spinner {
       width: 36px; height: 36px;
-      border: 3px solid var(--border);
+      border: 3px solid rgba(0,0,0,.1);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin .7s linear infinite;
@@ -362,6 +366,7 @@
       border: 1px solid rgba(239,68,68,.2);
       border-radius: 14px;
       color: var(--muted2);
+      box-shadow: var(--shadow);
     }
     .error-state .err-icon { font-size: 36px; margin-bottom: 12px; }
     .error-state h3 { color: var(--text); margin-bottom: 8px; }
@@ -460,9 +465,23 @@
   var isLoggedIn = false;
 
   function getUser() {
-    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch(e) { return null; }
+    try {
+      var u = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+      if (!u) return null;
+      // OAuth logins store tokens separately - merge them in
+      if (!u.access) {
+        var sep = localStorage.getItem('medqueue_access_token') || '';
+        var sepR = localStorage.getItem('medqueue_refresh_token') || '';
+        if (sep) { u.access = sep; u.refresh = sepR; }
+      }
+      return u;
+    } catch(e) { return null; }
   }
-  function saveUser(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
+  function saveUser(u) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(u));
+    // Keep separate keys in sync too
+    if (u.access) localStorage.setItem('medqueue_access_token', u.access);
+  }
 
   async function tryRefresh() {
     var u = getUser();
