@@ -2,6 +2,9 @@ from collections import defaultdict
 from datetime import timedelta
 import random
 import string
+import requests
+import base64
+import logging
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
@@ -9,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, Q, Subquery
 from .models import (
     Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile, DoctorReview,
@@ -1326,9 +1330,6 @@ def admin_users(request):
     } for u in users]
     return Response(data)
 
-import requests
-import base64
-import logging
 logger = logging.getLogger(__name__)
 
 def get_paypal_access_token():
