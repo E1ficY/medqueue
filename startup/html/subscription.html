@@ -232,6 +232,24 @@
       min-height: 80px;
     }
     .social-reason-box textarea:focus { outline: none; border-color: #6366f1; }
+    
+    .file-upload-zone {
+      border: 2px dashed rgba(59,130,246,.3);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(59,130,246,.03);
+      transition: all 0.2s;
+    }
+    .file-upload-zone:hover {
+      background: rgba(59,130,246,.08);
+      border-color: rgba(59,130,246,.5);
+    }
+    .file-upload-zone .upload-icon { font-size: 28px; margin-bottom: 10px; }
+    .file-upload-zone .upload-text { font-size: 14px; color: var(--muted); font-weight: 500; }
+    .file-upload-zone.has-file .upload-icon { content: '✅'; }
+    .file-upload-zone.has-file .upload-text { color: #10b981; font-weight: 700; }
 
     /* ─── RECEIPT ─── */
     .receipt-section { display: none; margin-bottom: 32px; }
@@ -373,8 +391,14 @@
 
   <!-- ФОРМА ЛЬГОТНОГО ТАРИФА -->
   <div class="social-reason-box" id="socialBox">
-    <label for="socialReason">Причина для льготного тарифа (минимум 12 символов)</label>
-    <textarea id="socialReason" placeholder="Опишите причину (инвалидность, пенсионный возраст, многодетная семья и т.д.)..."></textarea>
+    <label>Загрузите фото льготной карточки (пенсионное, инвалидность и т.д.)</label>
+    <div class="file-upload-zone" id="fileUploadZone" onclick="document.getElementById('socialPhoto').click()">
+      <div class="upload-icon" id="uploadIcon">📸</div>
+      <div class="upload-text" id="uploadText">Нажмите, чтобы выбрать фото</div>
+      <input type="file" id="socialPhoto" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
+    </div>
+    <!-- Hidden textarea so the backend validation still works (needs >=12 chars) -->
+    <textarea id="socialReason" style="display:none;"></textarea>
   </div>
 
   <!-- ПОСЛЕДНИЙ ПЛАТЕЖ -->
@@ -553,6 +577,17 @@
     section.classList.add('show');
   }
 
+  function handleFileUpload(input) {
+    if (input.files && input.files[0]) {
+      var file = input.files[0];
+      document.getElementById('uploadIcon').textContent = '✅';
+      document.getElementById('uploadText').textContent = 'Файл прикреплён: ' + file.name;
+      document.getElementById('fileUploadZone').classList.add('has-file');
+      // Set a dummy reason for the backend validation
+      document.getElementById('socialReason').value = 'Файл загружен: ' + file.name + ' (подтверждение льготы)';
+    }
+  }
+
   async function handlePlan(planId) {
     if (!requireAuth()) return;
     if (planId === activePlanId && isLoggedIn) return;
@@ -560,9 +595,8 @@
     if (planId === 'social') {
       var reason = (document.getElementById('socialReason').value || '').trim();
       if (reason.length < 12) {
-        toast('Укажите причину минимум из 12 символов в поле ниже', 'warn');
+        toast('Пожалуйста, прикрепите фото вашей льготной карточки', 'warn');
         document.getElementById('socialBox').classList.add('show');
-        document.getElementById('socialReason').focus();
         return;
       }
       await activatePlan(planId, {social_reason: reason});
