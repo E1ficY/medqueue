@@ -173,11 +173,11 @@
     }
     .plan-btn.free-btn:hover { background: rgba(15,23,42,.08); }
     .plan-btn.social-btn {
-      background: rgba(74,222,128,.1);
+      background: rgba(59,130,246,.1);
       color: var(--accent);
-      border: 1px solid rgba(74,222,128,.3);
+      border: 1px solid rgba(59,130,246,.3);
     }
-    .plan-btn.social-btn:hover { background: rgba(74,222,128,.2); }
+    .plan-btn.social-btn:hover { background: rgba(59,130,246,.2); }
     .plan-btn.paypal-btn {
       background: linear-gradient(135deg, #003087, #0070ba);
       color: #fff;
@@ -189,9 +189,9 @@
       transform: none !important;
     }
     .plan-btn.active-btn {
-      background: rgba(74,222,128,.1);
+      background: rgba(59,130,246,.1);
       color: var(--accent);
-      border: 1px solid rgba(74,222,128,.25);
+      border: 1px solid rgba(59,130,246,.25);
       cursor: default;
     }
 
@@ -495,7 +495,7 @@
       if (p.id === 'plus' && !isActive) {
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
-        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:rgba(111,156,146,.12); color:var(--accent); border:1px solid rgba(111,156,146,.3);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
+        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:rgba(59,130,246,.12); color:var(--accent); border:1px solid rgba(59,130,246,.3);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
         html += '</div>';
       } else {
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
