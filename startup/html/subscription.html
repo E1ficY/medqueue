@@ -427,7 +427,10 @@
       <div class="status-plan" id="statusPlan">Тариф: Free</div>
       <div class="status-detail" id="statusDetail">Загрузка...</div>
     </div>
-    <div class="status-badge" id="statusBadge">Free</div>
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+      <div class="status-badge" id="statusBadge">Free</div>
+      <button id="refundBtn" class="plan-btn" style="display:none; padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted2); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
+    </div>
   </div>
 
   <!-- ПЛАНЫ -->
@@ -598,6 +601,11 @@
     var badge = document.getElementById('statusBadge');
     badge.textContent = sub.plan_title;
     badge.className = 'status-badge' + (sub.plan_id === 'plus' ? ' plus' : sub.plan_id === 'social' ? ' social' : '');
+
+    var refundBtn = document.getElementById('refundBtn');
+    if (refundBtn) {
+      refundBtn.style.display = (sub.plan_id !== 'free') ? 'block' : 'none';
+    }
   }
 
   function renderReceipt(tx) {
@@ -644,6 +652,19 @@
     var d = await r.json();
     if (!r.ok) { toast(d.error || 'Ошибка активации', 'error'); if (btn) btn.disabled = false; return; }
     toast(d.message || 'Тариф активирован!', 'success');
+    await loadData();
+  }
+
+  async function resetDemo() {
+    if (!confirm('Вы уверены, что хотите отменить тариф и вернуть средства (сброс демо-данных)?')) return;
+    var btn = document.getElementById('refundBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Обработка...'; }
+    var r = await authFetch(API + '/subscription/reset-demo/', {method: 'POST'});
+    if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
+    var d = await r.json();
+    if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
+    toast(d.message || 'Тариф отменён и данные очищены', 'success');
+    if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; }
     await loadData();
   }
 
