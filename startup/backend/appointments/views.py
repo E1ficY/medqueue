@@ -1450,7 +1450,25 @@ def capture_paypal_order(request):
                 issue = details[0].get('issue') if details else err_data.get('name')
                 
                 if issue == 'INSTRUMENT_DECLINED':
-                    msg = "Оплата отклонена банком. Пожалуйста, используйте другую карту или проверьте баланс."
+                    desc = str(details[0].get('description', '')).lower() if details else ""
+                    if 'fraud' in desc or 'risk' in desc:
+                        msg = "Платёж заблокирован системой безопасности банка (подозрение на мошенничество)."
+                    elif 'cvv' in desc or 'security code' in desc:
+                        msg = "Неверный код безопасности (CVV). Пожалуйста, проверьте данные."
+                    elif 'expired' in desc:
+                        msg = "Срок действия карты истёк."
+                    elif 'refused' in desc or 'declined by the processor' in desc:
+                        msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в банк или используйте другую карту."
+                    else:
+                        msg = "Оплата отклонена банком (возможно, недостаточно средств). Проверьте баланс."
+                elif issue in ['CVV_REJECTED', 'INVALID_CVV']:
+                    msg = "Неверный код безопасности (CVV). Пожалуйста, проверьте данные."
+                elif issue in ['EXPIRED_CARD', 'INSTRUMENT_EXPIRED']:
+                    msg = "Срок действия карты истёк."
+                elif issue in ['TRANSACTION_REFUSED']:
+                    msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в банк."
+                elif 'fraud' in str(issue).lower() or 'risk' in str(issue).lower():
+                    msg = "Платёж заблокирован системой безопасности."
                 else:
                     msg = f"Ошибка оплаты: {issue or 'отказ платёжной системы'}"
             except:
