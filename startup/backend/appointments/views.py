@@ -1411,7 +1411,7 @@ def create_paypal_order(request):
             except:
                 msg = "Ошибка связи с PayPal при создании заказа."
                 
-            logger.warning(f"PayPal Create Rejected: {msg}")
+            print(f"[WARNING] PayPal Create Rejected: {msg}", flush=True)
             return Response({'error': msg}, status=400)
             
         data = response.json()
@@ -1419,7 +1419,7 @@ def create_paypal_order(request):
         
         return Response({'checkout_url': approve_link, 'order_id': data['id']})
     except Exception as e:
-        logger.error(f"PayPal Order Error: {e}")
+        print(f"[ERROR] PayPal Order Error: {e}", flush=True)
         return Response({'error': str(e)}, status=500)
 
 
@@ -1476,7 +1476,7 @@ def capture_paypal_order(request):
             except:
                 msg = "Произошла неизвестная ошибка при обращении к PayPal."
             
-            logger.warning(f"PayPal Capture Rejected: {msg}")
+            print(f"[WARNING] PayPal Capture Rejected: {msg}", flush=True)
             return Response({'error': msg}, status=400)
             
         data = response.json()
@@ -1508,12 +1508,12 @@ def capture_paypal_order(request):
                 paid_at=timezone.now()
             )
             
-            logger.info(f"PayPal Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount_paid} {currency} for Plus plan.")
+            print(f"[INFO] PayPal Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount_paid} {currency} for Plus plan.", flush=True)
             return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
         else:
-            logger.warning(f"PayPal Capture Incomplete: Status {data['status']}")
+            print(f"[WARNING] PayPal Capture Incomplete: Status {data['status']}", flush=True)
             return Response({'error': f"Заказ не завершен. Статус: {data['status']}"}, status=400)
             
     except Exception as e:
-        logger.error(f"PayPal Capture Error: {e}")
+        print(f"[ERROR] PayPal Capture Error: {e}", flush=True)
         return Response({'error': str(e)}, status=500)
