@@ -1410,6 +1410,8 @@ def create_paypal_order(request):
                 msg = f"Ошибка PayPal: {issue}"
             except:
                 msg = "Ошибка связи с PayPal при создании заказа."
+                
+            logger.warning(f"PayPal Create Rejected: {msg}")
             return Response({'error': msg}, status=400)
             
         data = response.json()
@@ -1473,6 +1475,8 @@ def capture_paypal_order(request):
                     msg = f"Ошибка оплаты: {issue or 'отказ платёжной системы'}"
             except:
                 msg = "Произошла неизвестная ошибка при обращении к PayPal."
+            
+            logger.warning(f"PayPal Capture Rejected: {msg}")
             return Response({'error': msg}, status=400)
             
         data = response.json()
