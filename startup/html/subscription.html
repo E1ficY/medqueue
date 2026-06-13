@@ -661,17 +661,6 @@
     var user = getUser();
     isLoggedIn = !!(user && user.access);
 
-    if (user) {
-      var initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
-      document.getElementById('navAvatar').textContent = initials;
-      document.getElementById('navUserName').textContent = user.name || user.username || 'Профиль';
-    } else {
-      document.getElementById('navAvatar').textContent = '→';
-      document.getElementById('navUserName').textContent = 'Войти';
-      document.getElementById('navUserName').style.cursor = 'pointer';
-      document.getElementById('navUserName').onclick = function() { window.location.href = '/auth.html'; };
-    }
-
     var params = new URLSearchParams(window.location.search);
     window.history.replaceState(null, '', window.location.pathname);
     if (params.get('pp') === 'cancel') {
