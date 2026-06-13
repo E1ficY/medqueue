@@ -653,7 +653,8 @@ def subscription_activate(request):
     if plan_id not in SUBSCRIPTION_PLANS:
         return Response({'error': 'Выбранный тариф не существует'}, status=400)
 
-    if plan_id == 'plus':
+    test_payment = str(request.data.get('test_payment', '')).lower() in ('true', '1')
+    if plan_id == 'plus' and not test_payment:
         return Response({'error': 'Оплата Plus производится через PayPal Checkout'}, status=400)
 
     sub, _ = UserSubscription.objects.get_or_create(
@@ -668,9 +669,9 @@ def subscription_activate(request):
         if len(social_reason) < 12:
             return Response({'error': 'Для льготного тарифа укажите причину минимум из 12 символов'}, status=400)
 
-    if plan_id == 'plus' and not card:
+    if plan_id == 'plus' and not test_payment and not card:
         return Response({'error': 'Для платного тарифа сначала добавьте платежную карту'}, status=400)
-    if plan_id == 'plus' and card and not card.is_verified:
+    if plan_id == 'plus' and not test_payment and card and not card.is_verified:
         return Response({'error': 'Сначала подтвердите карту кодом из банка'}, status=400)
 
     amount = selected['price_kzt']
@@ -683,9 +684,9 @@ def subscription_activate(request):
             currency='KZT',
             status='processing',
             transaction_ref=_make_tx_ref(),
-            merchant_name='MedQueue Health Services',
-            card_last4=card.last4 if card else '',
-            card_brand=card.brand if card else '',
+            merchant_name='MedQueue Health Services (TEST)',
+            card_last4='4242' if test_payment else (card.last4 if card else ''),
+            card_brand='DemoCard' if test_payment else (card.brand if card else ''),
             description=f"Оплата тарифа {selected['title']}",
         )
 

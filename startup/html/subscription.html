@@ -560,7 +560,14 @@
       html += '<div class="plan-name">' + icon + ' ' + p.title + '</div>';
       html += '<div class="plan-price">' + priceText + priceSub + '</div>';
       html += '<ul class="plan-features">' + benefits + '</ul>';
-      html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
+      if (p.id === 'plus' && !isActive) {
+        html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
+        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:var(--card2); color:var(--text); border:1px solid var(--border);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
+        html += '</div>';
+      } else {
+        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
+      }
       html += '</div>';
     }
     html += '</div>';
