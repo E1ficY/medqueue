@@ -1508,8 +1508,10 @@ def capture_paypal_order(request):
                 paid_at=timezone.now()
             )
             
+            logger.info(f"PayPal Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount_paid} {currency} for Plus plan.")
             return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
         else:
+            logger.warning(f"PayPal Capture Incomplete: Status {data['status']}")
             return Response({'error': f"Заказ не завершен. Статус: {data['status']}"}, status=400)
             
     except Exception as e:
