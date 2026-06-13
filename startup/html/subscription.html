@@ -11,26 +11,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #f0f5fb;
-      --bg2: #e8eef8;
-      --card: #ffffff;
-      --card2: #f8fafd;
-      --border: rgba(0,0,0,.08);
-      --accent: #10b981;
-      --accent2: #059669;
-      --paypal: #003087;
-      --paypal2: #009cde;
-      --text: #0f172a;
-      --muted: #64748b;
-      --muted2: #475569;
-      --plus: #d97706;
-      --social: #6366f1;
-      --shadow: 0 2px 16px rgba(0,0,0,.07);
-    }
+
 
     body {
-      font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -59,7 +42,7 @@
     }
     .nav-links { display: flex; gap: 4px; }
     .nav-link {
-      color: var(--muted2);
+      color: var(--muted);
       text-decoration: none;
       font-size: 13px;
       font-weight: 600;
@@ -75,12 +58,12 @@
       gap: 10px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--muted2);
+      color: var(--muted);
     }
     .nav-avatar {
       width: 34px; height: 34px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--paypal2));
+      background: linear-gradient(135deg, var(--accent), #009cde);
       display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-weight: 800; color: #fff;
       cursor: pointer;
@@ -104,7 +87,7 @@
       margin-bottom: 12px;
     }
     .page-hero p {
-      color: var(--muted2);
+      color: var(--muted);
       font-size: 16px;
       max-width: 480px;
       margin: 0 auto;
@@ -151,8 +134,8 @@
       color: var(--accent);
       border: 1px solid rgba(74,222,128,.2);
     }
-    .status-badge.plus { background: rgba(245,158,11,.12); color: var(--plus); border-color: rgba(245,158,11,.2); }
-    .status-badge.social { background: rgba(129,140,248,.12); color: var(--social); border-color: rgba(129,140,248,.2); }
+    .status-badge.plus { background: rgba(245,158,11,.12); color: #d97706; border-color: rgba(245,158,11,.2); }
+    .status-badge.social { background: rgba(129,140,248,.12); color: #6366f1; border-color: rgba(129,140,248,.2); }
 
     /* ─── PLANS GRID ─── */
     .plans-grid {
@@ -187,7 +170,7 @@
       position: absolute; top: 16px; right: 16px;
       font-size: 10px; font-weight: 800;
       padding: 3px 9px; border-radius: 20px;
-      background: linear-gradient(90deg, var(--plus), #f97316);
+      background: linear-gradient(90deg, #d97706, #f97316);
       color: #fff;
       letter-spacing: .5px;
       text-transform: uppercase;
@@ -195,7 +178,7 @@
 
     .plan-name {
       font-size: 13px; font-weight: 700;
-      color: var(--muted2);
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -209,10 +192,10 @@
     .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
     .plan-features li {
       display: flex; align-items: flex-start; gap: 8px;
-      font-size: 13px; color: var(--muted2); line-height: 1.4;
+      font-size: 13px; color: var(--muted); line-height: 1.4;
     }
     .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
-    .plan-card.popular .plan-features li::before { color: var(--plus); }
+    .plan-card.popular .plan-features li::before { color: #d97706; }
 
     .plan-btn {
       width: 100%;
@@ -227,18 +210,18 @@
     }
     .plan-btn.free-btn {
       background: rgba(255,255,255,.06);
-      color: var(--muted2);
+      color: var(--muted);
       border: 1px solid var(--border);
     }
     .plan-btn.free-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
     .plan-btn.social-btn {
       background: rgba(129,140,248,.12);
-      color: var(--social);
+      color: #6366f1;
       border: 1px solid rgba(129,140,248,.25);
     }
     .plan-btn.social-btn:hover { background: rgba(129,140,248,.22); }
     .plan-btn.paypal-btn {
-      background: linear-gradient(135deg, var(--paypal), #0070ba);
+      background: linear-gradient(135deg, #003087, #0070ba);
       color: #fff;
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
@@ -275,7 +258,7 @@
     .social-reason-box label {
       display: block;
       font-size: 13px; font-weight: 700;
-      color: var(--muted2);
+      color: var(--muted);
       margin-bottom: 8px;
     }
     .social-reason-box textarea {
@@ -290,7 +273,7 @@
       resize: vertical;
       min-height: 80px;
     }
-    .social-reason-box textarea:focus { outline: none; border-color: var(--social); }
+    .social-reason-box textarea:focus { outline: none; border-color: #6366f1; }
 
     /* ─── RECEIPT ─── */
     .receipt-section { display: none; margin-bottom: 32px; }
@@ -302,12 +285,12 @@
       overflow: hidden;
     }
     .receipt-header {
-      background: linear-gradient(90deg, var(--card2), #1a2540);
+      background: linear-gradient(90deg, var(--card), #1a2540);
       padding: 14px 20px;
       display: flex; align-items: center; gap: 10px;
       border-bottom: 1px solid var(--border);
     }
-    .receipt-header .title { font-size: 12px; font-weight: 800; color: var(--muted2); letter-spacing: 1px; text-transform: uppercase; }
+    .receipt-header .title { font-size: 12px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
     .receipt-body { padding: 4px 0; }
     .receipt-row {
       display: flex; justify-content: space-between;
@@ -365,7 +348,7 @@
       background: var(--card);
       border: 1px solid rgba(239,68,68,.2);
       border-radius: 14px;
-      color: var(--muted2);
+      color: var(--muted);
       box-shadow: var(--shadow);
     }
     .error-state .err-icon { font-size: 36px; margin-bottom: 12px; }
@@ -429,7 +412,7 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
       <div class="status-badge" id="statusBadge">Free</div>
-      <button id="refundBtn" class="plan-btn" style="display:none; padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted2); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
+      <button id="refundBtn" class="plan-btn" style="display:none; padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
     </div>
   </div>
 
@@ -566,7 +549,7 @@
       if (p.id === 'plus' && !isActive) {
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
-        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:var(--card2); color:var(--text); border:1px solid var(--border);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
+        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:var(--card); color:var(--text); border:1px solid var(--border);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
         html += '</div>';
       } else {
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
@@ -656,10 +639,19 @@
   }
 
   async function resetDemo() {
-    if (!confirm('Вы уверены, что хотите отменить тариф и вернуть средства (сброс демо-данных)?')) return;
+    var reason = prompt('Отмена тарифа и возврат средств.\n\nПожалуйста, укажите причину возврата (минимум 5 символов):');
+    if (reason === null) return;
+    if (reason.trim().length < 5) {
+      alert('Пожалуйста, укажите более подробную причину.');
+      return;
+    }
+
     var btn = document.getElementById('refundBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Обработка...'; }
-    var r = await authFetch(API + '/subscription/reset-demo/', {method: 'POST'});
+    var r = await authFetch(API + '/subscription/reset-demo/', {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason.trim() })
+    });
     if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
     var d = await r.json();
     if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
