@@ -118,8 +118,9 @@
     }
     .plan-card:hover { border-color: rgba(255,255,255,.15); transform: translateY(-2px); }
     .plan-card.popular {
-      border-color: rgba(245,158,11,.35);
-      background: linear-gradient(145deg, #1a2540, #1e2c40);
+      border-color: rgba(245,158,11,.4);
+      background: linear-gradient(145deg, #fffcf5, #fffbeb);
+      box-shadow: 0 4px 24px rgba(245,158,11,.15);
     }
     .plan-card.active-plan { border-color: rgba(74,222,128,.35); }
 
@@ -166,17 +167,17 @@
       transition: all .2s;
     }
     .plan-btn.free-btn {
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
+      background: rgba(15,23,42,.04);
+      color: var(--text);
       border: 1px solid var(--border);
     }
-    .plan-btn.free-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+    .plan-btn.free-btn:hover { background: rgba(15,23,42,.08); }
     .plan-btn.social-btn {
-      background: rgba(129,140,248,.12);
-      color: #6366f1;
-      border: 1px solid rgba(129,140,248,.25);
+      background: rgba(74,222,128,.1);
+      color: var(--accent);
+      border: 1px solid rgba(74,222,128,.3);
     }
-    .plan-btn.social-btn:hover { background: rgba(129,140,248,.22); }
+    .plan-btn.social-btn:hover { background: rgba(74,222,128,.2); }
     .plan-btn.paypal-btn {
       background: linear-gradient(135deg, #003087, #0070ba);
       color: #fff;
@@ -494,7 +495,7 @@
       if (p.id === 'plus' && !isActive) {
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
-        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:var(--card); color:var(--text); border:1px solid var(--border);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
+        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:rgba(111,156,146,.12); color:var(--accent); border:1px solid rgba(111,156,146,.3);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">💳 Тестовая оплата</button>';
         html += '</div>';
       } else {
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
