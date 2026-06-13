@@ -52,10 +52,10 @@
 :root {
   --bg: #f0f7f9;
   --card: #ffffff;
-  --accent: #6f9c92;
-  --accent-2: #88b0a9;
-  --accent-dark: #5c887f;
-  --accent-light: #f2f6f4;
+  --accent: #2563eb;
+  --accent-2: #3b82f6;
+  --accent-dark: #1d4ed8;
+  --accent-light: #eff6ff;
   --navy: #0f172a;
   --navy-mid: #1e293b;
   --blue: #88b0a9;
@@ -3539,9 +3539,9 @@ body.page-profile-avant button,
 body.page-hospital-avant .doctor-book-btn,
 body.page-contacts-avant .btn,
 body.page-contacts-avant button {
-  background: linear-gradient(135deg, #1f2d2f, #4e6962) !important;
-  color: #f9f6f0 !important;
-  border: 1px solid rgba(25, 41, 40, 0.4) !important;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(37, 99, 235, 0.4) !important;
   border-radius: 12px !important;
 }
 
@@ -3765,9 +3765,9 @@ body.page-contacts-avant .contacts-section {
 [data-theme="dark"] body.page-hospital-avant .doctor-book-btn,
 [data-theme="dark"] body.page-contacts-avant .btn,
 [data-theme="dark"] body.page-contacts-avant button {
-  background: linear-gradient(135deg, #2f403f, #5f7a72) !important;
-  color: #f5f0e6 !important;
-  border-color: rgba(216, 201, 170, 0.28) !important;
+  background: linear-gradient(135deg, #172554, #1d4ed8) !important;
+  color: #ffffff !important;
+  border-color: rgba(29, 78, 216, 0.4) !important;
 }
 
 @media (max-width: 900px) {
@@ -3784,8 +3784,8 @@ body.page-contacts-avant .contacts-section {
 
 /* ===== FINAL UNIFIED SOFT DESIGN LAYER ===== */
 :root {
-  --mq-soft-accent: #6f9c92;
-  --mq-soft-accent-dark: #5c887f;
+  --mq-soft-accent: #3b82f6;
+  --mq-soft-accent-dark: #2563eb;
   --mq-soft-bg: #f7f2e9;
   --mq-soft-bg-2: #f3ece1;
   --mq-soft-card: #fffaf2;
@@ -3854,17 +3854,17 @@ body.page-profile-avant button,
 body.page-hospital-avant .doctor-book-btn,
 body.page-contacts-avant .btn,
 body.page-contacts-avant button {
-  background: linear-gradient(135deg, #2b3d3b, var(--mq-soft-accent)) !important;
-  border-color: rgba(28, 44, 42, 0.38) !important;
-  color: #f9f6f0 !important;
+  background: linear-gradient(135deg, #1e3a8a, var(--mq-soft-accent)) !important;
+  border-color: rgba(30, 58, 138, 0.38) !important;
+  color: #ffffff !important;
 }
 
 body.page-main-avant .btn-outline,
 body.page-recording-avant .btn-outline,
 body.page-profile-avant .btn-outline {
   background: transparent !important;
-  color: #2b3d3b !important;
-  border-color: rgba(43, 61, 59, 0.4) !important;
+  color: #1e3a8a !important;
+  border-color: rgba(30, 58, 138, 0.4) !important;
 }
 
 /* heroes and top blocks in one gentle style */
