@@ -1403,8 +1403,15 @@ def create_paypal_order(request):
         }
         
         response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        
+        if not response.ok:
+            try:
+                err_data = response.json()
+                issue = err_data.get('name', 'UNKNOWN_ERROR')
+                msg = f"Ошибка PayPal: {issue}"
+            except:
+                msg = "Ошибка связи с PayPal при создании заказа."
+            return Response({'error': msg}, status=400)
+            
         data = response.json()
         approve_link = next((link['href'] for link in data['links'] if link['rel'] == 'approve'), None)
         
@@ -1435,7 +1442,21 @@ def capture_paypal_order(request):
         }
         
         response = requests.post(url, headers=headers)
-        response.raise_for_status()
+        
+        if not response.ok:
+            try:
+                err_data = response.json()
+                details = err_data.get('details', [])
+                issue = details[0].get('issue') if details else err_data.get('name')
+                
+                if issue == 'INSTRUMENT_DECLINED':
+                    msg = "Оплата отклонена банком. Пожалуйста, используйте другую карту или проверьте баланс."
+                else:
+                    msg = f"Ошибка оплаты: {issue or 'отказ платёжной системы'}"
+            except:
+                msg = "Произошла неизвестная ошибка при обращении к PayPal."
+            return Response({'error': msg}, status=400)
+            
         data = response.json()
         
         if data['status'] == 'COMPLETED':
