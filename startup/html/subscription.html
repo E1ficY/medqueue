@@ -8,6 +8,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css?v=2026-06-11">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=2">
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
+  <script src="../js/script.js?v=1.0.8"></script>
+  <script src="../js/theme.js"></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,55 +25,6 @@
       min-height: 100vh;
     }
 
-    /* ─── NAVBAR ─── */
-    .navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 32px;
-      height: 64px;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .brand {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--accent);
-      text-decoration: none;
-      letter-spacing: -.3px;
-    }
-    .nav-links { display: flex; gap: 4px; }
-    .nav-link {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 8px;
-      transition: all .15s;
-    }
-    .nav-link:hover { color: var(--text); background: rgba(255,255,255,.06); }
-    .nav-link.active { color: var(--text); background: rgba(255,255,255,.08); }
-    .nav-user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .nav-avatar {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #009cde);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 800; color: #fff;
-      cursor: pointer;
-    }
 
     /* ─── LAYOUT ─── */
     .page { max-width: 1080px; margin: 0 auto; padding: 40px 20px 80px; }
@@ -376,21 +333,9 @@
     }
   </style>
 </head>
-<body>
+<body class="page-subscription-avant">
 
-<nav class="navbar">
-  <a href="main.html" class="brand">MedQueue</a>
-  <div class="nav-links">
-    <a href="main.html" class="nav-link">Главная</a>
-    <a href="appointments.html" class="nav-link">Запись</a>
-    <a href="subscription.html" class="nav-link active">Подписка</a>
-    <a href="profile.html" class="nav-link">Профиль</a>
-  </div>
-  <div class="nav-user">
-    <div class="nav-avatar" id="navAvatar">?</div>
-    <span id="navUserName">Загрузка...</span>
-  </div>
-</nav>
+
 
 <div id="toast">
   <span class="toast-icon" id="toastIcon">ℹ️</span>
