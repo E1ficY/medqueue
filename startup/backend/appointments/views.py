@@ -1448,9 +1448,10 @@ def capture_paypal_order(request):
         if not response.ok:
             try:
                 err_data = response.json()
-                print(f"[DEBUG] Raw PayPal Error: {err_data}", flush=True)
                 details = err_data.get('details', [])
                 issue = details[0].get('issue') if details else err_data.get('name')
+                
+                print(f"[ERROR] PayPal Capture Failed. Issue: {issue}", flush=True)
                 
                 if issue == 'INSTRUMENT_DECLINED':
                     desc = str(details[0].get('description', '')).lower() if details else ""
@@ -1477,7 +1478,6 @@ def capture_paypal_order(request):
             except:
                 msg = "Произошла неизвестная ошибка при обращении к PayPal."
             
-            print(f"[WARNING] PayPal Capture Rejected: {msg}", flush=True)
             return Response({'error': msg}, status=400)
             
         data = response.json()
