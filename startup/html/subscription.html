@@ -365,6 +365,7 @@
   <div class="page-hero">
     <h1>Подписка MedQueue</h1>
     <p>Выберите подходящий тариф и получите доступ к расширенным функциям платформы</p>
+    <button onclick="runErrorDemo()" style="margin-top:16px; padding:8px 16px; font-size:13px; background:rgba(59,130,246,.1); color:var(--accent); border:1px solid rgba(59,130,246,.3); border-radius:8px; cursor:pointer;">🎓 Демо: Показать варианты ошибок оплаты</button>
   </div>
 
   <!-- СТАТУС ТЕКУЩЕЙ ПОДПИСКИ -->
@@ -478,13 +479,28 @@
   var toastTimer;
   function toast(msg, type) {
     type = type || 'info';
-    var el = document.getElementById('toast');
-    var icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warn' ? '⚠️' : 'ℹ️';
-    document.getElementById('toastIcon').textContent = icon;
+    var t = document.getElementById('toast');
+    var i = document.getElementById('toastIcon');
+    t.className = 'show ' + type;
+    i.textContent = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
     document.getElementById('toastMsg').textContent = msg;
-    el.className = 'show ' + type;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function() { el.className = ''; }, 4500);
+    toastTimer = setTimeout(() => { t.className = t.className.replace('show', ''); }, 4000);
+  }
+
+  async function runErrorDemo() {
+    const msgs = [
+      { t: "error", m: "Оплата отклонена банком (возможно, недостаточно средств). Проверьте баланс." },
+      { t: "error", m: "Платёж заблокирован системой безопасности банка (подозрение на мошенничество)." },
+      { t: "error", m: "Неверный код безопасности (CVV). Пожалуйста, проверьте данные." },
+      { t: "error", m: "Срок действия карты истёк." },
+      { t: "error", m: "Банк отклонил транзакцию. Пожалуйста, обратитесь в банк или используйте другую карту." },
+      { t: "success", m: "Оплата успешно завершена! Тариф Plus активирован." }
+    ];
+    for (let i = 0; i < msgs.length; i++) {
+      toast(msgs[i].m, msgs[i].t);
+      await new Promise(r => setTimeout(r, 4500));
+    }
   }
 
   function requireAuth() {
