@@ -1448,6 +1448,7 @@ def capture_paypal_order(request):
         if not response.ok:
             try:
                 err_data = response.json()
+                print(f"[DEBUG] Raw PayPal Error: {err_data}", flush=True)
                 details = err_data.get('details', [])
                 issue = details[0].get('issue') if details else err_data.get('name')
                 
