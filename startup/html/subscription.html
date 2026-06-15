@@ -465,6 +465,8 @@
   var AUTH_KEY = 'medqueue_current_user';
   var activePlanId = 'free';
   var isLoggedIn = false;
+  var _pollTimer = null;          // polling timer id
+  var _wasPendingSocial = false;  // track previous state for change detection
 
   function getUser() {
     try {
@@ -781,10 +783,46 @@
     var sub = isLoggedIn ? (meData.subscription || null) : null;
     // A social plan is only truly "active" once confirmed by admin
     var isPendingSocial = sub && sub.plan_id === 'social' && !sub.social_reason_confirmed_at;
+
+    // REAL-TIME: detect transition from pending → approved
+    if (_wasPendingSocial && !isPendingSocial && sub && sub.plan_id === 'social') {
+      // Admin just approved! Show celebration
+      toast('🎉 Ваша льгота одобрена администратором! Тариф «Льготный Care» активирован.', 'success');
+      // Pulse animation on status bar
+      var bar = document.getElementById('statusBar');
+      if (bar) { bar.style.transition = 'transform 0.3s'; bar.style.transform = 'scale(1.02)'; setTimeout(() => bar.style.transform = '', 400); }
+    }
+    if (_wasPendingSocial && sub && sub.plan_id === 'free' && !isPendingSocial) {
+      // Admin rejected
+      toast('❌ Заявка отклонена администратором. Пожалуйста, обратитесь в поддержку.', 'error');
+    }
+    _wasPendingSocial = !!isPendingSocial;
+
     var currentPlanId = isLoggedIn ? (sub ? (isPendingSocial ? 'pending_social' : sub.plan_id) : 'free') : null;
     renderPlans(plans, currentPlanId, isPendingSocial);
     renderStatus(sub, isPendingSocial);
     if (meData.transactions && meData.transactions.length) renderReceipt(meData.transactions[0]);
+
+    // REAL-TIME POLLING: start if pending, stop if not
+    if (isPendingSocial && !_pollTimer) {
+      _pollTimer = setInterval(async function() {
+        // Silently check only subscription status (lightweight)
+        try {
+          var r = await authFetch(API + '/subscription/me/');
+          if (!r || !r.ok) return;
+          var d = await r.json();
+          var s = d.subscription || null;
+          var stillPending = s && s.plan_id === 'social' && !s.social_reason_confirmed_at;
+          // If status changed, do a full re-render
+          if (!stillPending) {
+            clearInterval(_pollTimer); _pollTimer = null;
+            await loadData();
+          }
+        } catch(e) {}
+      }, 5000);
+    } else if (!isPendingSocial && _pollTimer) {
+      clearInterval(_pollTimer); _pollTimer = null;
+    }
   }
 
   async function init() {
