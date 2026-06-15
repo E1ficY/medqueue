@@ -1523,3 +1523,59 @@ def capture_paypal_order(request):
     except Exception as e:
         print(f"[ERROR] PayPal Capture Error: {e}", flush=True)
         return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def card_checkout(request):
+    """POST /api/subscription/card-checkout/"""
+    user = request.user
+    card_number = request.data.get('card_number', '')
+    amount = request.data.get('amount', 2990)
+
+    if not card_number or len(card_number) < 13:
+        return Response({'error': 'Некорректный номер карты'}, status=400)
+
+    # Mock Validation Logic
+    if card_number.endswith('0000'):
+        msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в ваш банк или используйте другую карту."
+        print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+        return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
+        
+    if card_number.endswith('1111'):
+        msg = "Недостаточно средств на карте."
+        print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+        return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
+
+    # Success Case
+    plan_id = 'plus'
+    try:
+        plan = SubscriptionPlan.objects.get(id=plan_id)
+    except SubscriptionPlan.DoesNotExist:
+        return Response({'error': 'План не найден'}, status=404)
+
+    # Update subscription
+    sub, _ = Subscription.objects.get_or_create(user=user)
+    sub.plan = plan
+    sub.social_reason = ""
+    sub.status = 'active'
+    sub.start_date = timezone.now()
+    # Next billing date - 1 month from now
+    from dateutil.relativedelta import relativedelta
+    sub.next_billing_date = timezone.now() + relativedelta(months=1)
+    sub.save()
+
+    # Create transaction
+    Transaction.objects.create(
+        user=user,
+        amount=amount,
+        currency='KZT',
+        status='paid',
+        transaction_ref=f"CARD_MOCK_{int(timezone.now().timestamp())}",
+        merchant_name='Credit Card',
+        card_last4=card_number[-4:],
+        description="Оплата тарифа Plus картой",
+        paid_at=timezone.now()
+    )
+    
+    print(f"[INFO] Card Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount} KZT for Plus plan.", flush=True)
+    return Response({'status': 'success', 'message': 'Оплата успешно завершена'})

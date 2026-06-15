@@ -566,32 +566,11 @@
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
         
-        // Direct Card UI
+        // Button redirecting to card checkout
         html += '<div class="card-payment-box">';
-        html += '<div class="card-payment-divider">ИЛИ КАРТОЙ</div>';
-        
-        html += '<div class="card-input-group">';
-        html += '<div class="card-input-row">';
-        html += '<input type="text" placeholder="Номер карты" maxlength="19">';
-        html += '<div class="card-icons">';
-        html += '<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" style="height:12px;">';
-        html += '<img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" style="height:12px;">';
-        html += '</div>';
-        html += '</div>';
-        html += '<div class="card-input-row" style="display:flex;">';
-        html += '<input type="text" placeholder="ММ / ГГ" style="flex:1; border-right:1px solid var(--border);" maxlength="5">';
-        html += '<input type="text" placeholder="Код безопасности" style="flex:1; padding-left:14px;" maxlength="3">';
-        html += '</div>';
+        html += '<button class="plan-btn" style="background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);" onclick="window.location.href=\'/card-checkout.html\'">💳 Оплатить картой</button>';
         html += '</div>';
 
-        html += '<div class="card-save-row">';
-        html += '<input type="checkbox" id="saveCardCb">';
-        html += '<label for="saveCardCb">Сохранить реквизиты платежа для будущих покупок</label>';
-        html += '</div>';
-
-        html += '<button class="plan-btn" style="background:#10b981; color:#fff; border:none;" onclick="toast(\'Оплата картой интегрируется\', \'info\')">Подписаться</button>';
-
-        html += '</div>';
         html += '</div>';
       } else {
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';

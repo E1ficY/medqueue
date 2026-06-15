@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Оформление подписки | MedQueue</title>
+  <link rel="stylesheet" href="../css/modules/fonts.css">
+  <style>
+    :root {
+      --bg: #000000;
+      --text: #ffffff;
+      --muted: #a1a1aa;
+      --border: #3f3f46;
+      --card: #18181b;
+      --accent: #10b981;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    * { box-sizing: border-box; }
+    
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .checkout-grid { grid-template-columns: 1fr; }
+    }
+
+    .payment-form h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .input-row:last-child { border-bottom: none; }
+    .input-row input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+    }
+    .input-row input::placeholder { color: var(--muted); }
+    .card-icons { display: flex; gap: 6px; }
+    .card-icons img { height: 16px; }
+
+    .save-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .save-row input[type="checkbox"] {
+      margin-top: 4px;
+      accent-color: var(--text);
+      width: 16px;
+      height: 16px;
+    }
+    .save-row label {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 30px;
+    }
+    .summary-card h2 {
+      font-size: 22px;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    .summary-label {
+      font-size: 14px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .features-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 30px 0;
+    }
+    .features-list li {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #e4e4e7;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .features-list li span { color: #a855f7; }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      padding: 14px;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 13px;
+      margin-bottom: 16px;
+      text-align: center;
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--card);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 10000;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-row">
+      <button class="back-btn" onclick="window.location.href='/subscription.html'">‹</button>
+      <h1 class="title">Настройте свой план</h1>
+    </div>
+
+    <div class="checkout-grid">
+      
+      <div class="payment-form">
+        <h3>Способ оплаты</h3>
+        
+        <div class="input-group">
+          <div class="input-row">
+            <input type="text" id="cardNumber" placeholder="Номер карты" maxlength="19" oninput="formatCard(this)">
+            <div class="card-icons">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+            </div>
+          </div>
+          <div class="input-row" style="display:flex;">
+            <input type="text" id="cardExp" placeholder="ММ / ГГ" style="flex:1; border-right:1px solid var(--border);" maxlength="5" oninput="formatExp(this)">
+            <input type="text" id="cardCvc" placeholder="Код безопасности" style="flex:1; padding-left:16px;" maxlength="3">
+          </div>
+        </div>
+
+        <div class="save-row">
+          <input type="checkbox" id="saveCardCb" checked>
+          <label for="saveCardCb">Сохранить реквизиты платежа в адрес MedQueue для будущих покупок</label>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <h2>План Plus</h2>
+        <div class="summary-label">Основные функции</div>
+        
+        <ul class="features-list">
+          <li><span>⚡</span> Выбор любой клиники и врача без ограничений</li>
+          <li><span>⚡</span> Умный подбор врача и приоритетная запись на освободившееся время</li>
+          <li><span>⚡</span> Персональные напоминания и поддержка 24/7</li>
+        </ul>
+
+        <hr style="border:none; border-top:1px solid var(--border); margin-bottom:20px;">
+
+        <div class="price-row">
+          <span>Подписка Ежемесячно</span>
+          <span>2 990 KZT</span>
+        </div>
+        <div class="price-row">
+          <span>Расчетный налог</span>
+          <span>0,00 KZT</span>
+        </div>
+        
+        <div class="total-row">
+          <span>К оплате сегодня</span>
+          <span>2 990 KZT</span>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <button class="submit-btn" id="submitBtn" onclick="processPayment()">Подписаться</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastMsg">Сообщение</span>
+  </div>
+
+  <script>
+    function formatCard(el) {
+      var v = el.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      var matches = v.match(/\d{4,16}/g);
+      var match = matches && matches[0] || '';
+      var parts = [];
+      for (var i = 0, len = match.length; i < len; i += 4) {
+        parts.push(match.substring(i, i + 4));
+      }
+      if (parts.length) {
+        el.value = parts.join(' ');
+      } else {
+        el.value = v;
+      }
+    }
+    function formatExp(el) {
+      var v = el.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      if (v.length > 2) {
+        v = v.substring(0, 2) + ' / ' + v.substring(2, 4);
+      }
+      el.value = v;
+    }
+
+    var toastTimer;
+    function toast(msg, type) {
+      type = type || 'info';
+      var t = document.getElementById('toast');
+      var i = document.getElementById('toastIcon');
+      t.className = 'toast show';
+      i.textContent = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
+      document.getElementById('toastMsg').textContent = msg;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.className = t.className.replace('show', ''); }, 4000);
+    }
+
+    function requireAuth() {
+      var AUTH_KEY = 'medqueue_current_user';
+      try {
+        var u = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+        if (!u || !u.access) {
+          // Check separate token
+          var sep = localStorage.getItem('medqueue_access_token');
+          if (!sep) {
+            sessionStorage.setItem('medqueue_auth_return_url', window.location.href);
+            window.location.href = '/auth.html?tab=login';
+            return null;
+          }
+          u = u || {};
+          u.access = sep;
+        }
+        return u;
+      } catch(e) { return null; }
+    }
+
+    async function processPayment() {
+      var u = requireAuth();
+      if (!u) return;
+
+      var card = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+      var exp = document.getElementById('cardExp').value;
+      var cvc = document.getElementById('cardCvc').value;
+      var errorMsg = document.getElementById('errorMsg');
+      errorMsg.style.display = 'none';
+
+      if (card.length < 13) {
+        errorMsg.textContent = 'Введите корректный номер карты';
+        errorMsg.style.display = 'block';
+        return;
+      }
+      if (exp.length < 5) {
+        errorMsg.textContent = 'Введите срок действия';
+        errorMsg.style.display = 'block';
+        return;
+      }
+      if (cvc.length < 3) {
+        errorMsg.textContent = 'Введите код безопасности';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Обработка...';
+
+      try {
+        var res = await fetch(window.location.origin + '/api/subscription/card-checkout/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + u.access
+          },
+          body: JSON.stringify({
+            card_number: card,
+            amount: 2990
+          })
+        });
+        var data = await res.json();
+        
+        if (!res.ok) {
+          errorMsg.textContent = data.detail || data.error || 'Ошибка оплаты';
+          errorMsg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Подписаться';
+          toast('Банк отклонил операцию', 'error');
+        } else {
+          toast('Оплата успешно завершена!', 'success');
+          btn.textContent = 'Успешно ✓';
+          setTimeout(() => {
+            window.location.href = '/subscription.html';
+          }, 1500);
+        }
+      } catch(e) {
+        errorMsg.textContent = 'Ошибка соединения с сервером';
+        errorMsg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Подписаться';
+      }
+    }
+  </script>
+</body>
+</html>
