@@ -442,16 +442,61 @@
     }
 
     // ── Auth ─────────────────────────────────────────────
-    function getAuthToken() {
+    function getUser() {
       try {
         var u = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
-        if (u && u.access) return u.access;
-        return localStorage.getItem('medqueue_access_token') || null;
+        if (!u) return null;
+        if (!u.access) {
+          var sep = localStorage.getItem('medqueue_access_token') || '';
+          var sepR = localStorage.getItem('medqueue_refresh_token') || '';
+          if (sep) { u.access = sep; u.refresh = sepR; }
+        }
+        return u;
+      } catch(e) { return null; }
+    }
+    
+    function saveUser(u) {
+      localStorage.setItem('medqueue_current_user', JSON.stringify(u));
+      if (u.access) localStorage.setItem('medqueue_access_token', u.access);
+    }
+
+    async function tryRefresh() {
+      var u = getUser();
+      if (!u || !u.refresh) return false;
+      try {
+        var r = await fetch(window.location.origin + '/api/auth/token/refresh/', {
+          method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({refresh: u.refresh})
+        });
+        if (!r.ok) return false;
+        var d = await r.json();
+        if (!d.access) return false;
+        saveUser(Object.assign({}, u, {access: d.access}));
+        return true;
+      } catch(e) { return false; }
+    }
+
+    async function authFetch(url, opts) {
+      opts = opts || {};
+      var u = getUser();
+      var headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+      if (u && u.access) headers['Authorization'] = 'Bearer ' + u.access;
+      try {
+        var res = await fetch(url, Object.assign({}, opts, {headers: headers}));
+        if (res.status === 401) {
+          if (await tryRefresh()) {
+            var u2 = getUser();
+            headers['Authorization'] = 'Bearer ' + u2.access;
+            return fetch(url, Object.assign({}, opts, {headers: headers}));
+          }
+          localStorage.removeItem('medqueue_current_user');
+          return null;
+        }
+        return res;
       } catch(e) { return null; }
     }
 
     function requireAuth() {
-      if (getAuthToken()) return true;
+      if (getUser() && getUser().access) return true;
       sessionStorage.setItem('medqueue_auth_return_url', window.location.href);
       window.location.href = '/auth.html?tab=login';
       return false;
@@ -487,18 +532,19 @@
       btn.textContent = 'Обработка...';
 
       try {
-        var res = await fetch(window.location.origin + '/api/subscription/card-checkout/', {
+        var res = await authFetch(window.location.origin + '/api/subscription/card-checkout/', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + getAuthToken()
-          },
           body: JSON.stringify({
             card_name: firstName + ' ' + lastName,
             card_number: card,
             amount: 2990
           })
         });
+        
+        if (!res) {
+          window.location.href = '/auth.html?tab=login';
+          return;
+        }
         var data = await res.json();
 
         if (!res.ok) {
