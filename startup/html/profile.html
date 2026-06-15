@@ -830,6 +830,10 @@
         roleBadge.textContent = roleText + ' • ' + planText;
         roleBadge.style.display = 'inline-block';
         
+        if (user.role !== 'patient') {
+          document.querySelectorAll('a[href="subscription.html"]').forEach(a => a.style.display = 'none');
+        }
+
         if (user.subscription_plan === 'social') {
           roleBadge.style.background = '#f59e0b';
           roleBadge.style.color = '#fff';
