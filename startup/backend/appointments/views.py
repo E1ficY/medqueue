@@ -1624,82 +1624,88 @@ def card_checkout(request):
     except ValueError:
         exp_year = 99
 
-    if not card_number or len(card_number) < 13:
-        return Response({'error': 'Некорректный номер карты'}, status=400)
-
-    # Mock Validation Logic
-    if 'reject' in card_name.lower() or 'реджект' in card_name.lower():
-        msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
-        print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
-        return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
-
-    if card_number.endswith('0000'):
-        msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в ваш банк или используйте другую карту."
-        print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
-        return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
-        
-    if card_number.endswith('1111'):
-        msg = "Недостаточно средств на карте."
-        print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
-        return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
-
-    # Success Case
-    plan_id = 'plus'
-    if plan_id not in SUBSCRIPTION_PLANS:
-        return Response({'error': 'План не найден'}, status=404)
-
-    # Determine Brand
-    first_digit = card_number[0] if card_number else '4'
-    if first_digit == '4': brand = 'VISA'
-    elif first_digit == '5': brand = 'Mastercard'
-    elif first_digit == '3': brand = 'AmEx'
-    elif first_digit == '6': brand = 'UnionPay'
-    else: brand = 'Unknown'
-
-    # Save Payment Card
     try:
-        card = PaymentCard.objects.get(user=user)
-        card.card_holder = card_name or user.get_full_name() or user.username
-        card.brand = brand
-        card.last4 = card_number[-4:]
-        card.exp_month = exp_month
-        card.exp_year = exp_year
-        card.is_verified = True
-        card.save()
-    except PaymentCard.DoesNotExist:
-        card = PaymentCard.objects.create(
+        if not card_number or len(card_number) < 13:
+            return Response({'error': 'Некорректный номер карты'}, status=400)
+
+        # Mock Validation Logic
+        if 'reject' in card_name.lower() or 'реджект' in card_name.lower():
+            msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
+            print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
+            return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
+
+        if card_number.endswith('0000'):
+            msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в ваш банк или используйте другую карту."
+            print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+            return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
+            
+        if card_number.endswith('1111'):
+            msg = "Недостаточно средств на карте."
+            print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+            return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
+
+        # Success Case
+        plan_id = 'plus'
+        if plan_id not in SUBSCRIPTION_PLANS:
+            return Response({'error': 'План не найден'}, status=404)
+
+        # Determine Brand
+        first_digit = card_number[0] if card_number else '4'
+        if first_digit == '4': brand = 'VISA'
+        elif first_digit == '5': brand = 'Mastercard'
+        elif first_digit == '3': brand = 'AmEx'
+        elif first_digit == '6': brand = 'UnionPay'
+        else: brand = 'Unknown'
+
+        # Save Payment Card
+        try:
+            card = PaymentCard.objects.get(user=user)
+            card.card_holder = card_name or user.get_full_name() or user.username
+            card.brand = brand
+            card.last4 = card_number[-4:]
+            card.exp_month = exp_month
+            card.exp_year = exp_year
+            card.is_verified = True
+            card.save()
+        except PaymentCard.DoesNotExist:
+            card = PaymentCard.objects.create(
+                user=user,
+                card_holder=card_name or user.get_full_name() or user.username,
+                brand=brand,
+                last4=card_number[-4:],
+                exp_month=exp_month,
+                exp_year=exp_year,
+                is_verified=True
+            )
+
+        # Update subscription
+        sub, _ = UserSubscription.objects.get_or_create(user=user)
+        sub.plan = plan_id
+        sub.social_reason = ""
+        sub.status = 'active'
+        
+        from dateutil.relativedelta import relativedelta
+        sub.next_billing_date = timezone.now() + relativedelta(months=1)
+        sub.save()
+
+        # Create transaction
+        PaymentTransaction.objects.create(
             user=user,
-            card_holder=card_name or user.get_full_name() or user.username,
-            brand=brand,
-            last4=card_number[-4:],
-            exp_month=exp_month,
-            exp_year=exp_year,
-            is_verified=True
+            subscription=sub,
+            amount=amount,
+            currency='KZT',
+            status='paid',
+            transaction_ref=f"CARD_MOCK_{int(timezone.now().timestamp())}",
+            merchant_name='Credit Card',
+            card_last4=card.last4,
+            description="Оплата тарифа Plus картой",
+            paid_at=timezone.now()
         )
-
-    # Update subscription
-    sub, _ = UserSubscription.objects.get_or_create(user=user)
-    sub.plan = plan_id
-    sub.social_reason = ""
-    sub.status = 'active'
-    
-    from dateutil.relativedelta import relativedelta
-    sub.next_billing_date = timezone.now() + relativedelta(months=1)
-    sub.save()
-
-    # Create transaction
-    PaymentTransaction.objects.create(
-        user=user,
-        subscription=sub,
-        amount=amount,
-        currency='KZT',
-        status='paid',
-        transaction_ref=f"CARD_MOCK_{int(timezone.now().timestamp())}",
-        merchant_name='Credit Card',
-        card_last4=card.last4,
-        description="Оплата тарифа Plus картой",
-        paid_at=timezone.now()
-    )
-    
-    print(f"[INFO] Card Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount} KZT for Plus plan.", flush=True)
-    return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
+        
+        print(f"[INFO] Card Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount} KZT for Plus plan.", flush=True)
+        return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
+    except Exception as e:
+        print(f"[ERROR] Card Checkout Exception: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return Response({'error': 'INTERNAL_ERROR', 'detail': f"Server error: {str(e)}"}, status=400)
