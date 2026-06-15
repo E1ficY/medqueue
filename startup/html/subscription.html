@@ -540,25 +540,40 @@
     return false;
   }
 
-  function renderPlans(plans, currentPlanId) {
+  function renderPlans(plans, currentPlanId, isPendingSocial) {
     activePlanId = currentPlanId || 'free';
     var defs = {free: '🌱', social: '💚', plus: '⭐'};
     var html = '<div class="plans-grid">';
     for (var i = 0; i < plans.length; i++) {
       var p = plans[i];
       var isActive = p.id === activePlanId && isLoggedIn;
+      // Pending social: show on social card but not as 'active'
+      var isPendingThisCard = isPendingSocial && p.id === 'social';
       var icon = defs[p.id] || '⚙️';
       var priceText = p.price_kzt === 0 ? 'Бесплатно' : p.price_kzt.toLocaleString('ru-RU') + ' ₸';
       var priceSub = p.price_kzt === 0 ? '' : '<span>/ месяц</span>';
       var btnContent, btnClass;
-      if (isActive) { btnContent = '✓ Текущий тариф'; btnClass = 'active-btn'; }
-      else if (p.id === 'plus') { btnContent = '<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span> Оплатить'; btnClass = 'paypal-btn'; }
-      else if (p.id === 'social') { btnContent = 'Подтвердить льготу'; btnClass = 'social-btn'; }
-      else { btnContent = isLoggedIn ? 'Выбрать' : 'Войти для выбора'; btnClass = 'free-btn'; }
+      if (isPendingThisCard) {
+        btnContent = '⏳ Ожидает проверки...';
+        btnClass = 'active-btn';
+      } else if (isActive) {
+        btnContent = '✓ Текущий тариф';
+        btnClass = 'active-btn';
+      } else if (p.id === 'plus') {
+        btnContent = '<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span> Оплатить';
+        btnClass = 'paypal-btn';
+      } else if (p.id === 'social') {
+        btnContent = 'Подтвердить льготу';
+        btnClass = 'social-btn';
+      } else {
+        btnContent = isLoggedIn ? 'Выбрать' : 'Войти для выбора';
+        btnClass = 'free-btn';
+      }
       var benefits = '';
       for (var j = 0; j < p.benefits.length; j++) benefits += '<li>' + p.benefits[j] + '</li>';
-      html += '<div class="plan-card' + (p.is_popular ? ' popular' : '') + (isActive ? ' active-plan' : '') + '">';
+      html += '<div class="plan-card' + (p.is_popular ? ' popular' : '') + (isActive ? ' active-plan' : '') + (isPendingThisCard ? ' pending-plan' : '') + '">';
       if (p.is_popular) html += '<div class="plan-popular-badge">🔥 Популярный</div>';
+      if (isPendingThisCard) html += '<div class="plan-popular-badge" style="background:#f59e0b;">⏳ Ожидает проверки</div>';
       html += '<div class="plan-name">' + icon + ' ' + p.title + '</div>';
       html += '<div class="plan-price">' + priceText + priceSub + '</div>';
       html += '<ul class="plan-features">' + benefits + '</ul>';
@@ -573,7 +588,7 @@
 
         html += '</div>';
       } else {
-        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
+        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive || isPendingThisCard ? ' disabled' : '') + '>' + btnContent + '</button>';
       }
       html += '</div>';
     }
@@ -583,7 +598,7 @@
     if (sb) sb.classList.toggle('show', isLoggedIn && activePlanId !== 'social');
   }
 
-  function renderStatus(sub) {
+  function renderStatus(sub, isPendingSocial) {
     var bar = document.getElementById('statusBar');
     if (!isLoggedIn) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
@@ -596,6 +611,22 @@
       document.getElementById('statusBadge').className = 'status-badge';
       return;
     }
+
+    // Pending social — special display
+    if (isPendingSocial) {
+      document.getElementById('statusIcon').textContent = '⏳';
+      document.getElementById('statusPlan').textContent = 'Тариф: Льготный Care (ожидает проверки)';
+      document.getElementById('statusDetail').textContent = 'Ваш документ на проверке у администратора. Вы уведомите как только он будет одобрен.';
+      var badge = document.getElementById('statusBadge');
+      badge.textContent = 'Ожидает';
+      badge.className = 'status-badge';
+      badge.style.background = '#f59e0b';
+      badge.style.color = '#fff';
+      var refundBtn = document.getElementById('refundBtn');
+      if (refundBtn) refundBtn.style.display = 'none';
+      return;
+    }
+
     document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '🏥';
     document.getElementById('statusPlan').textContent = 'Тариф: ' + sub.plan_title;
     var billing = sub.next_billing_date
@@ -605,6 +636,8 @@
     var badge = document.getElementById('statusBadge');
     badge.textContent = sub.plan_title;
     badge.className = 'status-badge' + (sub.plan_id === 'plus' ? ' plus' : sub.plan_id === 'social' ? ' social' : '');
+    badge.style.background = '';
+    badge.style.color = '';
 
     var refundBtn = document.getElementById('refundBtn');
     if (refundBtn) {
@@ -745,9 +778,12 @@
       }
     }
 
-    var currentPlanId = isLoggedIn ? ((meData.subscription && meData.subscription.plan_id) || 'free') : null;
-    renderPlans(plans, currentPlanId);
-    renderStatus(isLoggedIn ? (meData.subscription || null) : null);
+    var sub = isLoggedIn ? (meData.subscription || null) : null;
+    // A social plan is only truly "active" once confirmed by admin
+    var isPendingSocial = sub && sub.plan_id === 'social' && !sub.social_reason_confirmed_at;
+    var currentPlanId = isLoggedIn ? (sub ? (isPendingSocial ? 'pending_social' : sub.plan_id) : 'free') : null;
+    renderPlans(plans, currentPlanId, isPendingSocial);
+    renderStatus(sub, isPendingSocial);
     if (meData.transactions && meData.transactions.length) renderReceipt(meData.transactions[0]);
   }
 
