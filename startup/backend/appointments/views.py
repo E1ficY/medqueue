@@ -1657,14 +1657,25 @@ def card_checkout(request):
     else: brand = 'Unknown'
 
     # Save Payment Card
-    card, _ = PaymentCard.objects.get_or_create(user=user)
-    card.card_holder = card_name or user.get_full_name() or user.username
-    card.brand = brand
-    card.last4 = card_number[-4:]
-    card.exp_month = exp_month
-    card.exp_year = exp_year
-    card.is_verified = True
-    card.save()
+    try:
+        card = PaymentCard.objects.get(user=user)
+        card.card_holder = card_name or user.get_full_name() or user.username
+        card.brand = brand
+        card.last4 = card_number[-4:]
+        card.exp_month = exp_month
+        card.exp_year = exp_year
+        card.is_verified = True
+        card.save()
+    except PaymentCard.DoesNotExist:
+        card = PaymentCard.objects.create(
+            user=user,
+            card_holder=card_name or user.get_full_name() or user.username,
+            brand=brand,
+            last4=card_number[-4:],
+            exp_month=exp_month,
+            exp_year=exp_year,
+            is_verified=True
+        )
 
     # Update subscription
     sub, _ = UserSubscription.objects.get_or_create(user=user)
