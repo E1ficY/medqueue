@@ -1529,6 +1529,7 @@ def capture_paypal_order(request):
 def card_checkout(request):
     """POST /api/subscription/card-checkout/"""
     user = request.user
+    card_name = request.data.get('card_name', '').strip()
     card_number = request.data.get('card_number', '')
     amount = request.data.get('amount', 2990)
 
@@ -1536,6 +1537,11 @@ def card_checkout(request):
         return Response({'error': 'Некорректный номер карты'}, status=400)
 
     # Mock Validation Logic
+    if card_name.lower() in ['reject', 'реджект']:
+        msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
+        print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
+        return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
+
     if card_number.endswith('0000'):
         msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в ваш банк или используйте другую карту."
         print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
