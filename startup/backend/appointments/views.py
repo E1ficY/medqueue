@@ -1145,8 +1145,11 @@ def admin_stats(request):
 
     # Calculate total revenue from paid transactions
     from django.db.models import Sum
-    revenue_agg = PaymentTransaction.objects.filter(status='paid').aggregate(Sum('amount'))
-    revenue = revenue_agg['amount__sum'] or 0
+    kzt_revenue = PaymentTransaction.objects.filter(status='paid', currency='KZT').aggregate(Sum('amount'))['amount__sum'] or 0
+    usd_revenue = PaymentTransaction.objects.filter(status='paid', currency='USD').aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Конвертируем USD в KZT (курс 500: 5.98 USD * 500 = 2990 KZT)
+    revenue = float(kzt_revenue) + float(usd_revenue) * 500.0
 
     return Response({
         'hospitals':      Hospital.objects.count(),
