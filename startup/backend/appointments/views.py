@@ -1607,7 +1607,7 @@ def card_checkout(request):
         return Response({'error': 'Некорректный номер карты'}, status=400)
 
     # Mock Validation Logic
-    if card_name.lower() in ['reject', 'реджект']:
+    if 'reject' in card_name.lower() or 'реджект' in card_name.lower():
         msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
         print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
         return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
@@ -1624,24 +1624,22 @@ def card_checkout(request):
 
     # Success Case
     plan_id = 'plus'
-    try:
-        plan = SubscriptionPlan.objects.get(id=plan_id)
-    except SubscriptionPlan.DoesNotExist:
+    if plan_id not in SUBSCRIPTION_PLANS:
         return Response({'error': 'План не найден'}, status=404)
 
     # Update subscription
-    sub, _ = Subscription.objects.get_or_create(user=user)
-    sub.plan = plan
+    sub, _ = UserSubscription.objects.get_or_create(user=user)
+    sub.plan = plan_id
     sub.social_reason = ""
     sub.status = 'active'
     sub.start_date = timezone.now()
-    # Next billing date - 1 month from now
+    
     from dateutil.relativedelta import relativedelta
     sub.next_billing_date = timezone.now() + relativedelta(months=1)
     sub.save()
 
     # Create transaction
-    Transaction.objects.create(
+    PaymentTransaction.objects.create(
         user=user,
         amount=amount,
         currency='KZT',
