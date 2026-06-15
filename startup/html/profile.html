@@ -592,6 +592,7 @@
           <p class="profile-username" id="profileUsername"></p>
           <p class="profile-email" id="profileEmail"></p>
           <div class="profile-badges">
+            <span class="profile-badge" id="profileRoleBadge" style="display:none; padding:4px 10px; font-weight:700;"></span>
             <span class="profile-badge"> Верифицирован</span>
             <span class="profile-badge" id="memberSince"> Участник MedQueue</span>
           </div>
@@ -787,6 +788,36 @@
       if (user.role === 'doctor') {
         const banner = document.getElementById('doctorBanner');
         if (banner) { banner.style.display = 'flex'; }
+      }
+
+      // Role and subscription badge
+      const roleBadge = document.getElementById('profileRoleBadge');
+      if (roleBadge) {
+        let roleText = '';
+        let planText = '';
+        
+        if (user.role === 'patient') roleText = 'Пациент';
+        else if (user.role === 'doctor') roleText = 'Врач';
+        else if (user.role === 'admin' || user.is_superuser) roleText = 'Администратор';
+        else roleText = 'Пользователь';
+        
+        if (user.subscription_plan === 'social') planText = 'Льготник';
+        else if (user.subscription_plan === 'plus') planText = 'Plus';
+        else planText = 'Free';
+        
+        roleBadge.textContent = roleText + ' • ' + planText;
+        roleBadge.style.display = 'inline-block';
+        
+        if (user.subscription_plan === 'social') {
+          roleBadge.style.background = '#f59e0b';
+          roleBadge.style.color = '#fff';
+        } else if (user.subscription_plan === 'plus') {
+          roleBadge.style.background = '#10b981';
+          roleBadge.style.color = '#fff';
+        } else {
+          roleBadge.style.background = 'rgba(15,23,42,0.05)';
+          roleBadge.style.color = '#475569';
+        }
       }
     }
 
