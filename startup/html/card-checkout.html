@@ -238,18 +238,39 @@
       margin-bottom: 10px;
     }
     .total-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      margin-top: 16px;
-      margin-bottom: 20px;
+      display:flex; justify-content:space-between;
+      font-size:18px; font-weight:800; color:var(--text);
+      margin-top:20px; margin-bottom:24px;
     }
+
+    .agreement-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.03);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .agreement-box input[type="checkbox"] {
+      margin-top: 3px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .agreement-box span {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      cursor: pointer;
+      user-select: none;
+    }
+
     .pay-btn {
-      width: 100%;
-      background: var(--accent);
-      color: #fff;
+      width:100%;
+      background:var(--primary); color:#fff;
       border: none;
       padding: 15px;
       border-radius: 10px;
@@ -384,6 +405,11 @@
           <span>2 990 ₸</span>
         </div>
 
+        <label class="agreement-box">
+          <input type="checkbox" id="refundAgreement">
+          <span>Я подтверждаю оплату и согласен(на), что средства за подписку не подлежат возврату.</span>
+        </label>
+
         <button class="pay-btn" id="payBtn" onclick="processPayment()">Оплатить 2 990 ₸</button>
       </div>
 
@@ -511,6 +537,7 @@
       var card = document.getElementById('cardNumber').value.replace(/\s/g, '');
       var exp  = document.getElementById('cardExp').value;
       var cvc  = document.getElementById('cardCvc').value;
+      var agree = document.getElementById('refundAgreement').checked;
       var errorMsg = document.getElementById('errorMsg');
       errorMsg.style.display = 'none';
 
@@ -518,8 +545,9 @@
       if (!firstName) err = 'Введите имя';
       else if (!lastName) err = 'Введите фамилию';
       else if (card.length < 13) err = 'Введите корректный номер карты';
-      else if (exp.length < 4) err = 'Введите срок действия';
-      else if (cvc.length < 3) err = 'Введите CVV';
+      else if (!exp) err = 'Введите срок действия';
+      else if (!cvc) err = 'Введите CVC';
+      else if (!agree) err = 'Необходимо подтвердить условие о невозврате средств';
 
       if (err) {
         errorMsg.textContent = err;
