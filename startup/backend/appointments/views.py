@@ -1602,6 +1602,19 @@ def card_checkout(request):
     card_name = request.data.get('card_name', '').strip()
     card_number = request.data.get('card_number', '')
     amount = request.data.get('amount', 2990)
+    
+    exp_month_raw = request.data.get('exp_month', '')
+    exp_year_raw = request.data.get('exp_year', '')
+    
+    try:
+        exp_month = int(exp_month_raw)
+    except ValueError:
+        exp_month = 12
+        
+    try:
+        exp_year = int(exp_year_raw)
+    except ValueError:
+        exp_year = 99
 
     if not card_number or len(card_number) < 13:
         return Response({'error': 'Некорректный номер карты'}, status=400)
@@ -1627,12 +1640,29 @@ def card_checkout(request):
     if plan_id not in SUBSCRIPTION_PLANS:
         return Response({'error': 'План не найден'}, status=404)
 
+    # Determine Brand
+    first_digit = card_number[0] if card_number else '4'
+    if first_digit == '4': brand = 'VISA'
+    elif first_digit == '5': brand = 'Mastercard'
+    elif first_digit == '3': brand = 'AmEx'
+    elif first_digit == '6': brand = 'UnionPay'
+    else: brand = 'Unknown'
+
+    # Save Payment Card
+    card, _ = PaymentCard.objects.get_or_create(user=user)
+    card.card_holder = card_name or user.get_full_name() or user.username
+    card.brand = brand
+    card.last4 = card_number[-4:]
+    card.exp_month = exp_month
+    card.exp_year = exp_year
+    card.is_verified = True
+    card.save()
+
     # Update subscription
     sub, _ = UserSubscription.objects.get_or_create(user=user)
     sub.plan = plan_id
     sub.social_reason = ""
     sub.status = 'active'
-    sub.start_date = timezone.now()
     
     from dateutil.relativedelta import relativedelta
     sub.next_billing_date = timezone.now() + relativedelta(months=1)
@@ -1641,12 +1671,13 @@ def card_checkout(request):
     # Create transaction
     PaymentTransaction.objects.create(
         user=user,
+        subscription=sub,
         amount=amount,
         currency='KZT',
         status='paid',
         transaction_ref=f"CARD_MOCK_{int(timezone.now().timestamp())}",
         merchant_name='Credit Card',
-        card_last4=card_number[-4:],
+        card_last4=card.last4,
         description="Оплата тарифа Plus картой",
         paid_at=timezone.now()
     )

@@ -532,11 +532,17 @@
       btn.textContent = 'Обработка...';
 
       try {
+        var expParts = exp.split('/');
+        var expMonth = expParts[0] ? expParts[0].trim() : '';
+        var expYear = expParts[1] ? expParts[1].trim() : '';
+
         var res = await authFetch(window.location.origin + '/api/subscription/card-checkout/', {
           method: 'POST',
           body: JSON.stringify({
             card_name: firstName + ' ' + lastName,
             card_number: card,
+            exp_month: expMonth,
+            exp_year: expYear,
             amount: 2990
           })
         });
