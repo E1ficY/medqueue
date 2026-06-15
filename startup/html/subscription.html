@@ -531,7 +531,7 @@
     var t = document.getElementById('toast');
     var i = document.getElementById('toastIcon');
     t.className = 'show ' + type;
-    i.textContent = type === 'error' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : (type === 'success' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : 'ℹ️');
+    i.innerHTML = type === 'error' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : (type === 'success' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : 'ℹ️');
     document.getElementById('toastMsg').textContent = msg;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.className = t.className.replace('show', ''); }, 4000);
@@ -624,7 +624,7 @@
 
     // Pending social — special display
     if (isPendingSocial) {
-      document.getElementById('statusIcon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg>';
+      document.getElementById('statusIcon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg>';
       document.getElementById('statusPlan').textContent = 'Тариф: Льготный Care (ожидает проверки)';
       document.getElementById('statusDetail').textContent = 'Ваш документ на проверке у администратора. Вы уведомите как только он будет одобрен.';
       var badge = document.getElementById('statusBadge');
@@ -637,7 +637,7 @@
       return;
     }
 
-    document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>';
+    document.getElementById('statusIcon').innerHTML = icons[sub.plan_id] || '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>';
     document.getElementById('statusPlan').textContent = 'Тариф: ' + sub.plan_title;
     var billing = sub.next_billing_date
       ? 'Следующее списание: ' + new Date(sub.next_billing_date).toLocaleDateString('ru-RU')
@@ -679,7 +679,7 @@
       var reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('socialReason').value = e.target.result;
-        document.getElementById('uploadIcon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        document.getElementById('uploadIcon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         document.getElementById('uploadText').textContent = 'Файл прикреплён: ' + file.name;
         document.getElementById('fileUploadZone').classList.add('has-file');
       };

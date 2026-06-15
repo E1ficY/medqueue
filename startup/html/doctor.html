@@ -438,7 +438,7 @@
     const a=_appointments.find(x=>x.id===id);
     if(!a) return;
     activeRecommendationId=id;
-    document.getElementById('recommendationModalTitle').textContent='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Заключение приема — '+a.patient_name;
+    document.getElementById('recommendationModalTitle').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Заключение приема — '+a.patient_name;
     document.getElementById('recommendationText').value=a.doctor_recommendation||'';
     document.getElementById('recommendationModal').classList.add('open');
   }

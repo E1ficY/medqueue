@@ -1154,7 +1154,7 @@ def admin_stats(request):
     return Response({
         'hospitals':      Hospital.objects.count(),
         'doctors':        Doctor.objects.filter(is_active=True).count(),
-        'users':          User.objects.filter(profile__role='patient').count(),
+        'users':          User.objects.count(),
         'appointments':   Appointment.objects.count(),
         'confirmed':      Appointment.objects.filter(status='confirmed').count(),
         'invite_codes':   DoctorInviteCode.objects.filter(is_used=False).count(),

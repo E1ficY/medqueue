@@ -888,34 +888,31 @@
         const img = new Image();
         img.onload = async function() {
           const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
           const MAX_SIZE = 400;
+          
+          // Square crop from center
+          let size = Math.min(img.width, img.height);
+          let sx = (img.width - size) / 2;
+          let sy = (img.height - size) / 2;
 
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = MAX_SIZE;
+          canvas.height = MAX_SIZE;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
+          ctx.drawImage(img, sx, sy, size, size, 0, 0, MAX_SIZE, MAX_SIZE);
 
           // Compress as JPEG
           const base64Str = canvas.toDataURL('image/jpeg', 0.85);
 
           toast('Загрузка аватара...', 'info');
           try {
-            const res = await authFetch(API + '/auth/avatar/', {
+            const userObj = JSON.parse(localStorage.getItem('medqueue_current_user') || 'null');
+            const token = userObj?.access || localStorage.getItem('medqueue_access_token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const res = await fetch(PROF_API_URL + '/auth/avatar/', {
               method: 'POST',
+              headers: headers,
               body: JSON.stringify({ avatar_base64: base64Str })
             });
             const data = await res.json();
