@@ -407,7 +407,7 @@
 
         <label class="agreement-box">
           <input type="checkbox" id="refundAgreement">
-          <span>Я подтверждаю оплату и согласен(на), что средства за подписку не подлежат возврату.</span>
+          <span>Я подтверждаю оплату и понимаю условия выбранного тарифа.</span>
         </label>
 
         <button class="pay-btn" id="payBtn" onclick="processPayment()">Оплатить 2 990 ₸</button>
@@ -547,7 +547,7 @@
       else if (card.length < 13) err = 'Введите корректный номер карты';
       else if (!exp) err = 'Введите срок действия';
       else if (!cvc) err = 'Введите CVC';
-      else if (!agree) err = 'Необходимо подтвердить условие о невозврате средств';
+      else if (!agree) err = 'Необходимо подтвердить согласие с условиями тарифа';
 
       if (err) {
         errorMsg.textContent = err;

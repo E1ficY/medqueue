@@ -423,7 +423,7 @@
     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
       <div class="status-badge" id="statusBadge">Free</div>
       <div id="refundBtnWrap" style="display:none;">
-        <button id="refundBtn" class="plan-btn" style="padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Отменить подписку</button>
+        <button id="refundBtn" class="plan-btn" style="padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
       </div>
     </div>
   </div>
@@ -586,7 +586,7 @@
         
         html += '<label style="display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--muted); cursor:pointer; text-align:left; background:rgba(15,23,42,0.03); padding:8px 10px; border-radius:6px; border:1px solid var(--border); margin-bottom:4px;">';
         html += '<input type="checkbox" id="paypalAgreement" style="margin-top:1px; accent-color:var(--primary);">';
-        html += '<span>Я согласен(на), что средства не подлежат возврату.</span>';
+        html += '<span>Я подтверждаю оплату и понимаю условия выбранного тарифа.</span>';
         html += '</label>';
 
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
@@ -734,18 +734,18 @@
       method: 'POST',
       body: JSON.stringify({ reason: reason.trim() })
     });
-    if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; } return; }
+    if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
     var d = await r.json();
-    if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; } return; }
+    if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
     toast(d.message || 'Тариф отменён и данные очищены', 'success');
-    if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; }
     await loadData();
   }
 
   async function startPayPal() {
     var agree = document.getElementById('paypalAgreement');
     if (agree && !agree.checked) {
-      toast('Необходимо подтвердить условие о невозврате средств', 'warn');
+      toast('Необходимо подтвердить согласие с условиями тарифа', 'warn');
       return;
     }
     
