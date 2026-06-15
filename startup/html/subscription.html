@@ -423,7 +423,7 @@
     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
       <div class="status-badge" id="statusBadge">Free</div>
       <div id="refundBtnWrap" style="display:none;">
-        <button id="refundBtn" class="plan-btn" style="padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
+        <button id="refundBtn" class="plan-btn" style="padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Отменить подписку</button>
       </div>
     </div>
   </div>
@@ -715,7 +715,7 @@
   }
 
   async function resetDemo() {
-    var reason = prompt('Отмена тарифа и возврат средств.\n\nПожалуйста, укажите причину возврата (минимум 5 символов):');
+    var reason = prompt('Отмена тарифа. Пожалуйста, укажите причину (минимум 5 символов):');
     if (reason === null) return;
     if (reason.trim().length < 5) {
       alert('Пожалуйста, укажите более подробную причину.');
@@ -728,11 +728,11 @@
       method: 'POST',
       body: JSON.stringify({ reason: reason.trim() })
     });
-    if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
+    if (!r) { toast('Ошибка сессии', 'warn'); if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; } return; }
     var d = await r.json();
-    if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; } return; }
+    if (!r.ok) { toast(d.error || 'Ошибка сброса', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; } return; }
     toast(d.message || 'Тариф отменён и данные очищены', 'success');
-    if (btn) { btn.disabled = false; btn.textContent = 'Возврат средств (Сброс)'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Отменить подписку'; }
     await loadData();
   }
 
