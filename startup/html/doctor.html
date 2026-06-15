@@ -409,7 +409,7 @@
     else showToast('Ошибка: '+(d.error||'?'));
   }
   function showToast(msg){
-    const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+    const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');
     clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
   }
   let _appointments=[];
