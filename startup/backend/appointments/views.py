@@ -1143,13 +1143,21 @@ def admin_stats(request):
     if err:
         return err
 
+    # Calculate total revenue from paid transactions
+    from django.db.models import Sum
+    revenue_agg = PaymentTransaction.objects.filter(status='paid').aggregate(Sum('amount'))
+    revenue = revenue_agg['amount__sum'] or 0
+
     return Response({
-        'hospitals':    Hospital.objects.count(),
-        'doctors':      Doctor.objects.filter(is_active=True).count(),
-        'users':        User.objects.filter(profile__role='patient').count(),
-        'appointments': Appointment.objects.count(),
-        'confirmed':    Appointment.objects.filter(status='confirmed').count(),
-        'invite_codes': DoctorInviteCode.objects.filter(is_used=False).count(),
+        'hospitals':      Hospital.objects.count(),
+        'doctors':        Doctor.objects.filter(is_active=True).count(),
+        'users':          User.objects.filter(profile__role='patient').count(),
+        'appointments':   Appointment.objects.count(),
+        'confirmed':      Appointment.objects.filter(status='confirmed').count(),
+        'invite_codes':   DoctorInviteCode.objects.filter(is_used=False).count(),
+        'revenue':        revenue,
+        'plus_subs':      UserSubscription.objects.filter(plan='plus', status='active').count(),
+        'pending_social': UserSubscription.objects.filter(plan='social', social_reason_confirmed_at__isnull=True).count(),
     })
 
 

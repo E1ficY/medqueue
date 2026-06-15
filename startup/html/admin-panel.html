@@ -622,6 +622,9 @@ async function loadStats(){
     <div class="stat-card amber"><div class="stat-val">${d.appointments}</div><div class="stat-lbl">📋 Всего записей</div></div>
     <div class="stat-card red"><div class="stat-val">${d.confirmed}</div><div class="stat-lbl">✅ Подтверждённых</div></div>
     <div class="stat-card"><div class="stat-val">${d.invite_codes}</div><div class="stat-lbl">🔑 Свободных кодов</div></div>
+    <div class="stat-card" style="border-top-color:#10b981"><div class="stat-val">${d.plus_subs}</div><div class="stat-lbl">⭐ Plus Подписок</div></div>
+    <div class="stat-card" style="border-top-color:#f59e0b"><div class="stat-val">${d.pending_social}</div><div class="stat-lbl">⏳ Заявок на льготы</div></div>
+    <div class="stat-card" style="border-top-color:#6366f1; grid-column: 1 / -1;"><div class="stat-val">${Number(d.revenue).toLocaleString('ru-RU')} ₸</div><div class="stat-lbl">💰 Общая выручка</div></div>
   `;
 }
 
