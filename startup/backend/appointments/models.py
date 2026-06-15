@@ -414,6 +414,7 @@ class UserProfile(models.Model):
     user  = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role  = models.CharField(max_length=20, choices=ROLES, default='patient')
     phone = models.CharField(max_length=30, blank=True, default='')
+    avatar_base64 = models.TextField(blank=True, null=True, help_text="Base64 encoded avatar image")
 
     class Meta:
         verbose_name = "Профиль пользователя"

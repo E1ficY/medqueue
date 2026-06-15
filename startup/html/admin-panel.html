@@ -375,7 +375,7 @@
       <div class="table-card">
         <div class="placeholder" id="usrPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
         <table id="usrTable" style="display:none;">
-          <thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Регистрация</th><th>Статус</th></tr></thead>
+          <thead><tr><th>Пользователь</th><th>Email</th><th>Роль / План</th><th>Регистрация</th><th>Статус</th></tr></thead>
           <tbody id="usrBody"></tbody>
         </table>
       </div>
@@ -860,20 +860,40 @@ async function loadUsers(){
   document.getElementById('usrPlaceholder').style.display = 'none';
   document.getElementById('usrTable').style.display = '';
   const ROLE = {
-    admin:   '<span class="badge b-red">Администратор</span>',
-    doctor:  '<span class="badge b-blue">Врач</span>',
-    patient: '<span class="badge b-green">Пациент</span>',
+    admin:   '<span class="badge b-red" style="margin-bottom:4px;display:inline-block">Администратор</span>',
+    doctor:  '<span class="badge b-blue" style="margin-bottom:4px;display:inline-block">Врач</span>',
+    patient: '<span class="badge b-green" style="margin-bottom:4px;display:inline-block">Пациент</span>',
   };
-  document.getElementById('usrBody').innerHTML = list.map(u => `
+  const PLAN = {
+    free: '<span class="badge b-gray">Free</span>',
+    social: '<span class="badge" style="background:rgba(245,158,11,0.1);color:#d97706;border:1px solid rgba(245,158,11,0.2)">Льготник</span>',
+    plus: '<span class="badge" style="background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.2)">Plus</span>'
+  };
+
+  document.getElementById('usrBody').innerHTML = list.map(u => {
+    const avatarHtml = u.avatar_base64 
+      ? `<img src="${u.avatar_base64}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${(u.name || u.email)[0].toUpperCase()}</div>`;
+    
+    return `
     <tr>
-      <td><b>${u.name || u.email}</b></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${avatarHtml}
+          <b>${u.name || u.email}</b>
+        </div>
+      </td>
       <td style="color:var(--muted)">${u.email}</td>
-      <td>${ROLE[u.role] || u.role}</td>
+      <td>
+        <div>${ROLE[u.role] || u.role}</div>
+        <div>${PLAN[u.subscription_plan] || PLAN.free}</div>
+      </td>
       <td style="color:var(--muted);font-size:13px">${u.joined}</td>
       <td>${u.is_active
         ? '<span class="badge b-green">Активен</span>'
         : '<span class="badge b-gray">Заблокирован</span>'}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* ── SOCIAL REQUESTS ────────────────────────────────── */

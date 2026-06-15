@@ -54,17 +54,32 @@
       min-width: 0;
     }
     .profile-avatar {
-      width: 76px;
-      height: 76px;
+      width: 105px; height: 105px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.22);
-      border: 3px solid rgba(255,255,255,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 34px;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      border: 4px solid rgba(255,255,255,0.4);
+      box-shadow: 0 8px 24px rgba(8,145,178,0.18);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+    }
+    .profile-avatar::after {
+      content: '📷';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      text-align: center;
+      font-size: 18px;
+      padding: 4px 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .profile-avatar:hover::after {
+      opacity: 1;
     }
     .profile-info h1 {
       margin: 0 0 4px;
@@ -586,7 +601,8 @@
     <!-- Profile header -->
     <div class="profile-header animate-in">
       <div class="profile-header-inner">
-        <div class="profile-avatar" id="profileAvatar"></div>
+        <div class="profile-avatar" id="profileAvatar" onclick="document.getElementById('avatarInput').click()"></div>
+        <input type="file" id="avatarInput" style="display:none" accept="image/png, image/jpeg, image/webp" onchange="uploadAvatar(event)">
         <div class="profile-info">
           <h1 id="profileName">Добро пожаловать!</h1>
           <p class="profile-username" id="profileUsername"></p>
@@ -755,14 +771,20 @@
     });
 
     function fillUserHeader(user) {
-      // Avatar with first letter
+      // Avatar
       const avatarEl = document.getElementById('profileAvatar');
-      const firstLetter = (user.name || user.username || '?')[0].toUpperCase();
-      avatarEl.textContent = firstLetter;
-      avatarEl.style.background = 'rgba(255,255,255,0.25)';
-      avatarEl.style.fontSize = '30px';
-      avatarEl.style.fontWeight = '900';
-      avatarEl.style.color = 'white';
+      if (user.avatar_base64) {
+        avatarEl.style.backgroundImage = `url(${user.avatar_base64})`;
+        avatarEl.textContent = '';
+      } else {
+        const firstLetter = (user.name || user.username || '?')[0].toUpperCase();
+        avatarEl.textContent = firstLetter;
+        avatarEl.style.backgroundImage = 'none';
+        avatarEl.style.background = 'rgba(255,255,255,0.25)';
+        avatarEl.style.fontSize = '30px';
+        avatarEl.style.fontWeight = '900';
+        avatarEl.style.color = 'white';
+      }
 
       document.getElementById('profileName').textContent = `Привет, ${user.name || user.username || 'Пользователь'}!`;
 
@@ -850,6 +872,67 @@
       } catch {
         return null;
       }
+    }
+
+    async function uploadAvatar(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        toast('Пожалуйста, выберите изображение', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = async function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 400;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress as JPEG
+          const base64Str = canvas.toDataURL('image/jpeg', 0.85);
+
+          toast('Загрузка аватара...', 'info');
+          try {
+            const res = await authFetch(API + '/auth/avatar/', {
+              method: 'POST',
+              body: JSON.stringify({ avatar_base64: base64Str })
+            });
+            const data = await res.json();
+            if (res.ok && data.user) {
+              localStorage.setItem('medqueue_current_user', JSON.stringify(data.user));
+              fillUserHeader(data.user);
+              toast('Аватар успешно обновлен!', 'success');
+            } else {
+              toast(data.error || 'Ошибка загрузки аватара', 'error');
+            }
+          } catch (e) {
+            toast('Ошибка соединения', 'error');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     async function loadProfileData() {

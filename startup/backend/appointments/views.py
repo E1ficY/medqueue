@@ -1339,14 +1339,31 @@ def admin_users(request):
         return err
 
     users = User.objects.select_related('profile').all().order_by('-date_joined')
-    data = [{
-        'id':         u.id,
-        'name':       u.get_full_name() or u.first_name or u.username,
-        'email':      u.email,
-        'role':       _get_display_role(u),
-        'joined':     u.date_joined.strftime('%d.%m.%Y'),
-        'is_active':  u.is_active,
-    } for u in users]
+    # Get active subscriptions
+    from django.utils import timezone
+    subs = UserSubscription.objects.filter(is_active=True, end_date__gt=timezone.now())
+    sub_map = {s.user_id: s.plan_type for s in subs}
+
+    data = []
+    for u in users:
+        plan = sub_map.get(u.id, 'free')
+        avatar = ''
+        try:
+            if hasattr(u, 'profile') and u.profile.avatar_base64:
+                avatar = u.profile.avatar_base64
+        except Exception:
+            pass
+
+        data.append({
+            'id':         u.id,
+            'name':       u.get_full_name() or u.first_name or u.username,
+            'email':      u.email,
+            'role':       _get_display_role(u),
+            'subscription_plan': plan,
+            'avatar_base64': avatar,
+            'joined':     u.date_joined.strftime('%d.%m.%Y'),
+            'is_active':  u.is_active,
+        })
     return Response(data)
 
 

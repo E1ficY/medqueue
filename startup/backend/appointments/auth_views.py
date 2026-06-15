@@ -72,6 +72,35 @@ def get_effective_role(user):
         return 'patient'
 
 
+def get_user_auth_payload(user):
+    role = get_effective_role(user)
+    plan = 'free'
+    from django.utils import timezone
+    from appointments.models import UserSubscription
+    sub = UserSubscription.objects.filter(user=user, is_active=True, end_date__gt=timezone.now()).first()
+    if sub:
+        plan = sub.plan_type
+
+    avatar_base64 = ''
+    try:
+        if hasattr(user, 'profile') and user.profile.avatar_base64:
+            avatar_base64 = user.profile.avatar_base64
+    except Exception:
+        pass
+
+    return {
+        'id': user.id,
+        'name': user.first_name or user.username,
+        'email': user.email,
+        'username': user.username,
+        'role': role,
+        'is_superuser': user.is_superuser,
+        'is_staff': user.is_staff,
+        'subscription_plan': plan,
+        'avatar_base64': avatar_base64,
+    }
+
+
 def verify_recaptcha_token(token, remote_ip=None):
     """Server-side Cloudflare Turnstile verification."""
     if not token:
@@ -433,15 +462,7 @@ def login_user(request):
 
     return Response({
         'message': 'Успешно',
-        'user': {
-            'id': user.id,
-            'name': user.first_name or user.username,
-            'email': user.email,
-            'username': user.username,
-            'role': role,
-            'is_superuser': user.is_superuser,
-            'is_staff': user.is_staff,
-        },
+        'user': get_user_auth_payload(user),
         **tokens
     })
 
@@ -1149,13 +1170,7 @@ def google_oauth(request):
 
     return Response({
         'message': 'Вход выполнен успешно через Google',
-        'user': {
-            'id': user.id,
-            'name': user.first_name or user.username,
-            'email': user.email,
-            'username': user.username,
-            'role': role,
-        },
+        'user': get_user_auth_payload(user),
         **tokens
     })
 
@@ -1222,12 +1237,37 @@ def facebook_oauth(request):
 
     return Response({
         'message': 'Вход выполнен успешно через Facebook',
-        'user': {
-            'id': user.id,
-            'name': user.first_name or user.username,
-            'email': user.email,
-            'username': user.username,
-            'role': role,
-        },
+        'user': get_user_auth_payload(user),
         **tokens
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    """
+    POST /api/auth/avatar/
+    Принимает Base64 строку и сохраняет её в профиль пользователя.
+    """
+    avatar_base64 = request.data.get('avatar_base64')
+    if not avatar_base64:
+        return Response({'error': 'avatar_base64 обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Проверка размера
+    if len(avatar_base64) > 2 * 1024 * 1024:
+        return Response({'error': 'Слишком большое изображение'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        profile = request.user.profile
+        profile.avatar_base64 = avatar_base64
+        profile.save(update_fields=['avatar_base64'])
+        
+        from appointments.auth_views import get_user_auth_payload, get_tokens_for_user
+        tokens = get_tokens_for_user(request.user)
+        
+        return Response({
+            'message': 'Аватар обновлен',
+            'user': get_user_auth_payload(request.user),
+            **tokens
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
