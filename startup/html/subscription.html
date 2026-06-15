@@ -204,6 +204,43 @@
       cursor: default;
     }
 
+    /* ─── CARD PAYMENT UI ─── */
+    .card-payment-box {
+      margin-top: 4px;
+      text-align: left;
+    }
+    .card-payment-divider {
+      display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 11px; margin: 12px 0;
+    }
+    .card-payment-divider::before, .card-payment-divider::after {
+      content: ''; flex: 1; border-bottom: 1px solid var(--border);
+    }
+    .card-payment-divider::before { margin-right: .5em; }
+    .card-payment-divider::after { margin-left: .5em; }
+    .card-input-group {
+      background: rgba(0,0,0,.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    [data-theme="dark"] .card-input-group { background: rgba(255,255,255,.03); }
+    .card-input-row {
+      display: flex; align-items: center; padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-input-row:last-child { border-bottom: none; }
+    .card-input-row input {
+      background: transparent; border: none; color: var(--text); font-size: 13px; font-family: inherit; width: 100%; outline: none;
+    }
+    .card-input-row input::placeholder { color: var(--muted); }
+    .card-icons { display: flex; gap: 4px; }
+    .card-icons img { height: 14px; }
+    .card-save-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+    .card-save-row input[type="checkbox"] { margin-top: 3px; accent-color: var(--accent); }
+    .card-save-row label { font-size: 11px; color: var(--muted); line-height: 1.4; cursor: pointer; }
+
+
     /* ─── PAYPAL LOGO ─── */
     .paypal-logo {
       display: inline-flex; align-items: center; gap: 3px;
@@ -528,6 +565,33 @@
       if (p.id === 'plus' && !isActive) {
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
+        
+        // Direct Card UI
+        html += '<div class="card-payment-box">';
+        html += '<div class="card-payment-divider">ИЛИ КАРТОЙ</div>';
+        
+        html += '<div class="card-input-group">';
+        html += '<div class="card-input-row">';
+        html += '<input type="text" placeholder="Номер карты" maxlength="19">';
+        html += '<div class="card-icons">';
+        html += '<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" style="height:12px;">';
+        html += '<img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" style="height:12px;">';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="card-input-row" style="display:flex;">';
+        html += '<input type="text" placeholder="ММ / ГГ" style="flex:1; border-right:1px solid var(--border);" maxlength="5">';
+        html += '<input type="text" placeholder="Код безопасности" style="flex:1; padding-left:14px;" maxlength="3">';
+        html += '</div>';
+        html += '</div>';
+
+        html += '<div class="card-save-row">';
+        html += '<input type="checkbox" id="saveCardCb">';
+        html += '<label for="saveCardCb">Сохранить реквизиты платежа для будущих покупок</label>';
+        html += '</div>';
+
+        html += '<button class="plan-btn" style="background:#10b981; color:#fff; border:none;" onclick="toast(\'Оплата картой интегрируется\', \'info\')">Подписаться</button>';
+
+        html += '</div>';
         html += '</div>';
       } else {
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
