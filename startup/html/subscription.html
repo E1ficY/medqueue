@@ -422,7 +422,9 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
       <div class="status-badge" id="statusBadge">Free</div>
-      <button id="refundBtn" class="plan-btn" style="display:none; padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
+      <div id="refundBtnWrap" style="display:none;">
+        <button id="refundBtn" class="plan-btn" style="padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted); width:auto;" onclick="resetDemo()">Возврат средств (Сброс)</button>
+      </div>
     </div>
   </div>
 
@@ -624,8 +626,8 @@
       badge.className = 'status-badge';
       badge.style.background = '#f59e0b';
       badge.style.color = '#fff';
-      var refundBtn = document.getElementById('refundBtn');
-      if (refundBtn) refundBtn.style.display = 'none';
+      var refundBtnWrap = document.getElementById('refundBtnWrap');
+      if (refundBtnWrap) refundBtnWrap.style.display = 'none';
       return;
     }
 
@@ -641,9 +643,9 @@
     badge.style.background = '';
     badge.style.color = '';
 
-    var refundBtn = document.getElementById('refundBtn');
-    if (refundBtn) {
-      refundBtn.style.display = (sub.plan_id === 'plus') ? 'block' : 'none';
+    var refundBtnWrap = document.getElementById('refundBtnWrap');
+    if (refundBtnWrap) {
+      refundBtnWrap.style.display = (sub.plan_id === 'plus') ? '' : 'none';
     }
   }
 
