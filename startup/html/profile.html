@@ -589,7 +589,7 @@
         <a href="recording.html" class="nav-link">Записаться</a>
         <a href="recording.html#status-check" class="nav-link">Статус очереди</a>
         <a href="profile.html" class="nav-link active">Личный кабинет</a>
-        <a href="subscription.html" class="nav-link">Подписка</a>
+        <a href="subscription.html?v=2" class="nav-link">Подписка</a>
 
       </nav>
     </div>
@@ -831,7 +831,7 @@
         roleBadge.style.display = 'inline-block';
         
         if (user.role !== 'patient') {
-          document.querySelectorAll('a[href="subscription.html"]').forEach(a => a.style.display = 'none');
+          document.querySelectorAll('a[href^="subscription.html"]').forEach(a => a.style.display = 'none');
         }
 
         if (user.subscription_plan === 'social') {
