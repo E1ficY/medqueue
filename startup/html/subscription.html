@@ -805,26 +805,27 @@
     renderStatus(sub, isPendingSocial);
     if (meData.transactions && meData.transactions.length) renderReceipt(meData.transactions[0]);
 
-    // REAL-TIME POLLING: start if pending, stop if not
-    if (isPendingSocial && !_pollTimer) {
+    // REAL-TIME POLLING: always poll when logged in to catch any server-side changes
+    if (isLoggedIn && !_pollTimer) {
+      var _lastPlanId = sub ? sub.plan_id : 'free';
+      var _lastConfirmed = sub ? sub.social_reason_confirmed_at : null;
       _pollTimer = setInterval(async function() {
-        // Silently check only subscription status (lightweight)
         try {
           var r = await authFetch(API + '/subscription/me/');
           if (!r || !r.ok) return;
           var d = await r.json();
           var s = d.subscription || null;
-          var stillPending = s && s.plan_id === 'social' && !s.social_reason_confirmed_at;
-          // If status changed, do a full re-render
-          if (!stillPending) {
+          var newPlanId = s ? s.plan_id : 'free';
+          var newConfirmed = s ? s.social_reason_confirmed_at : null;
+          // Re-render only if something actually changed
+          if (newPlanId !== _lastPlanId || newConfirmed !== _lastConfirmed) {
+            _lastPlanId = newPlanId;
+            _lastConfirmed = newConfirmed;
             clearInterval(_pollTimer); _pollTimer = null;
             await loadData();
           }
         } catch(e) {}
-      }, 5000);
-    } else if (!isPendingSocial && _pollTimer) {
-      clearInterval(_pollTimer); _pollTimer = null;
-    }
+      }, 3000);
   }
 
   async function init() {
