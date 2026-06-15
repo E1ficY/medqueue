@@ -77,9 +77,9 @@ def get_user_auth_payload(user):
     plan = 'free'
     from django.utils import timezone
     from appointments.models import UserSubscription
-    sub = UserSubscription.objects.filter(user=user, is_active=True, end_date__gt=timezone.now()).first()
+    sub = UserSubscription.objects.filter(user=user, status='active').first()
     if sub:
-        plan = sub.plan_type
+        plan = sub.plan
 
     avatar_base64 = ''
     try:
