@@ -1,36 +1,36 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Оформление подписки | MedQueue</title>
-  <link rel="stylesheet" href="../css/modules/fonts.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="../css/styles.css?v=2026-06-11">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=2">
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=2">
+  
+  <script src="../js/script.js?v=1.0.8"></script>
+  <script src="../js/theme.js"></script>
+  
   <style>
-    :root {
-      --bg: #000000;
-      --text: #ffffff;
-      --muted: #a1a1aa;
-      --border: #3f3f46;
-      --card: #18181b;
-      --accent: #10b981;
-    }
     body {
-      margin: 0;
-      padding: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', sans-serif;
-      display: flex;
-      justify-content: center;
       min-height: 100vh;
-      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
     }
-    * { box-sizing: border-box; }
     
     .container {
       max-width: 1000px;
       width: 100%;
-      padding: 40px 20px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
     }
@@ -38,21 +38,32 @@
     .header-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
       margin-bottom: 40px;
     }
     .back-btn {
-      background: none;
-      border: none;
+      background: var(--card);
+      border: 1px solid var(--border);
       color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 20px;
       cursor: pointer;
-      padding: 0;
+      transition: all 0.2s;
+    }
+    .back-btn:hover {
+      background: var(--bg2);
+      transform: translateX(-2px);
     }
     .title {
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: 700;
       margin: 0;
+      color: var(--text);
     }
 
     .checkout-grid {
@@ -61,23 +72,30 @@
       gap: 40px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 800px) {
       .checkout-grid { grid-template-columns: 1fr; }
     }
 
+    .payment-form {
+      background: var(--card);
+      padding: 32px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
     .payment-form h3 {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .input-group {
-      background: rgba(255,255,255,0.05);
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     .input-row {
       display: flex;
@@ -90,7 +108,7 @@
       background: transparent;
       border: none;
       color: var(--text);
-      font-size: 14px;
+      font-size: 15px;
       font-family: inherit;
       width: 100%;
       outline: none;
@@ -106,9 +124,10 @@
     }
     .save-row input[type="checkbox"] {
       margin-top: 4px;
-      accent-color: var(--text);
+      accent-color: var(--accent);
       width: 16px;
       height: 16px;
+      cursor: pointer;
     }
     .save-row label {
       font-size: 13px;
@@ -119,18 +138,24 @@
 
     .summary-card {
       background: var(--card);
-      border-radius: 16px;
-      padding: 30px;
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
     }
     .summary-card h2 {
-      font-size: 22px;
+      font-size: 24px;
       margin-top: 0;
       margin-bottom: 16px;
+      color: var(--accent);
     }
     .summary-label {
       font-size: 14px;
-      margin-bottom: 12px;
-      font-weight: 500;
+      margin-bottom: 16px;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .features-list {
       list-style: none;
@@ -140,53 +165,66 @@
     .features-list li {
       display: flex;
       gap: 10px;
-      font-size: 13px;
-      color: #e4e4e7;
+      font-size: 14px;
+      color: var(--text);
+      opacity: 0.8;
       margin-bottom: 12px;
-      line-height: 1.4;
+      line-height: 1.5;
     }
-    .features-list li span { color: #a855f7; }
+    .features-list li span { color: var(--accent); }
 
     .price-row {
       display: flex;
       justify-content: space-between;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--muted);
       margin-bottom: 12px;
     }
     .total-row {
       display: flex;
       justify-content: space-between;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
       color: var(--text);
-      margin-top: 20px;
+      margin-top: 24px;
       margin-bottom: 24px;
     }
 
     .submit-btn {
       width: 100%;
-      background: var(--text);
-      color: var(--bg);
+      background: var(--accent);
+      color: #fff;
       border: none;
-      padding: 14px;
-      border-radius: 24px;
-      font-size: 15px;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: all 0.2s;
     }
-    .submit-btn:hover { opacity: 0.9; }
-    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .submit-btn:hover { 
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+    .submit-btn:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
+      transform: none;
+    }
 
     .error-msg {
       color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+      padding: 12px;
       font-size: 13px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       text-align: center;
       display: none;
     }
 
+    /* TOAST */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -195,7 +233,7 @@
       color: var(--text);
       padding: 12px 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       border: 1px solid var(--border);
       display: flex;
       gap: 10px;
@@ -212,8 +250,8 @@
 
   <div class="container">
     <div class="header-row">
-      <button class="back-btn" onclick="window.location.href='/subscription.html'">‹</button>
-      <h1 class="title">Настройте свой план</h1>
+      <button class="back-btn" onclick="window.location.href='/subscription.html'" title="Назад к тарифам">‹</button>
+      <h1 class="title">Оплата тарифа Plus</h1>
     </div>
 
     <div class="checkout-grid">
@@ -231,45 +269,46 @@
           </div>
           <div class="input-row" style="display:flex;">
             <input type="text" id="cardExp" placeholder="ММ / ГГ" style="flex:1; border-right:1px solid var(--border);" maxlength="5" oninput="formatExp(this)">
-            <input type="text" id="cardCvc" placeholder="Код безопасности" style="flex:1; padding-left:16px;" maxlength="3">
+            <input type="text" id="cardCvc" placeholder="CVC" style="flex:1; padding-left:16px;" maxlength="3">
           </div>
         </div>
 
         <div class="save-row">
           <input type="checkbox" id="saveCardCb" checked>
-          <label for="saveCardCb">Сохранить реквизиты платежа в адрес MedQueue для будущих покупок</label>
+          <label for="saveCardCb">Сохранить реквизиты платежа в MedQueue для будущих покупок и автопродления</label>
         </div>
       </div>
 
       <div class="summary-card">
         <h2>План Plus</h2>
-        <div class="summary-label">Основные функции</div>
+        <div class="summary-label">Преимущества</div>
         
         <ul class="features-list">
-          <li><span>⚡</span> Выбор любой клиники и врача без ограничений</li>
-          <li><span>⚡</span> Умный подбор врача и приоритетная запись на освободившееся время</li>
-          <li><span>⚡</span> Персональные напоминания и поддержка 24/7</li>
+          <li><span>✓</span> Приоритетные временные слоты в популярных клиниках</li>
+          <li><span>✓</span> Навигатор подготовки к приему с чек-листом документов</li>
+          <li><span>✓</span> Умные пост-визитные напоминания и контроль рекомендаций</li>
+          <li><span>✓</span> Гибкое перепланирование без потери очереди</li>
         </ul>
 
         <hr style="border:none; border-top:1px solid var(--border); margin-bottom:20px;">
 
         <div class="price-row">
           <span>Подписка Ежемесячно</span>
-          <span>2 990 KZT</span>
+          <span>2 990 ₸</span>
         </div>
         <div class="price-row">
-          <span>Расчетный налог</span>
-          <span>0,00 KZT</span>
+          <span>НДС (12%)</span>
+          <span>0 ₸ (Включен)</span>
         </div>
         
         <div class="total-row">
           <span>К оплате сегодня</span>
-          <span>2 990 KZT</span>
+          <span>2 990 ₸</span>
         </div>
 
         <div class="error-msg" id="errorMsg"></div>
 
-        <button class="submit-btn" id="submitBtn" onclick="processPayment()">Подписаться</button>
+        <button class="submit-btn" id="submitBtn" onclick="processPayment()">Оплатить 2 990 ₸</button>
       </div>
 
     </div>
@@ -320,7 +359,6 @@
       try {
         var u = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
         if (!u || !u.access) {
-          // Check separate token
           var sep = localStorage.getItem('medqueue_access_token');
           if (!sep) {
             sessionStorage.setItem('medqueue_auth_return_url', window.location.href);
@@ -350,12 +388,12 @@
         return;
       }
       if (exp.length < 5) {
-        errorMsg.textContent = 'Введите срок действия';
+        errorMsg.textContent = 'Введите срок действия (ММ / ГГ)';
         errorMsg.style.display = 'block';
         return;
       }
       if (cvc.length < 3) {
-        errorMsg.textContent = 'Введите код безопасности';
+        errorMsg.textContent = 'Введите CVC-код';
         errorMsg.style.display = 'block';
         return;
       }
@@ -382,7 +420,7 @@
           errorMsg.textContent = data.detail || data.error || 'Ошибка оплаты';
           errorMsg.style.display = 'block';
           btn.disabled = false;
-          btn.textContent = 'Подписаться';
+          btn.textContent = 'Оплатить 2 990 ₸';
           toast('Банк отклонил операцию', 'error');
         } else {
           toast('Оплата успешно завершена!', 'success');
@@ -395,7 +433,7 @@
         errorMsg.textContent = 'Ошибка соединения с сервером';
         errorMsg.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Подписаться';
+        btn.textContent = 'Оплатить 2 990 ₸';
       }
     }
   </script>
