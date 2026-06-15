@@ -583,6 +583,12 @@
       html += '<ul class="plan-features">' + benefits + '</ul>';
       if (p.id === 'plus' && !isActive) {
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        
+        html += '<label style="display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--muted); cursor:pointer; text-align:left; background:rgba(15,23,42,0.03); padding:8px 10px; border-radius:6px; border:1px solid var(--border); margin-bottom:4px;">';
+        html += '<input type="checkbox" id="paypalAgreement" style="margin-top:1px; accent-color:var(--primary);">';
+        html += '<span>Я согласен(на), что средства не подлежат возврату.</span>';
+        html += '</label>';
+
         html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
         
         // Button redirecting to card checkout
@@ -737,6 +743,12 @@
   }
 
   async function startPayPal() {
+    var agree = document.getElementById('paypalAgreement');
+    if (agree && !agree.checked) {
+      toast('Необходимо подтвердить условие о невозврате средств', 'warn');
+      return;
+    }
+    
     var btn = document.getElementById('btn-plus');
     if (btn) { btn.disabled = true; btn.textContent = 'Переход к PayPal...'; }
     var r = await authFetch(API + '/subscription/create-paypal-order/', {

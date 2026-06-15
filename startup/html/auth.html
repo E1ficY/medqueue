@@ -504,6 +504,13 @@
           <div style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;">Пройдите проверку непосредственно перед отправкой формы.</div>
         </div>
 
+        <div style="margin-bottom: 20px;">
+          <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:#6b7280; cursor:pointer; user-select:none;">
+            <input type="checkbox" id="registerAgreement" style="margin-top:2px; accent-color:#6f9c92; width:16px; height:16px;">
+            <span>Я принимаю <a href="#" style="color:#5c887f; text-decoration:underline;">пользовательское соглашение</a> и даю согласие на обработку персональных данных.</span>
+          </label>
+        </div>
+
         <button type="submit" class="submit-btn" id="registerSubmitBtn">Зарегистрироваться</button>
         <div style="margin-top:16px;text-align:center;">
           <button type="button" onclick="openVideoModal()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(111,156,146,0.08);color: #0369a1;border:1.5px solid rgba(111,156,146,0.25);border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s ease;width:100%;" onmouseover="this.style.background='rgba(111,156,146,0.15)'" onmouseout="this.style.background='rgba(111,156,146,0.08)'">
@@ -1120,6 +1127,12 @@
 
       if (!phone) {
         showMessage('Номер телефона обязателен', 'error');
+        resetCaptcha('register');
+        return;
+      }
+
+      if (!document.getElementById('registerAgreement').checked) {
+        showMessage('Необходимо принять пользовательское соглашение', 'error');
         resetCaptcha('register');
         return;
       }
