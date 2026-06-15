@@ -1341,8 +1341,8 @@ def admin_users(request):
     users = User.objects.select_related('profile').all().order_by('-date_joined')
     # Get active subscriptions
     from django.utils import timezone
-    subs = UserSubscription.objects.filter(is_active=True, end_date__gt=timezone.now())
-    sub_map = {s.user_id: s.plan_type for s in subs}
+    subs = UserSubscription.objects.filter(status='active')
+    sub_map = {s.user_id: s.plan for s in subs}
 
     data = []
     for u in users:
