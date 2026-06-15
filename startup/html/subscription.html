@@ -294,7 +294,7 @@
     }
     .file-upload-zone .upload-icon { font-size: 28px; margin-bottom: 10px; }
     .file-upload-zone .upload-text { font-size: 14px; color: var(--muted); font-weight: 500; }
-    .file-upload-zone.has-file .upload-icon { content: '✅'; }
+    .file-upload-zone.has-file .upload-icon { content: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'; }
     .file-upload-zone.has-file .upload-text { color: #10b981; font-weight: 700; }
 
     /* ─── RECEIPT ─── */
@@ -415,7 +415,7 @@
 
   <!-- СТАТУС ТЕКУЩЕЙ ПОДПИСКИ -->
   <div class="status-bar" id="statusBar" style="display:none">
-    <div class="status-icon" id="statusIcon">🏥</div>
+    <div class="status-icon" id="statusIcon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg></div>
     <div class="status-info">
       <div class="status-plan" id="statusPlan">Тариф: Free</div>
       <div class="status-detail" id="statusDetail">Загрузка...</div>
@@ -531,7 +531,7 @@
     var t = document.getElementById('toast');
     var i = document.getElementById('toastIcon');
     t.className = 'show ' + type;
-    i.textContent = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
+    i.textContent = type === 'error' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : (type === 'success' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : 'ℹ️');
     document.getElementById('toastMsg').textContent = msg;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.className = t.className.replace('show', ''); }, 4000);
@@ -546,7 +546,7 @@
 
   function renderPlans(plans, currentPlanId, isPendingSocial) {
     activePlanId = currentPlanId || 'free';
-    var defs = {free: '🌱', social: '💚', plus: '⭐'};
+    var defs = {free: '🌱', social: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>', plus: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'};
     var html = '<div class="plans-grid">';
     for (var i = 0; i < plans.length; i++) {
       var p = plans[i];
@@ -558,7 +558,7 @@
       var priceSub = p.price_kzt === 0 ? '' : '<span>/ месяц</span>';
       var btnContent, btnClass;
       if (isPendingThisCard) {
-        btnContent = '⏳ Ожидает проверки...';
+        btnContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg> Ожидает проверки...';
         btnClass = 'active-btn';
       } else if (isActive) {
         btnContent = '✓ Текущий тариф';
@@ -576,8 +576,8 @@
       var benefits = '';
       for (var j = 0; j < p.benefits.length; j++) benefits += '<li>' + p.benefits[j] + '</li>';
       html += '<div class="plan-card' + (p.is_popular ? ' popular' : '') + (isActive ? ' active-plan' : '') + (isPendingThisCard ? ' pending-plan' : '') + '">';
-      if (p.is_popular) html += '<div class="plan-popular-badge">🔥 Популярный</div>';
-      if (isPendingThisCard) html += '<div class="plan-popular-badge" style="background:#f59e0b;">⏳ Ожидает проверки</div>';
+      if (p.is_popular) html += '<div class="plan-popular-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Популярный</div>';
+      if (isPendingThisCard) html += '<div class="plan-popular-badge" style="background:#f59e0b;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg> Ожидает проверки</div>';
       html += '<div class="plan-name">' + icon + ' ' + p.title + '</div>';
       html += '<div class="plan-price">' + priceText + priceSub + '</div>';
       html += '<ul class="plan-features">' + benefits + '</ul>';
@@ -612,7 +612,7 @@
     var bar = document.getElementById('statusBar');
     if (!isLoggedIn) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
-    var icons = {free: '🌱', social: '💚', plus: '⭐'};
+    var icons = {free: '🌱', social: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>', plus: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'};
     if (!sub) {
       document.getElementById('statusPlan').textContent = 'Тариф: Free';
       document.getElementById('statusDetail').textContent = 'Активируйте тариф из списка ниже';
@@ -624,7 +624,7 @@
 
     // Pending social — special display
     if (isPendingSocial) {
-      document.getElementById('statusIcon').textContent = '⏳';
+      document.getElementById('statusIcon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg>';
       document.getElementById('statusPlan').textContent = 'Тариф: Льготный Care (ожидает проверки)';
       document.getElementById('statusDetail').textContent = 'Ваш документ на проверке у администратора. Вы уведомите как только он будет одобрен.';
       var badge = document.getElementById('statusBadge');
@@ -637,7 +637,7 @@
       return;
     }
 
-    document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '🏥';
+    document.getElementById('statusIcon').textContent = icons[sub.plan_id] || '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>';
     document.getElementById('statusPlan').textContent = 'Тариф: ' + sub.plan_title;
     var billing = sub.next_billing_date
       ? 'Следующее списание: ' + new Date(sub.next_billing_date).toLocaleDateString('ru-RU')
@@ -679,7 +679,7 @@
       var reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('socialReason').value = e.target.result;
-        document.getElementById('uploadIcon').textContent = '✅';
+        document.getElementById('uploadIcon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         document.getElementById('uploadText').textContent = 'Файл прикреплён: ' + file.name;
         document.getElementById('fileUploadZone').classList.add('has-file');
       };
@@ -713,7 +713,7 @@
     var d = await r.json();
     if (!r.ok) { toast(d.error || 'Ошибка активации', 'error'); if (btn) btn.disabled = false; return; }
     if (d.pending_review) {
-      toast('Заявка отправлена! Администратор проверит ваш документ и активирует льготу. ⏳', 'success');
+      toast('Заявка отправлена! Администратор проверит ваш документ и активирует льготу. <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg>', 'success');
     } else {
       toast(d.message || 'Тариф активирован!', 'success');
     }
@@ -808,7 +808,7 @@
     }
     if (_wasPendingSocial && sub && sub.plan_id === 'free' && !isPendingSocial) {
       // Admin rejected
-      toast('❌ Заявка отклонена администратором. Пожалуйста, обратитесь в поддержку.', 'error');
+      toast('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Заявка отклонена администратором. Пожалуйста, обратитесь в поддержку.', 'error');
     }
     _wasPendingSocial = !!isPendingSocial;
 

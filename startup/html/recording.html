@@ -85,11 +85,11 @@
             <div class="spec-chip" data-value="Педиатр" onclick="selectSpec(this)">👶 Педиатр</div>
             <div class="spec-chip" data-value="Кардиолог" onclick="selectSpec(this)">❤️ Кардиолог</div>
             <div class="spec-chip" data-value="Невролог" onclick="selectSpec(this)">🧠 Невролог</div>
-            <div class="spec-chip" data-value="Офтальмолог" onclick="selectSpec(this)">👁️ Офтальмолог</div>
+            <div class="spec-chip" data-value="Офтальмолог" onclick="selectSpec(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Офтальмолог</div>
             <div class="spec-chip" data-value="Дерматолог" onclick="selectSpec(this)">🌡️ Дерматолог</div>
             <div class="spec-chip" data-value="Эндокринолог" onclick="selectSpec(this)">💉 Эндокринолог</div>
             <div class="spec-chip" data-value="Гинеколог" onclick="selectSpec(this)">🌸 Гинеколог</div>
-            <div class="spec-chip" data-value="Уролог" onclick="selectSpec(this)">🏥 Уролог</div>
+            <div class="spec-chip" data-value="Уролог" onclick="selectSpec(this)"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg> Уролог</div>
             <div class="spec-chip" data-value="Психиатр" onclick="selectSpec(this)">🧘 Психиатр</div>
           </div>
           <div id="doctorPanel" style="display:none;margin-top:10px;">
@@ -154,8 +154,8 @@
   <script>
     const SPEC_ICONS = {
       'Терапевт':'🩺', 'Хирург':'🔪', 'Стоматолог':'🦷', 'Педиатр':'👶',
-      'Кардиолог':'❤️', 'Невролог':'🧠', 'Офтальмолог':'👁️', 'Дерматолог':'🌡️',
-      'Эндокринолог':'💉', 'Гинеколог':'🌸', 'Уролог':'🏥', 'Психиатр':'🧘'
+      'Кардиолог':'❤️', 'Невролог':'🧠', 'Офтальмолог':'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', 'Дерматолог':'🌡️',
+      'Эндокринолог':'💉', 'Гинеколог':'🌸', 'Уролог':'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>', 'Психиатр':'🧘'
     };
 
     let _hospitalDoctors = {};
@@ -232,7 +232,7 @@
         const grid = document.getElementById('specGrid');
         grid.innerHTML = groups.map((g, i) => `
           <div class="spec-chip${i === 0 ? ' selected' : ''}" data-value="${g.specialty}" onclick="selectSpec(this)">
-            ${SPEC_ICONS[g.specialty] || '🏥'} ${g.specialty}
+            ${SPEC_ICONS[g.specialty] || '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>'} ${g.specialty}
             <span class="spec-count">врачей: ${g.doctors.length}</span>
           </div>
         `).join('');
@@ -252,8 +252,8 @@
     function renderDefaultSpecGrid() {
       const defaults = [
         ['Терапевт','🩺'], ['Хирург','🔪'], ['Стоматолог','🦷'], ['Педиатр','👶'],
-        ['Кардиолог','❤️'], ['Невролог','🧠'], ['Офтальмолог','👁️'], ['Дерматолог','🌡️'],
-        ['Эндокринолог','💉'], ['Гинеколог','🌸'], ['Уролог','🏥'], ['Психиатр','🧘']
+        ['Кардиолог','❤️'], ['Невролог','🧠'], ['Офтальмолог','<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'], ['Дерматолог','🌡️'],
+        ['Эндокринолог','💉'], ['Гинеколог','🌸'], ['Уролог','<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>'], ['Психиатр','🧘']
       ];
 
       document.getElementById('specGrid').innerHTML = defaults.map((s, i) =>

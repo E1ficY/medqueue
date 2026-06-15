@@ -394,7 +394,7 @@
       const hasComment=a.comment&&a.comment.trim();
       const commentBtn=`<button class="act-comment" onclick="showComment(${a.id})" title="${hasComment?'Есть комментарий':'Нет комментария'}">${hasComment?'💬 Комментарий':'💬 —'}</button>`;
       const hasRec=a.doctor_recommendation&&a.doctor_recommendation.trim();
-      const recBtn=`<button class="act-comment" onclick="openRecommendation(${a.id})" title="${hasRec?'Заключение приема заполнено':'Добавить заключение приема'}">${hasRec?'📋 Заключение приема':'📋 Добавить'}</button>`;
+      const recBtn=`<button class="act-comment" onclick="openRecommendation(${a.id})" title="${hasRec?'Заключение приема заполнено':'Добавить заключение приема'}">${hasRec?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Заключение приема':'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Добавить'}</button>`;
       const hasRx=a.prescribed_medications&&a.prescribed_medications.trim();
       const rxBtn=`<button class="act-comment" onclick="openPrescription(${a.id})" title="${hasRx?'Рецепт заполнен':'Выписать рецепт'}">${hasRx?'📄 Рецепт':'📄 Выписать'}</button>`;
       return `<tr><td><b style="font-family:monospace">${a.code}</b></td><td>${a.patient_name}</td><td>${a.specialty}</td><td><b>${ds}</b> ${ts}</td><td style="text-align:center;font-weight:700">${a.queue_position}</td><td>${BD[a.status]||a.status}</td><td style="white-space:nowrap">${commentBtn}<div style="height:6px"></div>${recBtn}<div style="height:6px"></div>${rxBtn}</td><td style="white-space:nowrap">${acts}</td></tr>`;
@@ -438,7 +438,7 @@
     const a=_appointments.find(x=>x.id===id);
     if(!a) return;
     activeRecommendationId=id;
-    document.getElementById('recommendationModalTitle').textContent='📋 Заключение приема — '+a.patient_name;
+    document.getElementById('recommendationModalTitle').textContent='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Заключение приема — '+a.patient_name;
     document.getElementById('recommendationText').value=a.doctor_recommendation||'';
     document.getElementById('recommendationModal').classList.add('open');
   }
