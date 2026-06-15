@@ -713,7 +713,7 @@
     var d = await r.json();
     if (!r.ok) { toast(d.error || 'Ошибка активации', 'error'); if (btn) btn.disabled = false; return; }
     if (d.pending_review) {
-      toast('Заявка отправлена! Администратор проверит ваш документ и активирует льготу. <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg>', 'success');
+      toast('Заявка отправлена! Администратор проверит ваш документ и активирует льготу.', 'success');
     } else {
       toast(d.message || 'Тариф активирован!', 'success');
     }
@@ -819,7 +819,7 @@
     }
     if (_wasPendingSocial && sub && sub.plan_id === 'free' && !isPendingSocial) {
       // Admin rejected
-      toast('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Заявка отклонена администратором. Пожалуйста, обратитесь в поддержку.', 'error');
+      toast('Заявка отклонена администратором. Пожалуйста, обратитесь в поддержку.', 'error');
     }
     _wasPendingSocial = !!isPendingSocial;
 
