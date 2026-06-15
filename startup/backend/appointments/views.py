@@ -1607,24 +1607,25 @@ def capture_paypal_order(request):
 def card_checkout(request):
     """POST /api/subscription/card-checkout/"""
     user = request.user
-    card_name = request.data.get('card_name', '').strip()
-    card_number = request.data.get('card_number', '')
-    amount = request.data.get('amount', 2990)
-    
-    exp_month_raw = request.data.get('exp_month', '')
-    exp_year_raw = request.data.get('exp_year', '')
     
     try:
-        exp_month = int(exp_month_raw)
-    except ValueError:
-        exp_month = 12
+        card_name = request.data.get('card_name', '').strip()
+        card_number = request.data.get('card_number', '')
+        amount = request.data.get('amount', 2990)
         
-    try:
-        exp_year = int(exp_year_raw)
-    except ValueError:
-        exp_year = 99
+        exp_month_raw = request.data.get('exp_month', '')
+        exp_year_raw = request.data.get('exp_year', '')
+        
+        try:
+            exp_month = int(str(exp_month_raw))
+        except ValueError:
+            exp_month = 12
+            
+        try:
+            exp_year = int(str(exp_year_raw))
+        except ValueError:
+            exp_year = 99
 
-    try:
         if not card_number or len(card_number) < 13:
             return Response({'error': 'Некорректный номер карты'}, status=400)
 
