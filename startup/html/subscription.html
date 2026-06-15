@@ -632,11 +632,15 @@
   function handleFileUpload(input) {
     if (input.files && input.files[0]) {
       var file = input.files[0];
-      document.getElementById('uploadIcon').textContent = '✅';
-      document.getElementById('uploadText').textContent = 'Файл прикреплён: ' + file.name;
-      document.getElementById('fileUploadZone').classList.add('has-file');
-      // Set a dummy reason for the backend validation
-      document.getElementById('socialReason').value = 'Файл загружен: ' + file.name + ' (подтверждение льготы)';
+      // Convert to base64 so the backend can store and admin can view the image
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('socialReason').value = e.target.result;
+        document.getElementById('uploadIcon').textContent = '✅';
+        document.getElementById('uploadText').textContent = 'Файл прикреплён: ' + file.name;
+        document.getElementById('fileUploadZone').classList.add('has-file');
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -665,7 +669,11 @@
     if (!r) { toast('Сессия истекла. Войдите снова', 'warn'); if (btn) btn.disabled = false; return; }
     var d = await r.json();
     if (!r.ok) { toast(d.error || 'Ошибка активации', 'error'); if (btn) btn.disabled = false; return; }
-    toast(d.message || 'Тариф активирован!', 'success');
+    if (d.pending_review) {
+      toast('Заявка отправлена! Администратор проверит ваш документ и активирует льготу. ⏳', 'success');
+    } else {
+      toast(d.message || 'Тариф активирован!', 'success');
+    }
     await loadData();
   }
 

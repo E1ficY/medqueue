@@ -9,6 +9,7 @@ from .views import (
     create_paypal_order, capture_paypal_order, card_checkout,
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
+    admin_social_requests, admin_social_approve, admin_social_reject,
 )
 from . import auth_views
 
@@ -55,4 +56,7 @@ urlpatterns = [
     path('admin/invite-codes/', admin_invite_codes),
     path('admin/invite-codes/<int:code_id>/', admin_invite_code_detail),
     path('admin/users/', admin_users),
+    path('admin/social-requests/', admin_social_requests),
+    path('admin/social-requests/<int:sub_id>/approve/', admin_social_approve),
+    path('admin/social-requests/<int:sub_id>/reject/', admin_social_reject),
 ]

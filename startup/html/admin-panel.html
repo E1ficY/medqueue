@@ -291,6 +291,10 @@
     <div class="nav-item" onclick="showSection('users')">
       <span class="nav-icon">👥</span> Пользователи
     </div>
+    <div class="nav-item" id="nav-social" onclick="showSection('social')" style="position:relative;">
+      <span class="nav-icon">💚</span> Льготные заявки
+      <span id="socialBadge" style="display:none; position:absolute; right:12px; top:50%; transform:translateY(-50%); background:#ef4444; color:#fff; border-radius:10px; font-size:11px; font-weight:700; padding:1px 7px;"></span>
+    </div>
   </nav>
 
   <!-- CONTENT -->
@@ -373,6 +377,31 @@
         <table id="usrTable" style="display:none;">
           <thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Регистрация</th><th>Статус</th></tr></thead>
           <tbody id="usrBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SOCIAL REQUESTS ══ -->
+    <div class="section" id="sec-social">
+      <div class="sec-head">
+        <div><h2>💚 Льготные заявки</h2><div class="sub">Заявки пользователей на тариф «Льготный Care», ожидающие проверки документов</div></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" onclick="loadSocialRequests()">🔄 Обновить</button>
+          <button class="btn btn-ghost" id="socialShowAll" onclick="toggleSocialAll()" style="font-size:12px;">Показать все</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="placeholder" id="socialPlaceholder"><div class="icon">⏳</div>Загрузка…</div>
+        <div id="socialEmpty" style="display:none; padding:40px; text-align:center; color:var(--muted);">
+          <div style="font-size:48px; margin-bottom:12px;">✅</div>
+          <div style="font-weight:600;">Новых заявок нет</div>
+          <div style="font-size:13px; margin-top:4px;">Все льготные заявки проверены</div>
+        </div>
+        <table id="socialTable" style="display:none;">
+          <thead><tr>
+            <th>Пользователь</th><th>Email</th><th>Документ</th><th>Подано</th><th>Статус</th><th>Действия</th>
+          </tr></thead>
+          <tbody id="socialBody"></tbody>
         </table>
       </div>
     </div>
@@ -560,6 +589,7 @@ const SECTION_LOADERS = {
   invites: loadInvites,
   hospitals: loadHospitals,
   users: loadUsers,
+  social: loadSocialRequests,
 };
 
 function showSection(name){
@@ -571,7 +601,8 @@ function showSection(name){
       name === 'dashboard' ? 'дашборд' :
       name === 'doctors'   ? 'врач' :
       name === 'invites'   ? 'инвайт' :
-      name === 'hospitals' ? 'больниц' : 'пользовател'
+      name === 'hospitals' ? 'больниц' :
+      name === 'social'    ? 'льгот' : 'пользовател'
     )) n.classList.add('active');
   });
   if(SECTION_LOADERS[name]) SECTION_LOADERS[name]();
@@ -842,6 +873,120 @@ async function loadUsers(){
     </tr>`).join('');
 }
 
+/* ── SOCIAL REQUESTS ────────────────────────────────── */
+let socialShowingAll = false;
+
+async function loadSocialRequests(){
+  document.getElementById('socialPlaceholder').style.display = '';
+  document.getElementById('socialTable').style.display = 'none';
+  document.getElementById('socialEmpty').style.display = 'none';
+
+  const url = socialShowingAll ? `${API}/admin/social-requests/?all=1` : `${API}/admin/social-requests/`;
+  const res = await apiFetch(url);
+  if(!res) return;
+  const list = await res.json();
+
+  document.getElementById('socialPlaceholder').style.display = 'none';
+
+  // Update sidebar badge
+  const badge = document.getElementById('socialBadge');
+  if(list.length > 0 && !socialShowingAll) {
+    badge.style.display = 'inline';
+    badge.textContent = list.length;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if(list.length === 0) {
+    document.getElementById('socialEmpty').style.display = '';
+    return;
+  }
+
+  document.getElementById('socialTable').style.display = '';
+  document.getElementById('socialBody').innerHTML = list.map(r => {
+    const isApproved = !!r.confirmed_at;
+    const docCell = r.is_image
+      ? `<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;" onclick="openDocModal('${r.id}', '${escHtml(r.email)}')">&#128065; Посмотреть</button>`
+      : `<span style="font-size:12px; color:var(--muted);">${escHtml((r.social_reason||'').substring(0,50))}&hellip;</span>`;
+    const statusCell = isApproved
+      ? `<span class="badge b-green">✅ Одобрено</span>`
+      : `<span class="badge b-amber">⏳ Ожидает</span>`;
+    const actionCell = isApproved
+      ? `<button class="btn" style="background:#ef4444;color:#fff;font-size:12px;padding:4px 10px;" onclick="socialReject(${r.id})">&#10005; Отозвать</button>`
+      : `<div style="display:flex;gap:6px;">
+           <button class="btn btn-primary" style="font-size:12px;padding:4px 10px;" onclick="socialApprove(${r.id})">✅ Одобрить</button>
+           <button class="btn" style="background:#ef4444;color:#fff;font-size:12px;padding:4px 10px;" onclick="socialReject(${r.id})">&#10005; Отклонить</button>
+         </div>`;
+    return `<tr>
+      <td><b>${escHtml(r.name || r.email)}</b></td>
+      <td style="color:var(--muted);font-size:13px">${escHtml(r.email)}</td>
+      <td>${docCell}</td>
+      <td style="color:var(--muted);font-size:12px">${r.created_at ? new Date(r.created_at).toLocaleString('ru-RU') : '&mdash;'}</td>
+      <td>${statusCell}</td>
+      <td>${actionCell}</td>
+    </tr>`;
+  }).join('');
+
+  // Store images by id for modal
+  window._socialData = {};
+  list.forEach(r => { window._socialData[r.id] = r; });
+}
+
+async function socialApprove(subId){
+  if(!confirm('Одобрить льготную подписку? Пользователь получит доступ.')) return;
+  const res = await apiFetch(`${API}/admin/social-requests/${subId}/approve/`, {method:'POST'});
+  if(!res) return;
+  const d = await res.json();
+  if(!res.ok){ showToast(d.error || 'Ошибка', 'error'); return; }
+  showToast('Льгота одобрена! Пользователь теперь может пользоваться льготным тарифом.', 'success');
+  loadSocialRequests();
+}
+
+async function socialReject(subId){
+  if(!confirm('Отклонить заявку? Пользователь будет переведён на базовый тариф.')) return;
+  const res = await apiFetch(`${API}/admin/social-requests/${subId}/reject/`, {method:'POST'});
+  if(!res) return;
+  const d = await res.json();
+  if(!res.ok){ showToast(d.error || 'Ошибка', 'error'); return; }
+  showToast('Заявка отклонена.', 'success');
+  loadSocialRequests();
+}
+
+function toggleSocialAll(){
+  socialShowingAll = !socialShowingAll;
+  const btn = document.getElementById('socialShowAll');
+  btn.textContent = socialShowingAll ? 'Только ожидающие' : 'Показать все';
+  loadSocialRequests();
+}
+
+function openDocModal(subId, email){
+  const r = window._socialData && window._socialData[subId];
+  if(!r) return;
+  document.getElementById('docModalEmail').textContent = email;
+  const img = document.getElementById('docModalImg');
+  const txt = document.getElementById('docModalTxt');
+  if(r.is_image){
+    img.src = r.social_reason;
+    img.style.display = 'block';
+    txt.style.display = 'none';
+  } else {
+    txt.textContent = r.social_reason;
+    txt.style.display = 'block';
+    img.style.display = 'none';
+  }
+  document.getElementById('docModal').style.display = 'flex';
+}
+function closeDocModal(){ document.getElementById('docModal').style.display = 'none'; }
+
+function showToast(msg, type){
+  const t = document.getElementById('adminToast');
+  if(!t) return;
+  t.textContent = msg;
+  t.className = 'admin-toast show ' + (type||'');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
 /* ── TOOLS ───────────────────────────────────────── */
 function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -849,9 +994,38 @@ function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('doctorModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeDoctorModal(); });
   document.getElementById('inviteModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeInviteModal(); });
+  document.getElementById('docModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeDocModal(); });
+  // Auto load social badge on init
+  apiFetch(`${API}/admin/social-requests/`).then(r => r && r.json()).then(list => {
+    if(list && list.length > 0){
+      const badge = document.getElementById('socialBadge');
+      badge.style.display = 'inline';
+      badge.textContent = list.length;
+    }
+  }).catch(()=>{});
   init();
 });
 </script>
+
+<!-- DOC VIEW MODAL -->
+<div id="docModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--card); border-radius:16px; padding:28px; max-width:700px; width:100%; max-height:90vh; overflow-y:auto; position:relative;">
+    <button onclick="closeDocModal()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
+    <h3 style="margin-bottom:4px;">&#128065; Просмотр документа</h3>
+    <p id="docModalEmail" style="color:var(--muted); font-size:13px; margin-bottom:20px;"></p>
+    <img id="docModalImg" src="" style="display:none; max-width:100%; border-radius:8px; border:1px solid var(--border);" alt="Документ">
+    <pre id="docModalTxt" style="display:none; white-space:pre-wrap; font-size:13px; background:var(--bg2); padding:16px; border-radius:8px;"></pre>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="adminToast" class="admin-toast" style="position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:600; color:#fff; background:#10b981; box-shadow:0 4px 16px rgba(0,0,0,0.2); transform:translateY(60px); opacity:0; transition:all 0.3s; z-index:99999;"></div>
+<style>
+  .admin-toast.show { transform:translateY(0)!important; opacity:1!important; }
+  .admin-toast.error { background:#ef4444!important; }
+  .admin-toast.success { background:#10b981!important; }
+  .badge.b-amber { background:#fef3c7; color:#92400e; }
+</style>
 </body>
 </html>
 

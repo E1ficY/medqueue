@@ -702,15 +702,22 @@ def subscription_activate(request):
     sub.next_billing_date = timezone.now().date() + timedelta(days=30) if plan_id == 'plus' else None
     if plan_id == 'social':
         sub.social_reason = social_reason
-        sub.social_reason_confirmed_at = timezone.now()
+        # Leave confirmed_at = None → pending admin review
+        sub.social_reason_confirmed_at = None
     else:
         sub.social_reason = ''
         sub.social_reason_confirmed_at = None
     sub.save(update_fields=['plan', 'status', 'auto_taxi_enabled', 'next_billing_date', 'social_reason', 'social_reason_confirmed_at', 'updated_at'])
 
+    if plan_id == 'social':
+        msg = f"Заявка на тариф {selected['title']} принята! Администратор проверит ваш документ и активирует льготу."
+    else:
+        msg = f"Тариф {selected['title']} успешно активирован"
+
     payload = {
         'ok': True,
-        'message': f"Тариф {selected['title']} успешно активирован",
+        'message': msg,
+        'pending_review': plan_id == 'social',
         'subscription': {
             'plan_id': sub.plan,
             'plan_title': selected['title'],
@@ -1330,6 +1337,69 @@ def admin_users(request):
         'is_active':  u.is_active,
     } for u in users]
     return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_social_requests(request):
+    """GET /api/admin/social-requests/ — заявки на льготный тариф, ожидающие проверки."""
+    _, err = _require_admin(request)
+    if err:
+        return err
+
+    # Return both pending (confirmed_at=None) and already reviewed (for history)
+    show_all = request.GET.get('all', '0') == '1'
+    qs = UserSubscription.objects.filter(plan='social').select_related('user').order_by('social_reason_confirmed_at', '-id')
+    if not show_all:
+        qs = qs.filter(social_reason_confirmed_at__isnull=True)
+
+    data = []
+    for sub in qs:
+        u = sub.user
+        data.append({
+            'id': sub.id,
+            'user_id': u.id,
+            'name': u.get_full_name() or u.first_name or u.username,
+            'email': u.email,
+            'social_reason': sub.social_reason,
+            'is_image': sub.social_reason.startswith('data:image'),
+            'confirmed_at': sub.social_reason_confirmed_at.isoformat() if sub.social_reason_confirmed_at else None,
+            'created_at': sub.started_at.isoformat() if hasattr(sub, 'started_at') else None,
+        })
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_social_approve(request, sub_id):
+    """POST /api/admin/social-requests/<id>/approve/ — одобрить льготную заявку."""
+    _, err = _require_admin(request)
+    if err:
+        return err
+
+    sub = get_object_or_404(UserSubscription, id=sub_id, plan='social')
+    sub.social_reason_confirmed_at = timezone.now()
+    sub.save(update_fields=['social_reason_confirmed_at', 'updated_at'])
+    print(f"[INFO] Social Approve: Admin approved social plan for user {sub.user.email} (sub_id={sub_id})", flush=True)
+    return Response({'ok': True, 'message': 'Льготная подписка одобрена'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_social_reject(request, sub_id):
+    """POST /api/admin/social-requests/<id>/reject/ — отклонить и сбросить льготную заявку."""
+    _, err = _require_admin(request)
+    if err:
+        return err
+
+    sub = get_object_or_404(UserSubscription, id=sub_id, plan='social')
+    sub.plan = 'free'
+    sub.social_reason = ''
+    sub.social_reason_confirmed_at = None
+    sub.save(update_fields=['plan', 'social_reason', 'social_reason_confirmed_at', 'updated_at'])
+    print(f"[INFO] Social Reject: Admin rejected social plan for user {sub.user.email} (sub_id={sub_id})", flush=True)
+    return Response({'ok': True, 'message': 'Заявка отклонена, пользователь переведён на Free'})
+
 
 logger = logging.getLogger(__name__)
 
