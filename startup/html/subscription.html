@@ -643,7 +643,7 @@
 
     var refundBtn = document.getElementById('refundBtn');
     if (refundBtn) {
-      refundBtn.style.display = (sub.plan_id !== 'free') ? 'block' : 'none';
+      refundBtn.style.display = (sub.plan_id === 'plus') ? 'block' : 'none';
     }
   }
 
