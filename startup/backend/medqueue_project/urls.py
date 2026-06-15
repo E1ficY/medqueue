@@ -29,6 +29,7 @@ urlpatterns = [
     path('admin-panel.html', TemplateView.as_view(template_name='admin-panel.html')),
     path('subscription.html', TemplateView.as_view(template_name='subscription.html')),
     path('card-checkout.html', TemplateView.as_view(template_name='card-checkout.html')),
+    path('terms.html', TemplateView.as_view(template_name='terms.html')),
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
     path('api/docs/swagger/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='swagger-ui'),
