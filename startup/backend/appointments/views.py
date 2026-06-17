@@ -1689,8 +1689,11 @@ def card_checkout(request):
             PaymentTransaction.objects.create(
                 user=user, amount=amount, currency='KZT', status='failed',
                 transaction_ref=_make_tx_ref(),
-                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
-                description=f"Отказ банка: {msg}"
+                merchant_name='Credit Card',
+                card_last4=card_number[-4:] if card_number else '',
+                card_brand='',
+                authorization_code='',
+                description=f"Отказ банка: REJECT"
             )
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
 
@@ -1700,8 +1703,11 @@ def card_checkout(request):
             PaymentTransaction.objects.create(
                 user=user, amount=amount, currency='KZT', status='failed',
                 transaction_ref=_make_tx_ref(),
-                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
-                description=f"Отказ банка: Ограничения по карте"
+                merchant_name='Credit Card',
+                card_last4=card_number[-4:] if card_number else '',
+                card_brand='',
+                authorization_code='',
+                description="Отказ банка: Ограничения по карте"
             )
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
             
@@ -1711,8 +1717,11 @@ def card_checkout(request):
             PaymentTransaction.objects.create(
                 user=user, amount=amount, currency='KZT', status='failed',
                 transaction_ref=_make_tx_ref(),
-                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
-                description=f"Отказ банка: {msg}"
+                merchant_name='Credit Card',
+                card_last4=card_number[-4:] if card_number else '',
+                card_brand='',
+                authorization_code='',
+                description="Отказ банка: Недостаточно средств"
             )
             return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
 
