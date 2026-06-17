@@ -758,7 +758,8 @@ def subscription_reset_demo(request):
 
     deleted_codes = CardVerificationCode.objects.filter(user=user).delete()[0]
     deleted_cards = PaymentCard.objects.filter(user=user).delete()[0]
-    deleted_txs = PaymentTransaction.objects.filter(user=user).delete()[0]
+    txs = PaymentTransaction.objects.filter(user=user, status='paid')
+    updated_txs = txs.update(status='refunded')
 
     sub, _ = UserSubscription.objects.get_or_create(
         user=user,
@@ -777,7 +778,7 @@ def subscription_reset_demo(request):
         'ok': True,
         'message': 'Демо-данные платежей и карты очищены',
         'deleted': {
-            'transactions': deleted_txs,
+            'transactions_refunded': updated_txs,
             'cards': deleted_cards,
             'verification_codes': deleted_codes,
         },
@@ -1161,6 +1162,18 @@ def admin_stats(request):
         'revenue':        revenue,
         'plus_subs':      UserSubscription.objects.filter(plan='plus', status='active').count(),
         'pending_social': UserSubscription.objects.filter(plan='social', social_reason_confirmed_at__isnull=True).count(),
+        'recent_transactions': [
+            {
+                'id': t.id,
+                'user': t.user.get_full_name() or t.user.username,
+                'plan': t.subscription.plan if t.subscription else 'unknown',
+                'amount': float(t.amount),
+                'currency': t.currency,
+                'status': t.status,
+                'created_at': t.created_at.isoformat() if t.created_at else None
+            }
+            for t in PaymentTransaction.objects.select_related('user', 'subscription').order_by('-id')[:20]
+        ]
     })
 
 

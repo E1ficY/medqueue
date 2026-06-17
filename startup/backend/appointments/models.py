@@ -485,6 +485,7 @@ class PaymentTransaction(models.Model):
         ('processing', 'Обрабатывается'),
         ('paid', 'Оплачен'),
         ('failed', 'Ошибка'),
+        ('refunded', 'Возврат'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_transactions')
