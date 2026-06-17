@@ -7,14 +7,14 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="../css/styles.css?v=2026-06-17-1">
-  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=2026-06-17-1">
-  <link rel="stylesheet" href="../css/modules/logo-system.css?v=2026-06-17-1">
+  <link rel="stylesheet" href="../css/styles.css?v=2026-06-17-5">
+  <link rel="stylesheet" href="../css/modules/navigation-system.css?v=2026-06-17-5">
+  <link rel="stylesheet" href="../css/modules/logo-system.css?v=2026-06-17-5">
 
-  <script src="../js/script.js?v=2026-06-17-1"></script>
-  <script src="../js/theme.js?v=2026-06-17-1"></script>
+  <script src="../js/script.js?v=2026-06-17-5"></script>
+  <script src="../js/theme.js?v=2026-06-17-5"></script>
 
   <style>
     /* ── PAGE SHELL ── */
@@ -22,8 +22,8 @@
       background:
         radial-gradient(900px 500px at 0% 0%, rgba(111,156,146,0.10), transparent 55%),
         radial-gradient(900px 500px at 100% 5%, rgba(142,169,188,0.09), transparent 55%),
-        linear-gradient(180deg, #f4f8f7 0%, #eef4f2 52%, #f5f9f8 100%);
-      color: #223137;
+        linear-gradient(180deg, #f4f8f7 0%, #eef4f2 52%, #f5f9f8 100%) !important;
+      color: #223137 !important;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -35,8 +35,8 @@
       background:
         radial-gradient(900px 500px at 0% 0%, rgba(88,117,130,0.18), transparent 58%),
         radial-gradient(900px 500px at 100% 0%, rgba(83,124,114,0.15), transparent 58%),
-        linear-gradient(180deg, #0c1317 0%, #111b20 52%, #0b1216 100%);
-      color: #e9f0f2;
+        linear-gradient(180deg, #0c1317 0%, #111b20 52%, #0b1216 100%) !important;
+      color: #e9f0f2 !important;
     }
 
     .container { max-width: 1000px; width: 100%; }
@@ -152,25 +152,78 @@
       flex-shrink: 0;
       filter: drop-shadow(0 4px 14px rgba(111,156,146,0.40));
       animation: mq-pulse 3s ease-in-out infinite;
+    /* ── BRAND LOGO BLOCK (Maison Margiela style) ── */
+    .mq-brand-block {
+      margin-top: 28px;
+      padding: 28px 26px 22px;
+      background: #ffffff;
+      border: 1px solid #d8e3df;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(34,49,55,0.05);
+      display: flex; flex-direction: column; gap: 22px;
     }
-    @keyframes mq-pulse {
-      0%, 100% { filter: drop-shadow(0 4px 14px rgba(111,156,146,0.40)); }
-      50%       { filter: drop-shadow(0 6px 22px rgba(111,156,146,0.65)); }
+    [data-theme="dark"] .mq-brand-block { background: #1a2b32; border-color: #243840; }
+
+    .mq-wordmark-wrap {
+      text-align: center;
+      padding-bottom: 18px;
+      border-bottom: 1.5px solid #d8e3df;
     }
-    .mq-wordmark { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #223137; line-height: 1; }
-    .mq-wordmark span { color: #6f9c92; }
+    [data-theme="dark"] .mq-wordmark-wrap { border-bottom-color: #243840; }
+
+    .mq-wordmark {
+      font-family: 'Playfair Display', 'Georgia', serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #1a2b2e;
+      line-height: 1;
+      margin: 0 0 8px;
+    }
     [data-theme="dark"] .mq-wordmark { color: #e9f0f2; }
-    [data-theme="dark"] .mq-wordmark span { color: #82b5aa; }
-    .mq-tagline { font-size: 11px; color: #687980; margin-top: 5px; letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; }
-    .mq-security-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-    .mq-badge {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 11px; font-weight: 600; color: #5b857c;
-      background: rgba(111,156,146,0.10);
-      border: 1px solid rgba(111,156,146,0.22);
-      border-radius: 20px; padding: 5px 12px; letter-spacing: 0.3px;
+
+    .mq-city {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #6f9c92;
+      margin: 0;
     }
-    [data-theme="dark"] .mq-badge { color: #82b5aa; background: rgba(130,181,170,0.10); border-color: rgba(130,181,170,0.20); }
+    [data-theme="dark"] .mq-city { color: #82b5aa; }
+
+    .mq-security-badges {
+      display: flex;
+      gap: 0;
+      border: 1px solid #d8e3df;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .mq-security-badges { border-color: #243840; }
+
+    .mq-badge {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #5b857c;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      background: rgba(111,156,146,0.04);
+      border-right: 1px solid #d8e3df;
+      transition: background 0.2s;
+    }
+    .mq-badge:last-child { border-right: none; }
+    .mq-badge:hover { background: rgba(111,156,146,0.10); }
+    [data-theme="dark"] .mq-badge { color: #82b5aa; background: rgba(111,156,146,0.06); border-right-color: #243840; }
+    [data-theme="dark"] .mq-badge:hover { background: rgba(111,156,146,0.12); }
+    .mq-badge svg { color: #6f9c92; }
+    [data-theme="dark"] .mq-badge svg { color: #82b5aa; }
 
     /* ── RIGHT PANEL ── */
     .summary-panel {
@@ -294,48 +347,29 @@
 
         <!-- MedQueue Brand Logo Block -->
         <div class="mq-brand-block">
-          <div class="mq-brand-inner">
-            <div class="mq-logo-mark">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="48" height="48" rx="14" fill="url(#mqGrad)"/>
-                <path d="M14 24C14 18.477 18.477 14 24 14s10 4.477 10 10-4.477 10-10 10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M24 19v5l3 3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="34" cy="34" r="5" fill="url(#mqGrad2)" stroke="white" stroke-width="2"/>
-                <path d="M32 34h4M34 32v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-                <defs>
-                  <linearGradient id="mqGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#6f9c92"/>
-                    <stop offset="1" stop-color="#4d7c73"/>
-                  </linearGradient>
-                  <linearGradient id="mqGrad2" x1="29" y1="29" x2="39" y2="39" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#8eb8b0"/>
-                    <stop offset="1" stop-color="#6f9c92"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div class="mq-brand-text">
-              <div class="mq-wordmark">Med<span>Queue</span></div>
-              <div class="mq-tagline">Умная запись к врачу</div>
-            </div>
+          <!-- Maison Margiela-style wordmark -->
+          <div class="mq-wordmark-wrap">
+            <div class="mq-wordmark">MedQueue</div>
+            <div class="mq-city">Almaty</div>
           </div>
+
+          <!-- Security badges — segmented panel style -->
           <div class="mq-security-badges">
             <div class="mq-badge">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              SSL защита
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              SSL
             </div>
             <div class="mq-badge">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               PCI DSS
             </div>
             <div class="mq-badge">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               3D Secure
             </div>
           </div>
         </div>
       </div>
-
       <!-- RIGHT: Summary -->
       <div class="summary-panel">
         <div class="summary-plan-name">План Plus</div>
