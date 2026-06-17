@@ -1669,16 +1669,34 @@ def card_checkout(request):
         if 'reject' in card_name.lower() or 'реджект' in card_name.lower():
             msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
             print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
+            PaymentTransaction.objects.create(
+                user=user, amount=amount, currency='KZT', status='failed',
+                transaction_ref=_make_tx_ref(),
+                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
+                description=f"Отказ банка: {msg}"
+            )
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
 
         if card_number.endswith('0000'):
             msg = "Банк отклонил транзакцию. Пожалуйста, обратитесь в ваш банк или используйте другую карту."
             print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+            PaymentTransaction.objects.create(
+                user=user, amount=amount, currency='KZT', status='failed',
+                transaction_ref=_make_tx_ref(),
+                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
+                description=f"Отказ банка: Ограничения по карте"
+            )
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
             
         if card_number.endswith('1111'):
             msg = "Недостаточно средств на карте."
             print(f"[WARNING] Card Checkout Rejected: {msg}", flush=True)
+            PaymentTransaction.objects.create(
+                user=user, amount=amount, currency='KZT', status='failed',
+                transaction_ref=_make_tx_ref(),
+                merchant_name='Credit Card', card_last4=card_number[-4:] if card_number else '',
+                description=f"Отказ банка: {msg}"
+            )
             return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
 
         # Success Case
