@@ -1136,7 +1136,35 @@ def _require_admin(request):
     return request.user, None
 
 
-from django.views.decorators.cache import never_cache
+def _get_recent_transactions():
+    """Безопасно собирает последние 20 транзакций для дашборда."""
+    result = []
+    try:
+        txs = PaymentTransaction.objects.select_related('user', 'subscription').order_by('-id')[:20]
+        for t in txs:
+            try:
+                plan = t.subscription.plan if t.subscription_id else 'unknown'
+            except Exception:
+                plan = 'unknown'
+            try:
+                user_name = t.user.get_full_name() or t.user.username
+            except Exception:
+                user_name = '—'
+            result.append({
+                'id':         t.id,
+                'user':       user_name,
+                'plan':       plan,
+                'amount':     float(t.amount),
+                'currency':   t.currency,
+                'status':     t.status,
+                'description': t.description or '',
+                'card_last4': t.card_last4 or '',
+                'created_at': t.created_at.isoformat() if t.created_at else None,
+            })
+    except Exception as e:
+        print(f"[ERROR] _get_recent_transactions: {e}", flush=True)
+    return result
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1165,18 +1193,7 @@ def admin_stats(request):
         'revenue':        revenue,
         'plus_subs':      UserSubscription.objects.filter(plan='plus', status='active').count(),
         'pending_social': UserSubscription.objects.filter(plan='social', social_reason_confirmed_at__isnull=True).count(),
-        'recent_transactions': [
-            {
-                'id': t.id,
-                'user': t.user.get_full_name() or t.user.username,
-                'plan': t.subscription.plan if t.subscription else 'unknown',
-                'amount': float(t.amount),
-                'currency': t.currency,
-                'status': t.status,
-                'created_at': t.created_at.isoformat() if t.created_at else None
-            }
-            for t in PaymentTransaction.objects.select_related('user', 'subscription').order_by('-id')[:20]
-        ]
+        'recent_transactions': _get_recent_transactions()
     })
 
 
