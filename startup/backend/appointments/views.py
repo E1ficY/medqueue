@@ -1136,8 +1136,11 @@ def _require_admin(request):
     return request.user, None
 
 
+from django.views.decorators.cache import never_cache
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@never_cache
 def admin_stats(request):
     """GET /api/admin/stats/ — общая статистика системы."""
     _, err = _require_admin(request)

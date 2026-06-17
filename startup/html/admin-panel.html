@@ -629,7 +629,7 @@ function showSection(name){
 async function loadStats(){
   document.getElementById('statsGrid').innerHTML =
     '<div class="placeholder" style="grid-column:1/-1;padding:32px"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l16-20V2z"/></svg></div>Загрузка…</div>';
-  const res = await apiFetch(`${API}/admin/stats/`);
+  const res = await apiFetch(`${API}/admin/stats/?_t=${Date.now()}`);
   if(!res) return;
   const d = await res.json();
   document.getElementById('statsGrid').innerHTML = `
