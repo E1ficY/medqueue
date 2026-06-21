@@ -16,7 +16,7 @@ class AuthPageView(TemplateView):
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/main.html', permanent=False)),
+    path('', TemplateView.as_view(template_name='main.html')),
     path('favicon.ico', RedirectView.as_view(url='/images/favicon.svg', permanent=False)),
     path('main.html', TemplateView.as_view(template_name='main.html')),
     path('doctors.html', TemplateView.as_view(template_name='doctors.html')),
