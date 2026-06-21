@@ -1,0 +1,13 @@
+.env
+.env.*
+logs/
+*.log
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+db.sqlite3
+db.sqlite3-journal
+.certs/

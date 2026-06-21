@@ -1,0 +1,752 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MedQueue тАФ ╨Я╨╛╨┤╨┐╨╕╤Б╨║╨░</title>
+  <meta name="description" content="╨г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╨╡ ╨┐╨╛╨┤╨┐╨╕╤Б╨║╨╛╨╣ MedQueue. ╨Т╤Л╨▒╨╡╤А╨╕╤В╨╡ ╤В╨░╤А╨╕╤Д ╨╕ ╨╛╨┐╨╗╨░╤В╨╕╤В╨╡ ╤З╨╡╤А╨╡╨╖ PayPal." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f5fb;
+      --bg2: #e8eef8;
+      --card: #ffffff;
+      --card2: #f8fafd;
+      --border: rgba(0,0,0,.08);
+      --accent: #10b981;
+      --accent2: #059669;
+      --paypal: #003087;
+      --paypal2: #009cde;
+      --text: #0f172a;
+      --muted: #64748b;
+      --muted2: #475569;
+      --plus: #d97706;
+      --social: #6366f1;
+      --shadow: 0 2px 16px rgba(0,0,0,.07);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* тФАтФАтФА NAVBAR тФАтФАтФА */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 64px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -.3px;
+    }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link {
+      color: var(--muted2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      transition: all .15s;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,.06); }
+    .nav-link.active { color: var(--text); background: rgba(255,255,255,.08); }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted2);
+    }
+    .nav-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--paypal2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #fff;
+      cursor: pointer;
+    }
+
+    /* тФАтФАтФА LAYOUT тФАтФАтФА */
+    .page { max-width: 1080px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    .page-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f1f5f9 30%, #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .page-hero p {
+      color: var(--muted2);
+      font-size: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* тФАтФАтФА STATUS BAR тФАтФАтФА */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 24px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    .status-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(74,222,128,.2), rgba(34,197,94,.1));
+      border: 1px solid rgba(74,222,128,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .status-info { flex: 1; }
+    .status-plan {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .status-detail {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(74,222,128,.12);
+      color: var(--accent);
+      border: 1px solid rgba(74,222,128,.2);
+    }
+    .status-badge.plus { background: rgba(245,158,11,.12); color: var(--plus); border-color: rgba(245,158,11,.2); }
+    .status-badge.social { background: rgba(129,140,248,.12); color: var(--social); border-color: rgba(129,140,248,.2); }
+
+    /* тФАтФАтФА PLANS GRID тФАтФАтФА */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 768px) { .plans-grid { grid-template-columns: 1fr; } }
+
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: border-color .2s, transform .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .plan-card:hover { border-color: rgba(255,255,255,.15); transform: translateY(-2px); }
+    .plan-card.popular {
+      border-color: rgba(245,158,11,.35);
+      background: linear-gradient(145deg, #1a2540, #1e2c40);
+    }
+    .plan-card.active-plan { border-color: rgba(74,222,128,.35); }
+
+    .plan-popular-badge {
+      position: absolute; top: 16px; right: 16px;
+      font-size: 10px; font-weight: 800;
+      padding: 3px 9px; border-radius: 20px;
+      background: linear-gradient(90deg, var(--plus), #f97316);
+      color: #fff;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .plan-name {
+      font-size: 13px; font-weight: 700;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .plan-price {
+      font-size: 34px; font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+    .plan-price span { font-size: 14px; font-weight: 500; color: var(--muted); }
+
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .plan-features li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: var(--muted2); line-height: 1.4;
+    }
+    .plan-features li::before { content: 'тЬУ'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .plan-card.popular .plan-features li::before { color: var(--plus); }
+
+    .plan-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      transition: all .2s;
+    }
+    .plan-btn.free-btn {
+      background: rgba(255,255,255,.06);
+      color: var(--muted2);
+      border: 1px solid var(--border);
+    }
+    .plan-btn.free-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+    .plan-btn.social-btn {
+      background: rgba(129,140,248,.12);
+      color: var(--social);
+      border: 1px solid rgba(129,140,248,.25);
+    }
+    .plan-btn.social-btn:hover { background: rgba(129,140,248,.22); }
+    .plan-btn.paypal-btn {
+      background: linear-gradient(135deg, var(--paypal), #0070ba);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .plan-btn.paypal-btn:hover { background: linear-gradient(135deg, #004ab3, #0070ba); transform: scale(1.02); }
+    .plan-btn:disabled {
+      opacity: .6; cursor: not-allowed;
+      transform: none !important;
+    }
+    .plan-btn.active-btn {
+      background: rgba(74,222,128,.1);
+      color: var(--accent);
+      border: 1px solid rgba(74,222,128,.25);
+      cursor: default;
+    }
+
+    /* тФАтФАтФА PAYPAL LOGO тФАтФАтФА */
+    .paypal-logo {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-weight: 800; font-size: 14px;
+    }
+    .paypal-logo .pay { color: #009cde; }
+    .paypal-logo .pal { color: #003087; }
+
+    /* тФАтФАтФА SOCIAL FORM тФАтФАтФА */
+    .social-reason-box {
+      background: var(--card);
+      border: 1px solid rgba(129,140,248,.25);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 32px;
+      display: none;
+    }
+    .social-reason-box.show { display: block; }
+    .social-reason-box label {
+      display: block;
+      font-size: 13px; font-weight: 700;
+      color: var(--muted2);
+      margin-bottom: 8px;
+    }
+    .social-reason-box textarea {
+      width: 100%;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .social-reason-box textarea:focus { outline: none; border-color: var(--social); }
+
+    /* тФАтФАтФА RECEIPT тФАтФАтФА */
+    .receipt-section { display: none; margin-bottom: 32px; }
+    .receipt-section.show { display: block; }
+    .receipt-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .receipt-header {
+      background: linear-gradient(90deg, var(--card2), #1a2540);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .receipt-header .title { font-size: 12px; font-weight: 800; color: var(--muted2); letter-spacing: 1px; text-transform: uppercase; }
+    .receipt-body { padding: 4px 0; }
+    .receipt-row {
+      display: flex; justify-content: space-between;
+      padding: 10px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row .label { color: var(--muted); }
+    .receipt-row .value { color: var(--text); font-weight: 600; }
+    .receipt-row .value.success { color: var(--accent); }
+
+    /* тФАтФАтФА TOAST тФАтФАтФА */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px; font-weight: 600;
+      color: var(--text);
+      max-width: 340px;
+      z-index: 9999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all .3s ease;
+      display: flex; align-items: center; gap: 10px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: rgba(74,222,128,.3); }
+    #toast.error { border-color: rgba(239,68,68,.3); }
+    #toast .toast-icon { font-size: 18px; flex-shrink: 0; }
+
+    /* тФАтФАтФА LOADING тФАтФАтФА */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(0,0,0,.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: 14px;
+      color: var(--muted2);
+      box-shadow: var(--shadow);
+    }
+    .error-state .err-icon { font-size: 36px; margin-bottom: 12px; }
+    .error-state h3 { color: var(--text); margin-bottom: 8px; }
+    .error-state p { font-size: 14px; margin-bottom: 16px; }
+    .retry-btn {
+      padding: 10px 24px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .2s;
+    }
+    .retry-btn:hover { background: rgba(255,255,255,.14); }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="main.html" class="brand">MedQueue</a>
+  <div class="nav-links">
+    <a href="main.html" class="nav-link">╨У╨╗╨░╨▓╨╜╨░╤П</a>
+    <a href="appointments.html" class="nav-link">╨Ч╨░╨┐╨╕╤Б╤М</a>
+    <a href="subscription.html" class="nav-link active">╨Я╨╛╨┤╨┐╨╕╤Б╨║╨░</a>
+    <a href="profile.html" class="nav-link">╨Я╤А╨╛╤Д╨╕╨╗╤М</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">?</div>
+    <span id="navUserName">╨Ч╨░╨│╤А╤Г╨╖╨║╨░...</span>
+  </div>
+</nav>
+
+<div id="toast">
+  <span class="toast-icon" id="toastIcon">тД╣я╕П</span>
+  <span id="toastMsg"></span>
+</div>
+
+<main class="page">
+  <div class="page-hero">
+    <h1>╨Я╨╛╨┤╨┐╨╕╤Б╨║╨░ MedQueue</h1>
+    <p>╨Т╤Л╨▒╨╡╤А╨╕╤В╨╡ ╨┐╨╛╨┤╤Е╨╛╨┤╤П╤Й╨╕╨╣ ╤В╨░╤А╨╕╤Д ╨╕ ╨┐╨╛╨╗╤Г╤З╨╕╤В╨╡ ╨┤╨╛╤Б╤В╤Г╨┐ ╨║ ╤А╨░╤Б╤И╨╕╤А╨╡╨╜╨╜╤Л╨╝ ╤Д╤Г╨╜╨║╤Ж╨╕╤П╨╝ ╨┐╨╗╨░╤В╤Д╨╛╤А╨╝╤Л</p>
+  </div>
+
+  <!-- ╨б╨в╨Р╨в╨г╨б ╨в╨Х╨Ъ╨г╨й╨Х╨Щ ╨Я╨Ю╨Ф╨Я╨Ш╨б╨Ъ╨Ш -->
+  <div class="status-bar" id="statusBar" style="display:none">
+    <div class="status-icon" id="statusIcon">ЁЯПе</div>
+    <div class="status-info">
+      <div class="status-plan" id="statusPlan">╨в╨░╤А╨╕╤Д: Free</div>
+      <div class="status-detail" id="statusDetail">╨Ч╨░╨│╤А╤Г╨╖╨║╨░...</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+      <div class="status-badge" id="statusBadge">Free</div>
+      <button id="refundBtn" class="plan-btn" style="display:none; padding: 4px 10px; font-size:11px; background:transparent; border:1px solid var(--border); color:var(--muted2); width:auto;" onclick="resetDemo()">╨Т╨╛╨╖╨▓╤А╨░╤В ╤Б╤А╨╡╨┤╤Б╤В╨▓ (╨б╨▒╤А╨╛╤Б)</button>
+    </div>
+  </div>
+
+  <!-- ╨Я╨Ы╨Р╨Э╨л -->
+  <div class="section-title">╨Ф╨╛╤Б╤В╤Г╨┐╨╜╤Л╨╡ ╤В╨░╤А╨╕╤Д╤Л</div>
+  <div id="plansContainer">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div>╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╤В╨░╤А╨╕╤Д╨╛╨▓...</div>
+    </div>
+  </div>
+
+  <!-- ╨д╨Ю╨а╨Ь╨Р ╨Ы╨м╨У╨Ю╨в╨Э╨Ю╨У╨Ю ╨в╨Р╨а╨Ш╨д╨Р -->
+  <div class="social-reason-box" id="socialBox">
+    <label for="socialReason">╨Я╤А╨╕╤З╨╕╨╜╨░ ╨┤╨╗╤П ╨╗╤М╨│╨╛╤В╨╜╨╛╨│╨╛ ╤В╨░╤А╨╕╤Д╨░ (╨╝╨╕╨╜╨╕╨╝╤Г╨╝ 12 ╤Б╨╕╨╝╨▓╨╛╨╗╨╛╨▓)</label>
+    <textarea id="socialReason" placeholder="╨Ю╨┐╨╕╤И╨╕╤В╨╡ ╨┐╤А╨╕╤З╨╕╨╜╤Г (╨╕╨╜╨▓╨░╨╗╨╕╨┤╨╜╨╛╤Б╤В╤М, ╨┐╨╡╨╜╤Б╨╕╨╛╨╜╨╜╤Л╨╣ ╨▓╨╛╨╖╤А╨░╤Б╤В, ╨╝╨╜╨╛╨│╨╛╨┤╨╡╤В╨╜╨░╤П ╤Б╨╡╨╝╤М╤П ╨╕ ╤В.╨┤.)..."></textarea>
+  </div>
+
+  <!-- ╨Я╨Ю╨б╨Ы╨Х╨Ф╨Э╨Ш╨Щ ╨Я╨Ы╨Р╨в╨Х╨Ц -->
+  <div class="receipt-section" id="receiptSection">
+    <div class="section-title">╨Я╨╛╤Б╨╗╨╡╨┤╨╜╨╕╨╣ ╨┐╨╗╨░╤В╤С╨╢</div>
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <span>ЁЯз╛</span>
+        <span class="title">╨Ъ╨▓╨╕╤В╨░╨╜╤Ж╨╕╤П ╨╛╨▒ ╨╛╨┐╨╗╨░╤В╨╡</span>
+      </div>
+      <div class="receipt-body" id="receiptBody"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  var API = window.location.origin + '/api';
+  var AUTH_KEY = 'medqueue_current_user';
+  var activePlanId = 'free';
+  var isLoggedIn = false;
+
+  function getUser() {
+    try {
+      var u = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+      if (!u) return null;
+      // OAuth logins store tokens separately - merge them in
+      if (!u.access) {
+        var sep = localStorage.getItem('medqueue_access_token') || '';
+        var sepR = localStorage.getItem('medqueue_refresh_token') || '';
+        if (sep) { u.access = sep; u.refresh = sepR; }
+      }
+      return u;
+    } catch(e) { return null; }
+  }
+  function saveUser(u) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(u));
+    // Keep separate keys in sync too
+    if (u.access) localStorage.setItem('medqueue_access_token', u.access);
+  }
+
+  async function tryRefresh() {
+    var u = getUser();
+    if (!u || !u.refresh) return false;
+    try {
+      var r = await fetch(API + '/auth/token/refresh/', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({refresh: u.refresh})
+      });
+      if (!r.ok) return false;
+      var d = await r.json();
+      if (!d.access) return false;
+      saveUser(Object.assign({}, u, {access: d.access}));
+      return true;
+    } catch(e) { return false; }
+  }
+
+  async function authFetch(url, opts) {
+    opts = opts || {};
+    var u = getUser();
+    var headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+    if (u && u.access) headers['Authorization'] = 'Bearer ' + u.access;
+    try {
+      var res = await fetch(url, Object.assign({}, opts, {headers: headers}));
+      if (res.status === 401) {
+        if (await tryRefresh()) {
+          var u2 = getUser();
+          headers['Authorization'] = 'Bearer ' + u2.access;
+          return fetch(url, Object.assign({}, opts, {headers: headers}));
+        }
+        localStorage.removeItem(AUTH_KEY);
+        isLoggedIn = false;
+        return null;
+      }
+      return res;
+    } catch(e) { return null; }
+  }
+
+  var toastTimer;
+  function toast(msg, type) {
+    type = type || 'info';
+    var el = document.getElementById('toast');
+    var icon = type === 'success' ? 'тЬЕ' : type === 'error' ? 'тЭМ' : type === 'warn' ? 'тЪая╕П' : 'тД╣я╕П';
+    document.getElementById('toastIcon').textContent = icon;
+    document.getElementById('toastMsg').textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = ''; }, 4500);
+  }
+
+  function requireAuth() {
+    if (isLoggedIn) return true;
+    sessionStorage.setItem('medqueue_auth_return_url', window.location.href);
+    window.location.href = '/auth.html?tab=login';
+    return false;
+  }
+
+  function renderPlans(plans, currentPlanId) {
+    activePlanId = currentPlanId || 'free';
+    var defs = {free: 'ЁЯМ▒', social: 'ЁЯТЪ', plus: 'тнР'};
+    var html = '<div class="plans-grid">';
+    for (var i = 0; i < plans.length; i++) {
+      var p = plans[i];
+      var isActive = p.id === activePlanId && isLoggedIn;
+      var icon = defs[p.id] || 'тЪЩя╕П';
+      var priceText = p.price_kzt === 0 ? '╨С╨╡╤Б╨┐╨╗╨░╤В╨╜╨╛' : p.price_kzt.toLocaleString('ru-RU') + ' тВ╕';
+      var priceSub = p.price_kzt === 0 ? '' : '<span>/ ╨╝╨╡╤Б╤П╤Ж</span>';
+      var btnContent, btnClass;
+      if (isActive) { btnContent = 'тЬУ ╨в╨╡╨║╤Г╤Й╨╕╨╣ ╤В╨░╤А╨╕╤Д'; btnClass = 'active-btn'; }
+      else if (p.id === 'plus') { btnContent = '<span class="paypal-logo"><span class="pay">Pay</span><span class="pal">Pal</span></span> ╨Ю╨┐╨╗╨░╤В╨╕╤В╤М'; btnClass = 'paypal-btn'; }
+      else if (p.id === 'social') { btnContent = '╨Я╨╛╨┤╤В╨▓╨╡╤А╨┤╨╕╤В╤М ╨╗╤М╨│╨╛╤В╤Г'; btnClass = 'social-btn'; }
+      else { btnContent = isLoggedIn ? '╨Т╤Л╨▒╤А╨░╤В╤М' : '╨Т╨╛╨╣╤В╨╕ ╨┤╨╗╤П ╨▓╤Л╨▒╨╛╤А╨░'; btnClass = 'free-btn'; }
+      var benefits = '';
+      for (var j = 0; j < p.benefits.length; j++) benefits += '<li>' + p.benefits[j] + '</li>';
+      html += '<div class="plan-card' + (p.is_popular ? ' popular' : '') + (isActive ? ' active-plan' : '') + '">';
+      if (p.is_popular) html += '<div class="plan-popular-badge">ЁЯФе ╨Я╨╛╨┐╤Г╨╗╤П╤А╨╜╤Л╨╣</div>';
+      html += '<div class="plan-name">' + icon + ' ' + p.title + '</div>';
+      html += '<div class="plan-price">' + priceText + priceSub + '</div>';
+      html += '<ul class="plan-features">' + benefits + '</ul>';
+      if (p.id === 'plus' && !isActive) {
+        html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')">' + btnContent + '</button>';
+        html += '<button id="btn-' + p.id + '-test" class="plan-btn" style="background:var(--card2); color:var(--text); border:1px solid var(--border);" onclick="activatePlan(\'' + p.id + '\', {test_payment: true})">ЁЯТ│ ╨в╨╡╤Б╤В╨╛╨▓╨░╤П ╨╛╨┐╨╗╨░╤В╨░</button>';
+        html += '</div>';
+      } else {
+        html += '<button id="btn-' + p.id + '" class="plan-btn ' + btnClass + '" onclick="handlePlan(\'' + p.id + '\')"' + (isActive ? ' disabled' : '') + '>' + btnContent + '</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('plansContainer').innerHTML = html;
+    var sb = document.getElementById('socialBox');
+    if (sb) sb.classList.toggle('show', isLoggedIn && activePlanId !== 'social');
+  }
+
+  function renderStatus(sub) {
+    var bar = document.getElementById('statusBar');
+    if (!isLoggedIn) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    var icons = {free: 'ЁЯМ▒', social: 'ЁЯТЪ', plus: 'тнР'};
+    if (!sub) {
+      document.getElementById('statusPlan').textContent = '╨в╨░╤А╨╕╤Д: Free';
+      document.getElementById('statusDetail').textContent = '╨Р╨║╤В╨╕╨▓╨╕╤А╤Г╨╣╤В╨╡ ╤В╨░╤А╨╕╤Д ╨╕╨╖ ╤Б╨┐╨╕╤Б╨║╨░ ╨╜╨╕╨╢╨╡';
+      document.getElementById('statusIcon').textContent = 'ЁЯМ▒';
+      document.getElementById('statusBadge').textContent = 'Free';
+      document.getElementById('statusBadge').className = 'status-badge';
+      return;
+    }
+    document.getElementById('statusIcon').textContent = icons[sub.plan_id] || 'ЁЯПе';
+    document.getElementById('statusPlan').textContent = '╨в╨░╤А╨╕╤Д: ' + sub.plan_title;
+    var billing = sub.next_billing_date
+      ? '╨б╨╗╨╡╨┤╤Г╤О╤Й╨╡╨╡ ╤Б╨┐╨╕╤Б╨░╨╜╨╕╨╡: ' + new Date(sub.next_billing_date).toLocaleDateString('ru-RU')
+      : '╨С╨╡╤Б╨┐╨╗╨░╤В╨╜╨╛';
+    document.getElementById('statusDetail').textContent = billing;
+    var badge = document.getElementById('statusBadge');
+    badge.textContent = sub.plan_title;
+    badge.className = 'status-badge' + (sub.plan_id === 'plus' ? ' plus' : sub.plan_id === 'social' ? ' social' : '');
+
+    var refundBtn = document.getElementById('refundBtn');
+    if (refundBtn) {
+      refundBtn.style.display = (sub.plan_id !== 'free') ? 'block' : 'none';
+    }
+  }
+
+  function renderReceipt(tx) {
+    if (!tx) return;
+    var section = document.getElementById('receiptSection');
+    var body = document.getElementById('receiptBody');
+    var method = tx.card_last4 ? '**** **** **** ' + tx.card_last4 : (tx.merchant_name || 'PayPal');
+    var amount = tx.currency === 'USD'
+      ? '$' + Number(tx.amount).toFixed(2) + ' USD'
+      : Number(tx.amount).toLocaleString('ru-RU') + ' ' + (tx.currency || 'KZT');
+    body.innerHTML =
+      '<div class="receipt-row"><span class="label">╨б╤В╨░╤В╤Г╤Б</span><span class="value success">' + (tx.status === 'paid' ? '╨Ю╨Я╨Ы╨Р╨з╨Х╨Э тЬУ' : tx.status.toUpperCase()) + '</span></div>' +
+      '<div class="receipt-row"><span class="label">╨б╤Г╨╝╨╝╨░</span><span class="value">' + amount + '</span></div>' +
+      '<div class="receipt-row"><span class="label">╨Ю╨┐╨╗╨░╤В╨░</span><span class="value">' + method + '</span></div>' +
+      '<div class="receipt-row"><span class="label">ID</span><span class="value" style="font-size:11px;word-break:break-all">' + (tx.transaction_ref || 'тАФ') + '</span></div>' +
+      '<div class="receipt-row"><span class="label">╨Ф╨░╤В╨░</span><span class="value">' + (tx.paid_at ? new Date(tx.paid_at).toLocaleString('ru-RU') : 'тАФ') + '</span></div>';
+    section.classList.add('show');
+  }
+
+  async function handlePlan(planId) {
+    if (!requireAuth()) return;
+    if (planId === activePlanId && isLoggedIn) return;
+    if (planId === 'plus') { await startPayPal(); return; }
+    if (planId === 'social') {
+      var reason = (document.getElementById('socialReason').value || '').trim();
+      if (reason.length < 12) {
+        toast('╨г╨║╨░╨╢╨╕╤В╨╡ ╨┐╤А╨╕╤З╨╕╨╜╤Г ╨╝╨╕╨╜╨╕╨╝╤Г╨╝ ╨╕╨╖ 12 ╤Б╨╕╨╝╨▓╨╛╨╗╨╛╨▓ ╨▓ ╨┐╨╛╨╗╨╡ ╨╜╨╕╨╢╨╡', 'warn');
+        document.getElementById('socialBox').classList.add('show');
+        document.getElementById('socialReason').focus();
+        return;
+      }
+      await activatePlan(planId, {social_reason: reason});
+      return;
+    }
+    await activatePlan(planId, {});
+  }
+
+  async function activatePlan(planId, extra) {
+    var btn = document.getElementById('btn-' + planId);
+    if (btn) { btn.disabled = true; btn.textContent = '╨Ю╨▒╤А╨░╨▒╨╛╤В╨║╨░...'; }
+    var payload = JSON.stringify(Object.assign({plan_id: planId}, extra || {}));
+    var r = await authFetch(API + '/subscription/activate/', {method: 'POST', body: payload});
+    if (!r) { toast('╨б╨╡╤Б╤Б╨╕╤П ╨╕╤Б╤В╨╡╨║╨╗╨░. ╨Т╨╛╨╣╨┤╨╕╤В╨╡ ╤Б╨╜╨╛╨▓╨░', 'warn'); if (btn) btn.disabled = false; return; }
+    var d = await r.json();
+    if (!r.ok) { toast(d.error || '╨Ю╤И╨╕╨▒╨║╨░ ╨░╨║╤В╨╕╨▓╨░╤Ж╨╕╨╕', 'error'); if (btn) btn.disabled = false; return; }
+    toast(d.message || '╨в╨░╤А╨╕╤Д ╨░╨║╤В╨╕╨▓╨╕╤А╨╛╨▓╨░╨╜!', 'success');
+    await loadData();
+  }
+
+  async function resetDemo() {
+    if (!confirm('╨Т╤Л ╤Г╨▓╨╡╤А╨╡╨╜╤Л, ╤З╤В╨╛ ╤Е╨╛╤В╨╕╤В╨╡ ╨╛╤В╨╝╨╡╨╜╨╕╤В╤М ╤В╨░╤А╨╕╤Д ╨╕ ╨▓╨╡╤А╨╜╤Г╤В╤М ╤Б╤А╨╡╨┤╤Б╤В╨▓╨░ (╤Б╨▒╤А╨╛╤Б ╨┤╨╡╨╝╨╛-╨┤╨░╨╜╨╜╤Л╤Е)?')) return;
+    var btn = document.getElementById('refundBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '╨Ю╨▒╤А╨░╨▒╨╛╤В╨║╨░...'; }
+    var r = await authFetch(API + '/subscription/reset-demo/', {method: 'POST'});
+    if (!r) { toast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤Б╤Б╨╕╨╕', 'warn'); if (btn) { btn.disabled = false; btn.textContent = '╨Т╨╛╨╖╨▓╤А╨░╤В ╤Б╤А╨╡╨┤╤Б╤В╨▓ (╨б╨▒╤А╨╛╤Б)'; } return; }
+    var d = await r.json();
+    if (!r.ok) { toast(d.error || '╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨▒╤А╨╛╤Б╨░', 'error'); if (btn) { btn.disabled = false; btn.textContent = '╨Т╨╛╨╖╨▓╤А╨░╤В ╤Б╤А╨╡╨┤╤Б╤В╨▓ (╨б╨▒╤А╨╛╤Б)'; } return; }
+    toast(d.message || '╨в╨░╤А╨╕╤Д ╨╛╤В╨╝╨╡╨╜╤С╨╜ ╨╕ ╨┤╨░╨╜╨╜╤Л╨╡ ╨╛╤З╨╕╤Й╨╡╨╜╤Л', 'success');
+    if (btn) { btn.disabled = false; btn.textContent = '╨Т╨╛╨╖╨▓╤А╨░╤В ╤Б╤А╨╡╨┤╤Б╤В╨▓ (╨б╨▒╤А╨╛╤Б)'; }
+    await loadData();
+  }
+
+  async function startPayPal() {
+    var btn = document.getElementById('btn-plus');
+    if (btn) { btn.disabled = true; btn.textContent = '╨Я╨╡╤А╨╡╤Е╨╛╨┤ ╨║ PayPal...'; }
+    var r = await authFetch(API + '/subscription/create-paypal-order/', {
+      method: 'POST',
+      body: JSON.stringify({plan_id: 'plus', success_url: window.location.origin + '/subscription.html?pp=1', cancel_url: window.location.origin + '/subscription.html?pp=cancel'})
+    });
+    if (!r) { toast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤Б╤Б╨╕╨╕', 'error'); if (btn) btn.disabled = false; return; }
+    var d = await r.json();
+    if (!r.ok || !d.checkout_url) { toast(d.error || '╨Ю╤И╨╕╨▒╨║╨░ PayPal', 'error'); if (btn) btn.disabled = false; return; }
+    window.location.href = d.checkout_url;
+  }
+
+  async function capturePayPal(token) {
+    toast('╨Я╨╛╨┤╤В╨▓╨╡╤А╨╢╨┤╨░╨╡╨╝ ╨┐╨╗╨░╤В╤С╨╢...', 'info');
+    var r = await authFetch(API + '/subscription/capture-paypal-order/', {method: 'POST', body: JSON.stringify({token: token})});
+    if (!r) { toast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤Б╤Б╨╕╨╕', 'error'); return; }
+    var d = await r.json();
+    toast(r.ok ? '╨Ю╨┐╨╗╨░╤В╨░ ╤Г╤Б╨┐╨╡╤И╨╜╨░! ╨в╨░╤А╨╕╤Д Plus ╨░╨║╤В╨╕╨▓╨╕╤А╨╛╨▓╨░╨╜.' : (d.error || '╨Ю╤И╨╕╨▒╨║╨░ PayPal'), r.ok ? 'success' : 'error');
+    if (r.ok) await loadData();
+  }
+
+  async function loadData() {
+    var plans = [];
+    try {
+      var pr = await fetch(API + '/subscription/plans/');
+      if (pr.ok) { var pd = await pr.json(); plans = Array.isArray(pd) ? pd : (pd.plans || []); }
+    } catch(e) {}
+
+    if (!plans.length) {
+      document.getElementById('plansContainer').innerHTML =
+        '<div class="error-state"><div class="err-icon">ЁЯФМ</div><h3>╨б╨╡╤А╨▓╨╡╤А ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╡╨╜</h3><p>╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨╖╨░╨│╤А╤Г╨╖╨╕╤В╤М ╤В╨░╤А╨╕╤Д╤Л. ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╨╡ ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г.</p><button class="retry-btn" onclick="loadData()">╨Я╨╛╨▓╤В╨╛╤А╨╕╤В╤М</button></div>';
+      return;
+    }
+
+    var meData = {subscription: null, transactions: []};
+    if (isLoggedIn) {
+      var meRes = await authFetch(API + '/subscription/me/');
+      if (meRes && meRes.ok) {
+        meData = await meRes.json();
+      } else if (!meRes) {
+        isLoggedIn = false;
+        toast('╨б╨╡╤Б╤Б╨╕╤П ╨╕╤Б╤В╨╡╨║╨╗╨░. ╨Т╨╛╨╣╨┤╨╕╤В╨╡ ╤Б╨╜╨╛╨▓╨░ ╨┤╨╗╤П ╤Г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╤П ╨┐╨╛╨┤╨┐╨╕╤Б╨║╨╛╨╣.', 'warn');
+      }
+    }
+
+    var currentPlanId = isLoggedIn ? ((meData.subscription && meData.subscription.plan_id) || 'free') : null;
+    renderPlans(plans, currentPlanId);
+    renderStatus(isLoggedIn ? (meData.subscription || null) : null);
+    if (meData.transactions && meData.transactions.length) renderReceipt(meData.transactions[0]);
+  }
+
+  async function init() {
+    var user = getUser();
+    isLoggedIn = !!(user && user.access);
+
+    if (user) {
+      var initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
+      document.getElementById('navAvatar').textContent = initials;
+      document.getElementById('navUserName').textContent = user.name || user.username || '╨Я╤А╨╛╤Д╨╕╨╗╤М';
+    } else {
+      document.getElementById('navAvatar').textContent = 'тЖТ';
+      document.getElementById('navUserName').textContent = '╨Т╨╛╨╣╤В╨╕';
+      document.getElementById('navUserName').style.cursor = 'pointer';
+      document.getElementById('navUserName').onclick = function() { window.location.href = '/auth.html'; };
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    window.history.replaceState(null, '', window.location.pathname);
+    if (params.get('pp') === 'cancel') {
+      toast('╨Ю╨┐╨╗╨░╤В╨░ ╨╛╤В╨╝╨╡╨╜╨╡╨╜╨░', 'warn');
+    } else if (params.get('token') && isLoggedIn) {
+      await capturePayPal(params.get('token'));
+    }
+
+    await loadData();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

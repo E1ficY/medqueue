@@ -1,7 +1,8 @@
 // === НАСТРОЙКИ API ===
-const DEFAULT_LOCAL_API_ORIGIN = 'http://127.0.0.1:8000';
-const API_BASE = window.location.protocol === 'file:'
-  ? (localStorage.getItem('medqueue_api_origin') || DEFAULT_LOCAL_API_ORIGIN)
+const DEFAULT_LOCAL_API_ORIGIN = 'https://127.0.0.1:8000';
+const isLocal = window.location.protocol === 'file:' || window.location.port === '5500';
+const API_BASE = isLocal
+  ? DEFAULT_LOCAL_API_ORIGIN
   : window.location.origin;
 const API_URL = `${API_BASE}/api`;
 const AUTH_STORAGE_KEY = 'medqueue_current_user';
@@ -129,6 +130,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Защита по роли — выполняется первой
   enforceRoleAccess();
+
+  // Идентификация для аналитики
+  if (window.MedQueueAnalytics) {
+    const cu = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+    if (cu) {
+      window.MedQueueAnalytics.identifyUser(cu.id, cu.email, cu.name || cu.first_name, cu.subscription_plan);
+    }
+  }
 
   // Очищаем устаревший кэш от предыдущих версий
   // Очищаем устаревшие версии кэша больниц

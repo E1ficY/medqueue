@@ -66,3 +66,38 @@ class PostHogMiddleware:
             logger.warning('PostHog capture failed: %s', exc)
 
         return response
+
+def track_event(user_id: int, event_name: str, properties: dict = None):
+    client = _get_posthog_client()
+    if not client:
+        return
+    try:
+        client.capture(
+            distinct_id=str(user_id) if user_id else 'anonymous',
+            event=event_name,
+            properties=properties or {}
+        )
+    except Exception as exc:
+        logger.warning('PostHog capture event failed: %s', exc)
+
+def identify_user(user_id: int, properties: dict = None):
+    client = _get_posthog_client()
+    if not client:
+        return
+    try:
+        client.identify(
+            distinct_id=str(user_id),
+            properties=properties or {}
+        )
+    except Exception as exc:
+        logger.warning('PostHog identify failed: %s', exc)
+
+def is_feature_enabled(feature_flag_key: str, distinct_id: str) -> bool:
+    client = _get_posthog_client()
+    if not client:
+        return False
+    try:
+        return client.feature_enabled(feature_flag_key, distinct_id)
+    except Exception as exc:
+        logger.warning('PostHog feature flag failed: %s', exc)
+        return False

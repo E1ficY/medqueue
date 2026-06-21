@@ -276,6 +276,7 @@
     .toast-item.success .toast-icon { color: #6f9c92; }
     .toast-icon { font-size: 16px; }
   </style>
+  <script src="../js/analytics.js"></script>
 </head>
 <body>
 
@@ -401,6 +402,9 @@
   </div>
 
   <script>
+    if (window.MedQueueAnalytics) {
+      window.MedQueueAnalytics.trackEvent('begin_checkout', { value: 2990, currency: 'KZT', items: [{ item_name: 'Plus Subscription' }] });
+    }
     function formatCard(el) {
       var v = el.value.replace(/\D/g, '').slice(0, 16);
       var parts = [];
@@ -559,6 +563,9 @@
           btn.textContent = 'Оплатить 2 990 ₸';
           showToast('Банк отклонил операцию', 'error');
         } else {
+          if (window.MedQueueAnalytics) {
+            window.MedQueueAnalytics.trackEvent('purchase', { value: 2990, currency: 'KZT', items: [{ item_name: 'Plus Subscription' }] });
+          }
           showToast('Оплата успешно завершена!', 'success');
           btn.textContent = 'Успешно ✓';
           setTimeout(() => { window.location.href = '/subscription.html'; }, 1500);

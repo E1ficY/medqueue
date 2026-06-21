@@ -11,8 +11,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.contrib.auth.models import User
 from django.conf import settings
+from django.views.decorators.cache import never_cache
+from django.contrib.auth.models import User
 from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, Q, Subquery
 from .models import (
     Hospital, Appointment, Doctor, DoctorInviteCode, UserProfile, DoctorReview,
@@ -135,8 +136,17 @@ class DoctorCatalogViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(hospital_id=int(hospital_id))
         if query:
             qs = qs.filter(Q(full_name__icontains=query) | Q(hospital__name__icontains=query))
+            from appointments.monitoring import track_event
+            user_id = self.request.user.id if self.request.user.is_authenticated else None
+            track_event(user_id, "first search performed", {"query": query})
 
         return qs
+
+    def retrieve(self, request, *args, **kwargs):
+        from appointments.monitoring import track_event
+        user_id = request.user.id if request.user.is_authenticated else None
+        track_event(user_id, "first product viewed", {"doctor_id": kwargs.get('pk')})
+        return super().retrieve(request, *args, **kwargs)
 
 
 class AppointmentViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -1183,17 +1193,30 @@ def admin_stats(request):
     # Конвертируем USD в KZT (курс 500: 5.98 USD * 500 = 2990 KZT)
     revenue = float(kzt_revenue) + float(usd_revenue) * 500.0
 
+    total_users = User.objects.count()
+    plus_subs = UserSubscription.objects.filter(plan='plus', status='active').count()
+    conversion_rate = round((plus_subs / total_users) * 100, 1) if total_users > 0 else 0
+
+    mrr = plus_subs * 2990
+
+    cancelled_subs = UserSubscription.objects.filter(status='cancelled').count()
+    total_paid_subs = UserSubscription.objects.filter(plan='plus').count()
+    churn_rate = round((cancelled_subs / total_paid_subs) * 100, 1) if total_paid_subs > 0 else 0
+
     return Response({
         'hospitals':      Hospital.objects.count(),
         'doctors':        Doctor.objects.filter(is_active=True).count(),
-        'users':          User.objects.count(),
+        'users':          total_users,
         'appointments':   Appointment.objects.count(),
         'confirmed':      Appointment.objects.filter(status='confirmed').count(),
         'invite_codes':   DoctorInviteCode.objects.filter(is_used=False).count(),
         'revenue':        revenue,
         'plus_subs':      UserSubscription.objects.filter(plan='plus', status='active').count(),
         'pending_social': UserSubscription.objects.filter(plan='social', social_reason_confirmed_at__isnull=True).count(),
-        'recent_transactions': _get_recent_transactions()
+        'recent_transactions': _get_recent_transactions(),
+        'conversion_rate': conversion_rate,
+        'mrr': mrr,
+        'churn_rate': churn_rate
     })
 
 
@@ -1614,6 +1637,8 @@ def capture_paypal_order(request):
                 msg = "Произошла неизвестная ошибка при обращении к PayPal."
             
             print(f"[WARNING] PayPal Capture Rejected: {msg}", flush=True)
+            from appointments.monitoring import track_event
+            track_event(user.id, "payment failed", {"error_code": str(issue), "gateway": "paypal"})
             return Response({'error': msg}, status=400)
             
         data = response.json()
@@ -1646,6 +1671,9 @@ def capture_paypal_order(request):
             )
             
             print(f"[INFO] PayPal Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount_paid} {currency} for Plus plan.", flush=True)
+            from appointments.monitoring import track_event
+            track_event(user.id, "payment completed", {"$revenue": float(amount_paid), "currency": currency, "amount": amount_paid, "gateway": "paypal", "plan": "plus"})
+            track_event(user.id, "subscription activated", {"plan": "plus"})
             return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
         else:
             print(f"[WARNING] PayPal Capture Incomplete: Status {data['status']}", flush=True)
@@ -1653,6 +1681,8 @@ def capture_paypal_order(request):
             
     except Exception as e:
         print(f"[ERROR] PayPal Capture Error: {e}", flush=True)
+        from appointments.monitoring import track_event
+        track_event(user.id, "payment failed", {"error_code": "INTERNAL_ERROR", "gateway": "paypal"})
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
@@ -1660,6 +1690,8 @@ def capture_paypal_order(request):
 def card_checkout(request):
     """POST /api/subscription/card-checkout/"""
     user = request.user
+    from appointments.monitoring import track_event
+    track_event(user.id, "checkout started", {"amount": request.data.get('amount', 2990), "currency": "KZT"})
     
     try:
         card_name = request.data.get('card_name', '').strip()
@@ -1685,7 +1717,6 @@ def card_checkout(request):
         # Mock Validation Logic
         if 'reject' in card_name.lower() or 'реджект' in card_name.lower():
             msg = "Банк отклонил транзакцию по вашей карте (сработало правило песочницы: REJECT)."
-            print(f"[WARNING] Card Checkout Sandbox Rejected: {msg}", flush=True)
             PaymentTransaction.objects.create(
                 user=user, amount=amount, currency='KZT', status='failed',
                 transaction_ref=_make_tx_ref(),
@@ -1695,6 +1726,7 @@ def card_checkout(request):
                 authorization_code='',
                 description=f"Отказ банка: REJECT"
             )
+            track_event(user.id, "payment failed", {"error_code": "REJECT", "gateway": "mock_card"})
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
 
         if card_number.endswith('0000'):
@@ -1709,6 +1741,7 @@ def card_checkout(request):
                 authorization_code='',
                 description="Отказ банка: Ограничения по карте"
             )
+            track_event(user.id, "payment failed", {"error_code": "RESTRICTED_CARD", "gateway": "mock_card"})
             return Response({'error': 'INSTRUMENT_DECLINED', 'detail': msg}, status=400)
             
         if card_number.endswith('1111'):
@@ -1723,6 +1756,7 @@ def card_checkout(request):
                 authorization_code='',
                 description="Отказ банка: Недостаточно средств"
             )
+            track_event(user.id, "payment failed", {"error_code": "INSUFFICIENT_FUNDS", "gateway": "mock_card"})
             return Response({'error': 'INSUFFICIENT_FUNDS', 'detail': msg}, status=400)
 
         # Success Case
@@ -1784,9 +1818,31 @@ def card_checkout(request):
         )
         
         print(f"[INFO] Card Payment Success: User {user.username} (ID: {user.id}) successfully paid {amount} KZT for Plus plan.", flush=True)
+        track_event(user.id, "payment completed", {"$revenue": float(amount) / 100, "currency": "KZT", "amount": amount, "gateway": "mock_card", "plan": plan_id})
+        track_event(user.id, "subscription activated", {"plan": plan_id})
         return Response({'status': 'success', 'message': 'Оплата успешно завершена'})
     except Exception as e:
         print(f"[ERROR] Card Checkout Exception: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
         return Response({'error': 'INTERNAL_ERROR', 'detail': f"Server error: {str(e)}"}, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_cancel(request):
+    """POST /api/subscription/cancel/"""
+    user = request.user
+    sub = getattr(user, 'subscription', None)
+    if not sub:
+        sub = UserSubscription.objects.filter(user=user).first()
+    
+    if not sub or sub.status != 'active':
+        return Response({'error': 'Активная подписка не найдена'}, status=400)
+    
+    sub.status = 'cancelled'
+    sub.save(update_fields=['status'])
+    
+    from appointments.monitoring import track_event
+    track_event(user.id, "subscription cancelled", {"plan": sub.plan, "reason": request.data.get('reason', 'user_initiated')})
+    
+    return Response({'status': 'success', 'message': 'Подписка отменена'})

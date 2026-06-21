@@ -43,7 +43,7 @@ from .throttles import (
 )
 
 logger = logging.getLogger(__name__)
-
+from .monitoring import track_event, identify_user
 
 def get_tokens_for_user(user):
     """Генерирует JWT access и refresh токены для пользователя с ролью и ID"""
@@ -378,6 +378,10 @@ def verify_email(request):
 
         effective_role = get_effective_role(user)
 
+        # POSTHOG: User signed up
+        identify_user(user.id, {"email": user.email, "name": user.first_name, "plan": "free"})
+        track_event(user.id, "user signed up", {"plan": "free", "source": "direct", "method": "email"})
+
         return Response({
             'message': 'Регистрация успешна!',
             'user': {
@@ -459,6 +463,11 @@ def login_user(request):
     tokens = get_tokens_for_user(user)
 
     role = get_effective_role(user)
+    payload = get_user_auth_payload(user)
+
+    # POSTHOG: User logged in
+    identify_user(user.id, {"email": user.email, "name": user.first_name, "plan": payload.get("subscription_plan", "free")})
+    track_event(user.id, "user logged in", {"platform": "web", "method": "email"})
 
     return Response({
         'message': 'Успешно',
@@ -1137,7 +1146,9 @@ def google_oauth(request):
 
     with transaction.atomic():
         user = User.objects.filter(email=email).first()
+        is_new_user = False
         if not user:
+            is_new_user = True
             username = email.split('@')[0]
             # Валидация логина
             import re
@@ -1167,6 +1178,13 @@ def google_oauth(request):
 
     tokens = get_tokens_for_user(user)
     role = get_effective_role(user)
+    payload = get_user_auth_payload(user)
+
+    identify_user(user.id, {"email": user.email, "name": user.first_name, "plan": payload.get("subscription_plan", "free")})
+    if is_new_user:
+        track_event(user.id, "user signed up", {"plan": "free", "source": "direct", "method": "google"})
+    else:
+        track_event(user.id, "user logged in", {"platform": "web", "method": "google"})
 
     return Response({
         'message': 'Вход выполнен успешно через Google',
@@ -1208,7 +1226,9 @@ def facebook_oauth(request):
 
     with transaction.atomic():
         user = User.objects.filter(email=email).first()
+        is_new_user = False
         if not user:
+            is_new_user = True
             username = f"fb_{fb_id}"
             if User.objects.filter(username=username).exists():
                 import uuid
@@ -1234,6 +1254,13 @@ def facebook_oauth(request):
 
     tokens = get_tokens_for_user(user)
     role = get_effective_role(user)
+    payload = get_user_auth_payload(user)
+
+    identify_user(user.id, {"email": user.email, "name": user.first_name, "plan": payload.get("subscription_plan", "free")})
+    if is_new_user:
+        track_event(user.id, "user signed up", {"plan": "free", "source": "direct", "method": "facebook"})
+    else:
+        track_event(user.id, "user logged in", {"platform": "web", "method": "facebook"})
 
     return Response({
         'message': 'Вход выполнен успешно через Facebook',
@@ -1261,6 +1288,9 @@ def upload_avatar(request):
         profile.avatar_base64 = avatar_base64
         profile.save(update_fields=['avatar_base64'])
         
+        from appointments.monitoring import track_event
+        track_event(request.user.id, "user completed profile", {"fields_filled": "avatar_base64"})
+
         from appointments.auth_views import get_user_auth_payload, get_tokens_for_user
         tokens = get_tokens_for_user(request.user)
         

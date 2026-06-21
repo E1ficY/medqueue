@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/modules/logo-system.css?v=1">
   <link rel="stylesheet" href="../css/modules/navigation-system.css?v=1">
   <script>
-    window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default_if_none:"" }}';
+    window.TURNSTILE_SITE_KEY = '{{ turnstile_site_key|default_if_none:"" }}' || '1x00000000000000000000AA';
     window.GOOGLE_CLIENT_ID = '{{ google_client_id|default_if_none:"" }}';
     window.FACEBOOK_APP_ID = '{{ facebook_app_id|default_if_none:"" }}';
   </script>
@@ -380,6 +380,7 @@
     }
   </style>
   <script src="../js/theme.js?v=20260526b"></script>
+  <script src="../js/analytics.js"></script>
 </head>
 <body class="page-auth-avant">
   <label class="theme-switch"><input type="checkbox" class="theme-checkbox" onchange="toggleTheme()"><span class="theme-slider"></span></label>
@@ -588,9 +589,10 @@
     </div>
   </div>
   <script>
-    const DEFAULT_LOCAL_API_ORIGIN = 'http://127.0.0.1:8000';
-    const API_BASE = window.location.protocol === 'file:'
-      ? (localStorage.getItem('medqueue_api_origin') || DEFAULT_LOCAL_API_ORIGIN)
+    const DEFAULT_LOCAL_API_ORIGIN = 'https://127.0.0.1:8000';
+    const isLocal = window.location.protocol === 'file:' || window.location.port === '5500';
+    const API_BASE = isLocal
+      ? DEFAULT_LOCAL_API_ORIGIN
       : window.location.origin;
     const API_URL = `${API_BASE}/api`;
     const AUTH_STORAGE_KEY = 'medqueue_current_user';
@@ -1215,6 +1217,9 @@
         if (response.ok) {
           const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
+          if (window.MedQueueAnalytics) {
+            window.MedQueueAnalytics.trackEvent('sign_up', { method: 'email' });
+          }
           showMessage('Регистрация успешна!', 'success');
           setTimeout(redirectAfterAuth, 1000);
 
