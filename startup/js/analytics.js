@@ -21,7 +21,7 @@ posthog.init(POSTHOG_API_KEY, {
 // Helpers for triggering events from script.js
 window.MedQueueAnalytics = {
     identifyUser: function(userId, email, name, plan) {
-        posthog.identify(userId, { email: email, name: name, plan: plan });
+        posthog.identify(String(userId), { email: email, name: name, plan: plan });
     },
     trackEvent: function(eventName, properties) {
         posthog.capture(eventName, properties);
