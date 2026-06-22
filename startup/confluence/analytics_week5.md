@@ -1,13 +1,13 @@
 # MedQueue Analytics & KPIs (Week 5)
 
 ## 1. Core Implementation
-This document outlines the final analytics integration for the MedQueue startup (Sprint 5). We've successfully integrated both PostHog and Google Analytics 4 (GA4).
+This document outlines the final analytics integration for the MedQueue startup (Sprint 5). We've successfully integrated both PostHog and Cloudflare Web Analytics (replacing Google Analytics 4).
 
 ### Tools Used
-- **PostHog**: For product analytics, feature flags, and detailed event tracking (Acquisition, Activation, Revenue, Retention).
-- **Google Analytics 4 (GA4)**: For e-commerce tracking (`begin_checkout`, `purchase`, `sign_up`) and high-level marketing acquisition metrics.
+- **PostHog**: For product analytics, feature flags, detailed event tracking (Acquisition, Activation, Revenue, Retention), and Session Replays.
+- **Cloudflare Web Analytics**: For privacy-first, lightweight tracking of page views and high-level marketing acquisition metrics directly from the edge network. We opted for this over GA4 to ensure maximum site performance, bypass ad-blockers, and avoid complex Content Security Policy (CSP) conflicts.
 
-## 2. Event Taxonomy
+## 2. Event Taxonomy (PostHog)
 
 ### Acquisition
 - **`user signed up`**: Fired when a user successfully registers via Email/Password or OAuth.
@@ -19,9 +19,9 @@ This document outlines the final analytics integration for the MedQueue startup 
 - **`first search performed`**: Fired the first time a user uses the search bar.
 
 ### Revenue (E-Commerce)
-- **`checkout started`** (PostHog) & **`begin_checkout`** (GA4): Fired when a user initiates the payment process.
+- **`checkout started`**: Fired when a user initiates the payment process.
 - **`payment failed`**: Fired when a payment is declined.
-- **`payment completed`** (PostHog) & **`purchase`** (GA4): Fired upon successful subscription payment.
+- **`payment completed`**: Fired upon successful subscription payment.
 - **`subscription activated`**: Fired alongside `payment completed` for tracking active subscription periods.
 
 ### Retention
@@ -55,9 +55,11 @@ The primary conversion funnel to be visualized in PostHog UI:
 3. `checkout started` (Revenue intent)
 4. `payment completed` (Revenue realization)
 
-## 7. Frontend Integration
-A global analytics script (`startup/js/analytics.js`) has been injected into all 13 HTML files. The script automatically handles:
-- Initializing `posthog` (with autocapture and session recording)
-- Initializing `gtag` (with user_id tracking)
-- Providing a wrapper object (`window.MedQueueAnalytics`) to simplify tracking from `script.js`.
-- Automatic user identification across sessions (`identifyUser`) using `localStorage` auth data.
+## 7. Troubleshooting & Architectural Decisions
+
+| Error/Issue | Root Cause | Solution Implemented |
+| :--- | :--- | :--- |
+| **Site Layout Breaking / Blank Page (Error 502/521)** | Google Tag Manager (GTM) injected `unsafe-inline` scripts and iframes that clashed with our strict Nginx and Django CSP, causing the browser to block critical site rendering. | Removed GTM/GA4 entirely. Migrated to **Cloudflare Web Analytics**, which operates at the edge level and requires zero code changes or CSP compromises. |
+| **Events not appearing in PostHog ("where am i?")** | The site was communicating with the PostHog Custom Domain (`e.medqueue.me`), but Nginx and Django CSP blocked the outgoing requests to this domain. | Added `https://e.medqueue.me` to the `connect-src` and `script-src` whitelist in both Nginx and Django middleware CSP. |
+| **Browser caching old analytics scripts** | When applying CSP and custom domain fixes, Cloudflare and local browsers served a cached `analytics.js` (up to 30 days) that still pointed to the wrong API endpoints. | Appended a cache buster query parameter (`?v=2026-06-22-ph`) to the script source in all 13 HTML files to force browsers to fetch the fresh code. |
+| **PostHog SDK "Critical Outdated" Alert** | The backend Docker container was built with `posthog>=3.6.0`, which resolved to an outdated `7.13.1` version, falling behind the required `7.19.2`. | Updated `requirements.txt` to use a compatible release pin (`posthog~=7.19`), rebuilt the Docker container, and ensured both the backend and celery worker received the update. |
