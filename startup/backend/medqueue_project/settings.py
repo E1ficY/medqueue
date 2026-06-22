@@ -337,16 +337,16 @@ CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'base-uri': ("'self'",),
         'block-all-mixed-content': True,
-        'connect-src': ("'self'", 'https://challenges.cloudflare.com', 'https://us.i.posthog.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com'),
+        'connect-src': ("'self'", 'https://challenges.cloudflare.com', 'https://e.medqueue.me', 'https://*.google-analytics.com', 'https://*.analytics.google.com'),
         'default-src': ("'self'",),
         'font-src': ("'self'", 'https://fonts.gstatic.com', 'data:'),
         'form-action': ("'self'",),
         'frame-ancestors': ("'self'",),
-        'frame-src': ('https://challenges.cloudflare.com', 'https://www.googletagmanager.com'),
+        'frame-src': ('https://challenges.cloudflare.com',),
         'img-src': ("'self'", 'data:', 'blob:', 'https://upload.wikimedia.org', 'https://*.google-analytics.com'),
         'media-src': ("'self'", 'data:', 'blob:'),
         'object-src': ("'none'",),
-        'script-src': ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://challenges.cloudflare.com', 'https://us.i.posthog.com', 'https://us-assets.i.posthog.com', 'https://www.googletagmanager.com'),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://challenges.cloudflare.com', 'https://e.medqueue.me', 'https://us-assets.i.posthog.com', 'https://www.googletagmanager.com'),
         'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com')
     }
 }
