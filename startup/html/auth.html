@@ -678,6 +678,10 @@
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
           localStorage.setItem('medqueue_access_token', data.access);
           localStorage.setItem('medqueue_refresh_token', data.refresh);
+          if (window.MedQueueAnalytics) {
+            window.MedQueueAnalytics.identifyUser(String(userToStore.id), userToStore.email, userToStore.name || userToStore.first_name, userToStore.subscription_plan || 'free');
+            window.MedQueueAnalytics.trackEvent('login', { method: provider });
+          }
           showMessage('Вход выполнен успешно!', 'success');
           setTimeout(() => {
             redirectAfterAuth();
