@@ -1072,6 +1072,9 @@
         if (response.ok) {
           const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
+          if (window.MedQueueAnalytics) {
+            window.MedQueueAnalytics.identifyUser(String(userToStore.id), userToStore.email, userToStore.name || userToStore.first_name, userToStore.subscription_plan || 'free');
+          }
           showMessage('Вход выполнен!', 'success');
           setTimeout(redirectAfterAuth, 1000);
 
@@ -1218,6 +1221,7 @@
           const userToStore = { ...data.user, access: data.access, refresh: data.refresh };
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
           if (window.MedQueueAnalytics) {
+            window.MedQueueAnalytics.identifyUser(String(userToStore.id), userToStore.email, userToStore.name || userToStore.first_name, userToStore.subscription_plan || 'free');
             window.MedQueueAnalytics.trackEvent('sign_up', { method: 'email' });
           }
           showMessage('Регистрация успешна!', 'success');
