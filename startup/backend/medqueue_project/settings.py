@@ -315,7 +315,7 @@ else:
 
 # Monitoring (PostHog)
 POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
-POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://us.i.posthog.com').strip()
+POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://e.medqueue.me').strip()
 
 # Celery configuration
 # By default we use Redis configured in `CACHE_URL` as broker and result backend.
