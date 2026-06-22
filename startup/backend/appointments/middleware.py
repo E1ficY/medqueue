@@ -104,11 +104,11 @@ class SecurityHeadersMiddleware:
         response['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
         response['Content-Security-Policy'] = (
             "default-src 'self' https:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://unpkg.com https://e.medqueue.me https://www.googletagmanager.com https://www.google-analytics.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://unpkg.com https://e.medqueue.me; "
             "frame-src 'self' https://challenges.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https:;"
+            "img-src 'self' data: https:;"
         )
         response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=(), interest-cohort=()'
         return response
