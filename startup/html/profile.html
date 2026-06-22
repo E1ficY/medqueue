@@ -1458,6 +1458,30 @@
   }
   function appendAiMsg(t,r){const m=document.getElementById('aiChatMsgs'),e=document.createElement('div');e.className='ai-msg '+r;e.textContent=t;m.appendChild(e);m.scrollTop=m.scrollHeight;return e;}
   </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.posthog) {
+        posthog.onFeatureFlags(function() {
+          if (posthog.isFeatureEnabled('beta-profile-banner')) {
+            const banner = document.createElement('div');
+            banner.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
+            banner.style.color = 'white';
+            banner.style.padding = '12px';
+            banner.style.textAlign = 'center';
+            banner.style.borderRadius = '8px';
+            banner.style.marginBottom = '20px';
+            banner.style.fontWeight = 'bold';
+            banner.innerText = '✨ Вы участвуете в бета-тестировании нового интерфейса профиля!';
+            
+            const container = document.querySelector('.container') || document.body;
+            container.insertBefore(banner, container.firstChild);
+          }
+        });
+      }
+    });
+  </script>
+
 </body>
 </html>
 
