@@ -18,5 +18,5 @@ celery>=5.2.0
 stripe
 requests>=2.31.0
 gunicorn>=21.2.0
-django-prometheus>=0.3.1
+django-prometheus>=2.3.0
 

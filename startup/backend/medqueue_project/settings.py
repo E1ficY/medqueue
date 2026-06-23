@@ -321,16 +321,15 @@ POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
 POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://e.medqueue.me').strip()
 
 # ── Structured JSON Logging ───────────────────────────────────────────────────
+_LOGS_DIR = BASE_DIR / 'logs'
+_LOGS_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'json': {
             '()': 'appointments.log_formatter.JSONFormatter',
-        },
-        'verbose': {
-            'format': '[{asctime}] {levelname} {name} {message}',
-            'style': '{',
         },
     },
     'handlers': {
@@ -340,7 +339,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'app.json.log',
+            'filename': str(_LOGS_DIR / 'app.json.log'),
             'maxBytes': 10 * 1024 * 1024,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
