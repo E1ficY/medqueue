@@ -10,6 +10,7 @@ from .views import (
     admin_stats, admin_hospitals, admin_doctors, admin_doctor_detail,
     admin_invite_codes, admin_invite_code_detail, admin_users,
     admin_social_requests, admin_social_approve, admin_social_reject,
+    health_check,
 )
 from . import auth_views
 
@@ -61,4 +62,6 @@ urlpatterns = [
     path('admin/social-requests/', admin_social_requests),
     path('admin/social-requests/<int:sub_id>/approve/', admin_social_approve),
     path('admin/social-requests/<int:sub_id>/reject/', admin_social_reject),
+    # Health check for uptime monitoring / load-balancer probes
+    path('health/', health_check, name='health-check'),
 ]

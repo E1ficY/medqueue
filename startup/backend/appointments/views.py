@@ -29,6 +29,9 @@ from .serializers import (
 )
 from .throttles import UserThrottle
 from .permissions import IsAdminRole, IsResourceOwnerOrAdmin
+from .monitoring import track_event, identify_user
+
+logger = logging.getLogger(__name__)
 
 
 class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
@@ -754,6 +757,19 @@ def subscription_activate(request):
             'card_masked': f"{transaction.card_brand} •••• {transaction.card_last4}" if transaction.card_last4 else 'NO-CARD',
             'description': transaction.description,
         }
+        # Structured JSON log visible in Grafana Loki / docker logs
+        logger.info(
+            'Payment completed',
+            extra={
+                'event': 'payment_completed',
+                'user_id': user.id,
+                'plan': plan_id,
+                'amount': float(transaction.amount),
+                'currency': transaction.currency,
+                'gateway': 'internal',
+                'tx_ref': transaction.transaction_ref,
+            },
+        )
 
     return Response(payload)
 
@@ -1846,3 +1862,41 @@ def subscription_cancel(request):
     track_event(user.id, "subscription cancelled", {"plan": sub.plan, "reason": request.data.get('reason', 'user_initiated')})
     
     return Response({'status': 'success', 'message': 'Подписка отменена'})
+
+# Health Check
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """
+    GET /api/health/
+    Returns 200 if the service is operational.
+    Checks DB connectivity and returns status of all critical dependencies.
+    Used by Prometheus, load-balancer probes, and Uptime monitors.
+    """
+    import time
+    from django.db import connection
+
+    t_start = time.time()
+    db_ok = False
+    db_error = None
+
+    try:
+        connection.ensure_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        db_ok = True
+    except Exception as e:
+        db_error = str(e)
+
+    latency_ms = round((time.time() - t_start) * 1000, 2)
+    status_code = 200 if db_ok else 503
+    payload = {
+        "status": "ok" if db_ok else "degraded",
+        "db": "ok" if db_ok else "error: " + str(db_error),
+        "latency_ms": latency_ms,
+        "version": "6.0.0",
+    }
+    logger.info("Health check", extra={"db_ok": db_ok, "latency_ms": latency_ms})
+    return Response(payload, status=status_code)
+

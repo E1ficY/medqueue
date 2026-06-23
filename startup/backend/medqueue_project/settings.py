@@ -61,10 +61,12 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'corsheaders',
     'csp',
+    'django_prometheus',
     'appointments',
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',  # must be FIRST
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'csp.middleware.CSPMiddleware',
@@ -78,6 +80,7 @@ MIDDLEWARE = [
     'appointments.middleware.AdminRBACMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',   # must be LAST
 ]
 
 ROOT_URLCONF = 'medqueue_project.urls'
@@ -316,6 +319,50 @@ else:
 # Monitoring (PostHog)
 POSTHOG_API_KEY = os.getenv('POSTHOG_API_KEY', '').strip()
 POSTHOG_HOST = os.getenv('POSTHOG_HOST', 'https://e.medqueue.me').strip()
+
+# ── Structured JSON Logging ───────────────────────────────────────────────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'appointments.log_formatter.JSONFormatter',
+        },
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'app.json.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'json',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'WARNING'),
+            'propagate': False,
+        },
+        'appointments': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
 
 # Celery configuration
 # By default we use Redis configured in `CACHE_URL` as broker and result backend.

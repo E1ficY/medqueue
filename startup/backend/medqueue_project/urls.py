@@ -35,6 +35,8 @@ urlpatterns = [
     path('api/docs/swagger/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='swagger-ui'),
     path('api/docs/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='redoc-ui'),
     path('api/', include('appointments.urls')),
+    # Prometheus metrics endpoint - scraped by Prometheus every 15s
+    path('', include('django_prometheus.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'medqueue-monitor'
+
+scrape_configs:
+  # Django app metrics (via django-prometheus)
+  - job_name: 'django'
+    static_configs:
+      - targets: ['backend:8000']
+    metrics_path: '/metrics'
+    scheme: http
+
+  # Node Exporter - CPU, Memory, Disk of the VPS
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
