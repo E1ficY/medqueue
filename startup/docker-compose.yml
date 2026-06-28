@@ -106,8 +106,8 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -119,8 +119,8 @@ services:
       - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
-    ports:
-      - "9093:9093"
+    expose:
+      - "9093"
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -141,8 +141,28 @@ services:
       - "9100"
     restart: unless-stopped
 
+  # ── Backup: Daily PostgreSQL dump ───────────────────────────────────────────
+  backup:
+    image: postgres:15-alpine
+    container_name: medqueue-backup
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: medqueue
+      POSTGRES_USER: medqueue
+      POSTGRES_PASSWORD: medqueue
+      TELEGRAM_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - backup_data:/backups
+    entrypoint: ["/bin/sh", "-c", "chmod +x /backup.sh && crond -f -d 8 & while true; do sleep 86400 && /backup.sh; done"]
+    depends_on:
+      - db
+    restart: unless-stopped
+
 volumes:
   db_data:
   staticfiles:
   prometheus_data:
   grafana_data:
+  backup_data:
