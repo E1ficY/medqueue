@@ -150,8 +150,8 @@ services:
       POSTGRES_DB: medqueue
       POSTGRES_USER: medqueue
       POSTGRES_PASSWORD: medqueue
-      TELEGRAM_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_TOKEN: "8955489444:AAG5PH3fPubZqmc20cbGxlmRPusYVd8msps"
+      TELEGRAM_CHAT_ID: "1917474108"
     volumes:
       - ./scripts/backup.sh:/backup.sh:ro
       - backup_data:/backups
