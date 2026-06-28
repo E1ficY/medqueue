@@ -43,21 +43,27 @@ if PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
     ls -t "$BACKUP_DIR"/medqueue_*.sql.gz 2>/dev/null | tail -n +$((MAX_BACKUPS + 1)) | xargs -r rm -f
     KEPT=$(ls "$BACKUP_DIR"/medqueue_*.sql.gz 2>/dev/null | wc -l)
 
-    send_telegram "✅ <b>MedQueue: Бэкап БД выполнен</b>
+    send_telegram "💾 <b>#БЭКАП | MedQueue</b>
+━━━━━━━━━━━━━━━━━━━━━
+✅ Резервная копия БД создана успешно
 
 📦 Файл: <code>medqueue_$TIMESTAMP.sql.gz</code>
-💾 Размер: <b>$SIZE</b>
-🗂 Всего бэкапов: <b>$KEPT из $MAX_BACKUPS</b>
-🕐 Время: <code>$(date)</code>"
+💿 Размер: <b>$SIZE</b>
+🗂 Хранится бэкапов: <b>$KEPT из $MAX_BACKUPS</b>
+🕐 Время: <code>$(date)</code>
+━━━━━━━━━━━━━━━━━━━━━
+<i>Это автоматическое уведомление от системы бэкапов</i>"
 
     echo "[$(date)] Done. Kept $KEPT backups."
 else
     echo "[$(date)] BACKUP FAILED!"
-    send_telegram "🔥 <b>MedQueue: ОШИБКА бэкапа БД!</b>
+    send_telegram "💾 <b>#БЭКАП | MedQueue</b>
+━━━━━━━━━━━━━━━━━━━━━
+🔥 ОШИБКА создания резервной копии!
 
-❌ Не удалось создать резервную копию базы данных.
+❌ Не удалось сохранить дамп базы данных.
 🕐 Время: <code>$(date)</code>
-
-Немедленно проверьте сервер!"
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ Немедленно проверьте контейнер <code>medqueue-backup</code>!"
     exit 1
 fi
