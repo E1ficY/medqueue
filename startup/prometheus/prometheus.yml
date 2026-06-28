@@ -7,7 +7,7 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ['alertmanager:9093']
+        - targets: ['medqueue-alertmanager:9093']
 
 rule_files:
   - "alert.rules"
