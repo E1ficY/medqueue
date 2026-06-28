@@ -87,8 +87,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
-    expose:
-      - "9090"
+    ports:
+      - "9090:9090"
     depends_on:
       - backend
     restart: unless-stopped
