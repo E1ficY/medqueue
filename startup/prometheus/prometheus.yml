@@ -4,8 +4,14 @@ global:
   external_labels:
     monitor: 'medqueue-monitor'
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
 rule_files:
   - "alert.rules"
+
 
 
 scrape_configs:

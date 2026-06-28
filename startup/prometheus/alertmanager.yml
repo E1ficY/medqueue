@@ -1,0 +1,25 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'telegram-bot'
+
+receivers:
+  - name: 'telegram-bot'
+    telegram_configs:
+      - bot_token: '8955489444:AAG5PH3fPubZqmc20cbGxlmRPusYVd8msps'
+        api_url: 'https://api.telegram.org'
+        chat_id: 8955489444
+        parse_mode: 'HTML'
+        message: |-
+          {{ if eq .Status "firing" }}🔥 <b>АЛЕРТ: {{ .CommonLabels.alertname }}</b> 🔥{{ else }}✅ <b>РЕШЕНО: {{ .CommonLabels.alertname }}</b> ✅{{ end }}
+          
+          {{ range .Alerts }}
+          <b>Сервисы:</b> {{ .Labels.instance }}
+          <b>Описание:</b> {{ .Annotations.description }}
+          <b>Статус:</b> {{ .Status }}
+          {{ end }}

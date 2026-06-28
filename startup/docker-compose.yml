@@ -112,6 +112,19 @@ services:
       - prometheus
     restart: unless-stopped
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: medqueue-alertmanager
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - "9093:9093"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
   node-exporter:
     image: prom/node-exporter:v1.8.0
     container_name: medqueue-node-exporter
