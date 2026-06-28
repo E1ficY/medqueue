@@ -4,6 +4,10 @@ global:
   external_labels:
     monitor: 'medqueue-monitor'
 
+rule_files:
+  - "alert.rules"
+
+
 scrape_configs:
   # Django app metrics (via django-prometheus)
   - job_name: 'django'

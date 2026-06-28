@@ -1,0 +1,38 @@
+groups:
+  - name: medqueue_alerts
+    rules:
+      - alert: BackendDown
+        expr: up{job="django"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Бэкенд недоступен (Django Down)"
+          description: "Django сервер не отвечает более 1 минуты. Возможно, контейнер упал."
+
+      - alert: HighErrorRate
+        expr: (sum(rate(django_http_responses_total_by_status_view_method_total{status=~"5.."}[5m])) / sum(rate(django_http_responses_total_by_status_view_method_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Высокий процент ошибок 5xx (High Error Rate)"
+          description: "Более 5% запросов завершаются с ошибками 5xx на протяжении 2 минут."
+
+      - alert: HighCpuLoad
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая нагрузка на процессор (High CPU Load)"
+          description: "Загрузка процессора сервера превышает 85% более 5 минут."
+
+      - alert: LowMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Заканчивается оперативная память (Low Memory)"
+          description: "На сервере осталось менее 10% свободной оперативной памяти."
