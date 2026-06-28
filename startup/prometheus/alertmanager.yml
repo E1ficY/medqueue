@@ -13,7 +13,7 @@ receivers:
     telegram_configs:
       - bot_token: '8955489444:AAG5PH3fPubZqmc20cbGxlmRPusYVd8msps'
         api_url: 'https://api.telegram.org'
-        chat_id: 8955489444
+        chat_id: 1917474108
         parse_mode: 'HTML'
         message: |-
           {{ if eq .Status "firing" }}🔥 <b>АЛЕРТ: {{ .CommonLabels.alertname }}</b> 🔥{{ else }}✅ <b>РЕШЕНО: {{ .CommonLabels.alertname }}</b> ✅{{ end }}
