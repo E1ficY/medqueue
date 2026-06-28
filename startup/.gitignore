@@ -1,0 +1,20 @@
+# MedQueue — startup directory
+# Игнорируемые файлы
+
+# Логи
+*.log
+*.txt
+!README.txt
+
+# Дампы данных и отладочные файлы
+*.sqlite3
+__pycache__/
+*.pyc
+*.pyo
+
+# Отчёты нагрузочного тестирования (генерируются локально)
+locust_report*.html
+
+# Переменные окружения
+.env
+.env.*

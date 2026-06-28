@@ -749,6 +749,9 @@ function isLoggedIn() {
 }
 
 function logout() {
+  if (window.MedQueueAnalytics) {
+    window.MedQueueAnalytics.resetUser();
+  }
   localStorage.removeItem(AUTH_STORAGE_KEY);
   window.location.href = 'main.html';
 }

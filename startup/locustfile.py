@@ -23,7 +23,7 @@ class MedQueueUser(HttpUser):
     def on_start(self):
         """Log in before the test starts."""
         creds = random.choice(TEST_USERS)
-        resp = self.client.post(
+        with self.client.post(
             "/api/auth/login/",
             json={
                 "login": creds["login"],
@@ -33,19 +33,21 @@ class MedQueueUser(HttpUser):
             headers={"Content-Type": "application/json"},
             name="POST /api/auth/login/",
             catch_response=True,
-        )
-        if resp.status_code == 200:
-            try:
-                data = resp.json()
-                self.access_token = data.get("access", "")
-                self.user_id = data.get("user", {}).get("id", "")
-            except Exception:
+        ) as resp:
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                    self.access_token = data.get("access", "")
+                    self.user_id = data.get("user", {}).get("id", "")
+                    resp.success()
+                except Exception:
+                    self.access_token = ""
+                    self.user_id = ""
+                    resp.failure("Failed to parse JSON")
+            else:
                 self.access_token = ""
                 self.user_id = ""
-            resp.success()
-        else:
-            self.access_token = ""
-            resp.failure(f"Login failed: {resp.status_code} {resp.text[:200]}")
+                resp.failure(f"Login failed: {resp.status_code}")
 
     def _auth_headers(self):
         return {
