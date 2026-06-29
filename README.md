@@ -81,10 +81,89 @@
 
 ## 👥 Роли пользователей (RBAC)
 
-1. **Гость:** Каталог больниц, врачей, регистрация, вход (Google/Facebook OAuth, OTP)
-2. **Пациент:** Личный кабинет, управление своими записями на приём, подписка
-3. **Врач:** Управление расписанием, смена статуса приёма, выписка рецептов и рекомендаций
-4. **Администратор:** Доступ к Django Admin, управление врачами/клиниками, генерация инвайт-кодов, аналитика
+### 👤 Неавторизованный (гость)
+Доступно без токена:
+- `GET /api/hospitals/` — список больниц (кэш Redis)
+- `GET /api/hospitals/{id}/` — карточка больницы
+- `GET /api/hospitals/{id}/doctors/` — врачи по специальностям
+- `GET /api/doctors/` — каталог врачей
+- `POST /api/auth/register/` — регистрация + CAPTCHA
+- `POST /api/auth/login/` — вход → JWT
+- `POST /api/auth/google/` — вход через Google
+- `POST /api/auth/facebook/` — вход через Facebook
+
+### 🙋 Пациент (`role: patient`)
+Всё что доступно гостю +
+- `GET /api/appointments/` — **только свои** записи
+- `POST /api/appointments/` — создать запись
+- `PATCH /api/appointments/{id}/` — изменить **только свою** запись
+- `DELETE /api/appointments/{id}/` — отменить **только свою** запись
+- `GET /api/profile/` — личный кабинет
+- `POST /api/subscription/activate/` — управление подпиской
+
+### 🩺 Врач (`role: doctor`)
+Всё что пациент +
+- `GET /api/doctor/me/` — свой профиль врача
+- `GET /api/doctor/appointments/` — записи к себе
+- `PATCH /api/doctor/appointments/{id}/` — изменить статус приёма
+- `POST /api/doctor/appointments/{id}/recommendation/` — написать рекомендацию
+- `POST /api/doctor/appointments/{id}/prescription/` — выписать рецепт
+
+### 🔑 Администратор (`role: admin`)
+Всё что врач +
+- `GET /api/admin/stats/` — статистика системы
+- `GET /api/admin/hospitals/` — управление больницами
+- `GET /api/admin/doctors/` — управление врачами
+- `POST /api/admin/invite-codes/` — создание кодов для врачей
+- `GET /api/admin/users/` — список пользователей
+- `GET /admin/` — Django Admin панель
+
+> **Проверка ролей:** `GET /api/admin/stats/` без токена → **401**, с токеном пациента → **403**, с токеном admin → **200** ✅
+
+---
+
+## 🔗 API-эндпоинты
+
+### Публичные (без токена)
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/api/hospitals/` | Список больниц (кэш 60s) |
+| `GET` | `/api/hospitals/{id}/` | Карточка больницы (кэш) |
+| `GET` | `/api/hospitals/{id}/doctors/` | Врачи по специальностям (кэш) |
+| `GET` | `/api/doctors/` | Каталог врачей |
+| `POST` | `/api/auth/register/` | Регистрация + CAPTCHA |
+| `POST` | `/api/auth/login/` | Вход → JWT |
+| `POST` | `/api/auth/verify/` | Подтверждение OTP |
+| `POST` | `/api/auth/google/` | Вход через Google → JWT |
+| `POST` | `/api/auth/facebook/` | Вход через Facebook → JWT |
+| `POST` | `/api/auth/password-reset/` | Сброс пароля |
+
+### Пациент (JWT required)
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET/POST` | `/api/appointments/` | Свои записи |
+| `GET/PATCH/DELETE` | `/api/appointments/{id}/` | Конкретная запись (только своя) |
+| `GET` | `/api/profile/` | Профиль пользователя |
+| `GET` | `/api/subscription/me/` | Моя подписка |
+| `POST` | `/api/subscription/activate/` | Активировать подписку |
+
+### Врач (JWT + role=doctor)
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/api/doctor/me/` | Профиль врача |
+| `GET` | `/api/doctor/appointments/` | Записи к врачу |
+| `PATCH` | `/api/doctor/appointments/{id}/` | Изменить статус |
+| `POST` | `/api/doctor/appointments/{id}/recommendation/` | Рекомендации |
+| `POST` | `/api/doctor/appointments/{id}/prescription/` | Рецепт |
+
+### Администратор (JWT + role=admin)
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/api/admin/stats/` | Статистика |
+| `GET/POST` | `/api/admin/hospitals/` | Больницы |
+| `GET/POST` | `/api/admin/doctors/` | Врачи |
+| `GET/POST` | `/api/admin/invite-codes/` | Коды для врачей |
+| `GET` | `/api/admin/users/` | Пользователи |
 
 ---
 
